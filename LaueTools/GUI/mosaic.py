@@ -2991,26 +2991,12 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
     return CountersData
 
 
-# sample motors of 2D maps (mesh scans): x motors along horizontal axis and y motors along vertical
-# axis of maps plots
-MAP_HORIZONTAL_MOTORS = ("xech", "xps", "sx")
-MAP_VERTICAL_MOTORS = ("yech", "yps", "sy")
-
-
-def map_transposed(fastmotor, slowmotor):
-    """True if map of images (lines along slow motor) must be transposed to have the y motor along
-    the vertical axis, i.e. fast motor is a y motor (e.g. 'amesh yech ... xech ...',
-    'fscan2d xech ... yech ...')"""
-    return fastmotor in MAP_VERTICAL_MOTORS or (slowmotor in MAP_HORIZONTAL_MOTORS
-                                                and fastmotor not in MAP_HORIZONTAL_MOTORS)
-
-
-def map_axes_labels(fastmotor, slowmotor, transposed):
-    """(xlabel, ylabel) of 2D map plots: map lines are along slow motor (fast motor varies along
-    horizontal axis), or along fast motor if map is transposed"""
-    if transposed:
-        return "%s (slow motor)" % slowmotor, "%s (fast motor)" % fastmotor
-    return "%s (fast motor)" % fastmotor, "%s (slow motor)" % slowmotor
+# sample motors of 2D maps: x motors along horizontal axis and y motors along vertical axis of maps plots
+# (defined in generaltools, also used by the batch notebooks)
+MAP_HORIZONTAL_MOTORS = GT.MAP_HORIZONTAL_MOTORS
+MAP_VERTICAL_MOTORS = GT.MAP_VERTICAL_MOTORS
+map_transposed = GT.map_transposed
+map_axes_labels = GT.map_axes_labels
 
 
 # plotted quantity of GUI counters (title and colorbar label of plots), %s: X or Y

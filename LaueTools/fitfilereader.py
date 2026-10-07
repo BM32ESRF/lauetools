@@ -39,8 +39,11 @@ def get_nbdigits_filename(nb_files: int) -> int:
         else:
             return nb_digits
     
-def create_fit_obj(file_index: int, nbdigits_filename: int, folderpath: str, prefix = 'img_', suffix = '_g0.fit'):
+def create_fit_obj(file_index: int, nbdigits_filename: int, folderpath: str, prefix = 'img_', suffix = '_g0.fit',
+                   nbfiles_per_folder = None, subfolder_prefix = 'images_'):
                 filename = prefix + str(file_index).zfill(nbdigits_filename) + suffix
+                if nbfiles_per_folder:  # files in subfolders <subfolder_prefix><start>_<end> of nbfiles_per_folder files
+                    folderpath = os.path.join(folderpath, GT.subfolder_name(file_index, nbfiles_per_folder, subfolder_prefix))
                 return parsed_fitfile(os.path.join(folderpath, filename))
 
 # ------ get the exact motor position from the header of one image ----- #
@@ -75,7 +78,7 @@ def get_motor_fileseries(ExpFolder: str, nb_rows: int, nb_cols: int, nbdigits_fi
                                          itertools.repeat(nbdigits_filename))
     tpos1 = time.time()
     
-    with multiprocessing.Pool(nb_cpus) as pool:
+    with GT.mp_context(preload=('LaueTools.fitfilereader',)).Pool(nb_cpus) as pool:   # safe in a jupyter kernel
         abs_pos = pool.starmap(get_motor,
                                tqdm(get_motor_args, total = nb_files, desc = 'Fetching motor positions'),
                                chunksize = 1)
@@ -424,7 +427,10 @@ class parsed_fitfile:
 
 class parsed_fitfileseries:
 
-    def __init__(self, folderpath: str, nb_cols: int, nb_rows: int, prefix = 'img_', suffix = '_g0.fit', use_multiprocessing = True, nbdigits=4):
+    def __init__(self, folderpath: str, nb_cols: int, nb_rows: int, prefix = 'img_', suffix = '_g0.fit', use_multiprocessing = True, nbdigits=4,
+                 nbfiles_per_folder = None, subfolder_prefix = 'images_'):
+        """nbfiles_per_folder: None: all .fit files in folderpath. n: files in subfolders <subfolder_prefix><start>_<end>
+        of n files (see generaltools.subfolder_name(), indexing_batch.fitfiles_layout())"""
         
         
         self.folderpath = folderpath
@@ -445,9 +451,11 @@ class parsed_fitfileseries:
                                       itertools.repeat(self.nbdigits_filename),
                                       itertools.repeat(self.folderpath),
                                       itertools.repeat(prefix),
-                                      itertools.repeat(suffix))
+                                      itertools.repeat(suffix),
+                                      itertools.repeat(nbfiles_per_folder),
+                                      itertools.repeat(subfolder_prefix))
             
-            with multiprocessing.Pool(self.nb_cpus) as pool:
+            with GT.mp_context(preload=('LaueTools.fitfilereader',)).Pool(self.nb_cpus) as pool:   # safe in a jupyter kernel
                 self.get_fitlist = pool.starmap(create_fit_obj,
                                                 tqdm(create_fit_obj_args, total = self.nb_files, desc = 'Parsing progress'),
                                                 chunksize = 1)
@@ -460,8 +468,8 @@ class parsed_fitfileseries:
             obj_list = []
 
             for file_index in tqdm(range(0, self.nb_files), total = self.nb_files, desc = 'Parsing progress'):
-                filename = prefix + str(file_index).zfill(self.nbdigits_filename) + suffix
-                obj_list.append(parsed_fitfile(os.path.join(self.folderpath, filename)))
+                obj_list.append(create_fit_obj(file_index, self.nbdigits_filename, self.folderpath, prefix, suffix,
+                                               nbfiles_per_folder, subfolder_prefix))
             
             self.get_fitlist = obj_list
             

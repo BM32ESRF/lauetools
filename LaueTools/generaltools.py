@@ -3004,6 +3004,62 @@ def getfileindex(filename:str)->int:
     val = match.group()[:-len(fileextension)]
     return int(float(val))
 
+# sample motors of 2D maps (mesh scans): x motors along horizontal axis and y motors along vertical
+# axis of maps plots
+MAP_HORIZONTAL_MOTORS = ("xech", "xps", "sx")
+MAP_VERTICAL_MOTORS = ("yech", "yps", "sy")
+
+
+def map_transposed(fastmotor, slowmotor):
+    """True if map of images (lines along slow motor) must be transposed to have the y motor along
+    the vertical axis, i.e. fast motor is a y motor (e.g. 'amesh yech ... xech ...',
+    'fscan2d xech ... yech ...')"""
+    return fastmotor in MAP_VERTICAL_MOTORS or (slowmotor in MAP_HORIZONTAL_MOTORS
+                                                and fastmotor not in MAP_HORIZONTAL_MOTORS)
+
+
+def map_axes_labels(fastmotor, slowmotor, transposed):
+    """(xlabel, ylabel) of 2D map plots: map lines are along slow motor (fast motor varies along
+    horizontal axis), or along fast motor if map is transposed"""
+    if transposed:
+        return "%s (slow motor)" % slowmotor, "%s (fast motor)" % fastmotor
+    return "%s (fast motor)" % fastmotor, "%s (slow motor)" % slowmotor
+
+
+def mp_context(preload=()):
+    """multiprocessing context for pools of worker processes (use: mp_context().Pool(nb_cpus))
+
+    In a jupyter kernel: 'forkserver' (where available): worker processes are started from a clean server process.
+    Forking directly the kernel may break it: workers inherit its threads locks (pool stuck forever) and its
+    output channel (prints of the workers corrupt it: later each process start waits 20 s for output flushes).
+    Elsewhere (scripts, slurm jobs): default context ('fork' on Linux), as forkserver would import the main script
+    again in each worker. Worker functions must be defined in a module (not in the notebook).
+    preload: modules imported once in the forkserver process (faster start of the workers)
+    """
+    import multiprocessing
+    import sys
+    main = sys.modules.get('__main__')
+    if 'ipykernel' in sys.modules and not getattr(main, '__file__', None):
+        try:
+            ctx = multiprocessing.get_context('forkserver')
+            if preload:
+                ctx.set_forkserver_preload(list(preload))
+            return ctx
+        except ValueError:   # Windows
+            pass
+    return multiprocessing.get_context()
+
+
+def subfolder_name(fileindex: int, nbfiles_per_folder: int, prefix: str = 'images_') -> str:
+    """name of the subfolder of a file when a large series of files is split into subfolders
+    of nbfiles_per_folder files (used by peaksearch_batch, indexing_batch and fit files readers)
+
+    >>> subfolder_name(12345, 10000)
+    'images_10000_19999'
+    """
+    start = (int(fileindex) // nbfiles_per_folder) * nbfiles_per_folder
+    return f'{prefix}{start}_{start + nbfiles_per_folder - 1}'
+
 def list_image_indices_in_folder(folder_path: str, filename_prefix: str = 'img_', filename_suffix: str = 'tif') -> list:
     """
     Sorted list of integer indices of files named {filename_prefix}{digits}.{filename_suffix} in a folder.

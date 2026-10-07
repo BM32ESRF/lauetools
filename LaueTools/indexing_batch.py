@@ -67,6 +67,10 @@ DEFAULT_CONFIG = {
         'cor_folder': None,       # folder of .cor files (peaksearch results)
         'prefix': 'img_',         # e.g. img_0023.cor -> 'img_'
         'nbdigits': 4,            # zero padding of image index: img_0023.cor -> 4
+        # None: all .cor files in cor_folder. n (e.g. 10000): .cor files in subfolders of n files
+        # <cor_folder>/<subfolder_prefix><start>_<end> (as written by peaksearch_batch with output: nbfiles_per_folder)
+        'nbfiles_per_folder': None,
+        'subfolder_prefix': 'images_',
         'CCDLabel': 'sCMOS',
         'detfile': None,          # calibration .det file (for information)
         'image_folder': None,     # folder of images (for information)
@@ -80,6 +84,9 @@ DEFAULT_CONFIG = {
         'fit_folder': None,       # folder where .fit files are written (and read in postprocessing)
         'results_folder': None,   # folder of allresults_*.pickle (default: fit_folder)
         'results_stamp': None,    # allresults_<stamp>.pickle (default: key_material)
+        # False: all .fit files in fit_folder. True (with scan: nbfiles_per_folder): .fit files in subfolders of
+        # fit_folder with the same names as the subfolders of .cor files
+        'fit_subfolders': False,
     },
     'material': {
         'key_material': None,
@@ -225,12 +232,20 @@ def check_config(cfg: dict, verbose: bool = True) -> bool:
     """
     errors, warnings = [], []
     scan = cfg['scan']
+    nbpf = scan['nbfiles_per_folder']
+    if nbpf is not None and (not isinstance(nbpf, int) or nbpf < 1):
+        errors.append(f'scan: nbfiles_per_folder must be null or a positive integer, not {nbpf}')
+    elif cfg['output']['fit_subfolders'] and not nbpf:
+        warnings.append('output: fit_subfolders needs scan: nbfiles_per_folder: all .fit files in fit_folder')
     if scan['cor_folder'] is None or not Path(scan['cor_folder']).is_dir():
         errors.append(f"scan: cor_folder does not exist: {scan['cor_folder']}")
-    else:
-        nbcor = len(list(Path(scan['cor_folder']).glob(f"{scan['prefix']}*.cor")))
+    elif not errors:
+        nbcor = len(_corfiles(cfg))
         if nbcor == 0:
-            errors.append(f"no {scan['prefix']}*.cor file in {scan['cor_folder']}")
+            where = f"{scan['subfolder_prefix']}*/ subfolders of " if nbpf else ''
+            errors.append(f"no {scan['prefix']}*.cor file in {where}{scan['cor_folder']}")
+            if not nbpf and any(Path(scan['cor_folder']).glob(f"{scan['subfolder_prefix']}*/{scan['prefix']}*.cor")):
+                errors.append(f"  .cor files are in subfolders {scan['subfolder_prefix']}*: set scan: nbfiles_per_folder")
         elif verbose:
             print(f"{nbcor} .cor files found in {scan['cor_folder']}")
             if scan['mapdims'] is not None and nbcor != scan['mapdims'][0] * scan['mapdims'][1]:
@@ -276,13 +291,257 @@ def print_config(cfg: dict):
     """print the main configuration parameters"""
     scan, out = cfg['scan'], cfg['output']
     print(f"---- {cfg['name']} ----  ({cfg['configfile']})")
-    print(f".cor files:  {scan['cor_folder']}/{scan['prefix']}{'#' * scan['nbdigits']}.cor")
-    print(f".fit files:  {out['fit_folder']}")
+    subfolder = f"{scan['subfolder_prefix']}<start>_<end>/" if scan['nbfiles_per_folder'] else ''
+    print(f".cor files:  {scan['cor_folder']}/{subfolder}{scan['prefix']}{'#' * scan['nbdigits']}.cor"
+          + (f"  ({scan['nbfiles_per_folder']} files per subfolder)" if subfolder else ''))
+    print(f".fit files:  {out['fit_folder']}" + (f'/{subfolder}' if subfolder and out['fit_subfolders'] else ''))
     print(f"map:         mapdims (fast, slow) = {scan['mapdims']}, motors ({scan['fast_motor']}, {scan['slow_motor']})")
     print(f"detector:    {scan['CCDLabel']}, calibration {scan['detfile']}")
     ind = cfg['indexing']
     print(f"material:    {cfg['material']['key_material']}, energy {ind['e_min']}-{ind['e_max']} keV "
           f"(indexing up to {ind['e_max_MR']} keV), nbGrainstoFind = {ind['nbGrainstoFind']}")
+
+
+# --------------------------------------------------------------------------------------
+#  WRITE CONFIGURATION FILES (no manual editing of YAML indentation)
+# --------------------------------------------------------------------------------------
+TEMPLATE_CONFIG = Path(__file__).parent / 'notebooks' / 'indexation' / 'config_template.yaml'
+
+
+def _leaf_keys(tree: dict = DEFAULT_CONFIG, path: tuple = ()) -> Dict[str, tuple]:
+    """{parameter name: path in the configuration} e.g. 'nbGrainstoFind': ('indexing', 'nbGrainstoFind')"""
+    leaves = {}
+    for key, value in tree.items():
+        if isinstance(value, dict) and key not in ('mymaterials', 'ub_matrices'):
+            leaves.update(_leaf_keys(value, path + (key,)))
+        else:
+            leaves[key] = path + (key,)
+    return leaves
+
+
+def _key_path(name: str, tree: dict = DEFAULT_CONFIG) -> tuple:
+    """path of a parameter given by its name ('central_spots_indices' is accepted for 'central spots indices')"""
+    leaves = _leaf_keys(tree)
+    for candidate in (name, name.replace('_', ' ')):
+        if candidate in leaves:
+            return leaves[candidate]
+    import difflib
+    close = difflib.get_close_matches(name, list(leaves), n=3)
+    raise KeyError(f"unknown configuration parameter '{name}'" + (f'. Did you mean {close}?' if close else ''))
+
+
+def _to_plain(value):
+    """numpy arrays/scalars, Path, tuple -> python types writable in YAML"""
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, Path):
+        return str(value)
+    if isinstance(value, (list, tuple)):
+        return [_to_plain(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _to_plain(v) for k, v in value.items()}
+    return value
+
+
+def _same(a, b) -> bool:
+    a, b = _to_plain(a), _to_plain(b)
+    if a is None or b is None or isinstance(a, (str, bool)) or isinstance(b, (str, bool)):
+        return a == b
+    try:
+        return np.array_equal(np.asarray(a, dtype=float), np.asarray(b, dtype=float))
+    except (ValueError, TypeError):
+        return a == b
+
+
+def _compact_indices(indices):
+    """[0, ..., n-1] -> n, [s, ..., e-1] -> 's:e' (contiguous), else list"""
+    indices = [int(i) for i in indices]
+    if len(indices) > 3 and indices == list(range(indices[0], indices[-1] + 1)):
+        return len(indices) if indices[0] == 0 else f'{indices[0]}:{indices[-1] + 1}'
+    return indices
+
+
+def _write_config(source: Union[str, Path], newfile: Union[str, Path], changes: Dict[tuple, Any],
+                  overwrite: bool = False, header: str = '', path_keys: tuple = _PATH_KEYS) -> Path:
+    """copy the YAML file `source` to `newfile` with values replaced by `changes` {path: value}.
+
+    Comments and layout are kept if ruamel.yaml is installed.
+    Relative paths of `source` (keys `path_keys`) are made absolute if `newfile` is in another folder.
+    """
+    source = Path(source).expanduser().resolve()
+    newfile = Path(newfile).expanduser().resolve()
+    if newfile.exists() and not overwrite and newfile != source:
+        raise FileExistsError(f'{newfile} already exists. Use overwrite=True or another file name')
+    if newfile == source and not overwrite:
+        raise FileExistsError(f'{newfile} is the source file: use overwrite=True to update it in place')
+    text = source.read_text()
+
+    try:
+        from ruamel.yaml import YAML
+        from ruamel.yaml.comments import CommentedMap, CommentedSeq
+        ryaml = YAML()
+        ryaml.preserve_quotes = True
+        ryaml.width = 200
+        ryaml.representer.add_representer(type(None), lambda rep, _: rep.represent_scalar('tag:yaml.org,2002:null', 'null'))
+        data = ryaml.load(text) or CommentedMap()
+
+        def to_yaml(value):
+            if isinstance(value, list):
+                seq = CommentedSeq([to_yaml(v) for v in value])
+                seq.fa.set_flow_style()
+                return seq
+            if isinstance(value, dict):
+                cmap = CommentedMap()
+                for k, v in value.items():
+                    cmap[k] = to_yaml(v)
+                return cmap
+            return value
+        newsection = CommentedMap
+    except ImportError:
+        ryaml = None
+        data = yaml.safe_load(text) or {}
+        to_yaml = lambda value: value
+        newsection = dict
+        GT.printyellow('ruamel.yaml not installed: comments of the configuration file are not kept '
+                       '(pip install ruamel.yaml)')
+
+    if newfile.parent != source.parent:
+        for section, key in path_keys:
+            value = (data.get(section) or {}).get(key)
+            if value not in (None, '') and (section, key) not in changes:
+                abspath = _resolve_path(value, source.parent)
+                if str(abspath) != os.path.expandvars(os.path.expanduser(str(value))):
+                    changes[(section, key)] = str(abspath)
+
+    for path, value in changes.items():
+        node = data
+        for key in path[:-1]:
+            if node.get(key) is None:
+                node[key] = newsection()
+            node = node[key]
+        node[path[-1]] = to_yaml(_to_plain(value))
+
+    newfile.parent.mkdir(parents=True, exist_ok=True)
+    if ryaml is not None:
+        import io
+        buf = io.StringIO()
+        ryaml.dump(data, buf)
+        body = buf.getvalue()
+    else:
+        body = yaml.safe_dump(data, sort_keys=False, default_flow_style=None, width=200)
+    newfile.write_text(header + body)
+    return newfile
+
+
+def new_config(newfile: Union[str, Path], template: Optional[Union[str, Path]] = None,
+               overwrite: bool = False, check: bool = True, **changes) -> dict:
+    """create a configuration file from a template, with some parameters changed (no manual YAML editing)
+
+    template: config_template.yaml of LaueTools (default) or the configuration file of another experiment.
+    changes: parameters given by their name, whatever their section, e.g.
+        IB.new_config('configs/myexp.yaml', cor_folder='/data/.../corfiles', prefix='img_', mapdims=[51, 51],
+                      fit_folder='/data/.../fitfiles', key_material='Al', nbGrainstoFind=2,
+                      central_spots_indices=10)
+    ('central_spots_indices' stands for 'central spots indices', 'list_matching_tol_angles' for
+    'list matching tol angles').
+
+    check: check_config() of the new configuration (False e.g. if the .cor files do not exist yet)
+    Returns the configuration loaded from the new file (as load_config()).
+    """
+    template = TEMPLATE_CONFIG if template is None else template
+    pathchanges = {_key_path(name): value for name, value in changes.items()}
+    header = f'# created {datetime.datetime.now():%Y-%m-%d %H:%M} from {Path(template).name} (IB.new_config)\n'
+    newfile = _write_config(template, newfile, pathchanges, overwrite=overwrite, header=header)
+    GT.printgreen(f'configuration written: {newfile}')
+    cfg = load_config(newfile)
+    if check:
+        check_config(cfg)
+    return cfg
+
+
+# IndexRefineParams fields saved by save_config() (run options of tests, e.g. verboselevel, are not saved)
+_PARAMS_TO_CONFIG = {name: ('indexing', name) for name in
+                     ('e_min', 'e_max', 'e_max_MR', 'nbGrainstoFind', 'depth', 'MIN_NUMBERSPOTS_FOR_INDEXING',
+                      'MAX_NUMBERSPOTS_FOR_INDEXING', 'MAXNBSPOTS', 'crudeMReval', 'maxnbspots_MReval',
+                      'stop_Nb_Matches', 'MatchingRate_List')}
+_PARAMS_TO_CONFIG.update({'key_material': ('material', 'key_material'),
+                          'mymaterials': ('material', 'mymaterials'),
+                          'fit_folder': ('output', 'fit_folder'),
+                          'skipindexing': ('run', 'skipindexing'),
+                          'CCDLabel': ('scan', 'CCDLabel')})
+
+
+def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['IndexRefineParams'] = None,
+                overwrite: bool = False, **changes) -> dict:
+    """save a configuration file = file of `cfg` + parameters changed in `params` (e.g. after a test) + `changes`
+
+    Only the parameters of `params` that differ from `cfg` are written (indexing parameters, dict_indexrefine,
+    material, fit_folder, usepreviousUB, skipindexing), with the comments of the original file.
+    Run options of tests (verboselevel, ignorefitfileresults, outputlistindices ...) are not saved.
+    `changes`: other parameters given by their name, as in new_config() (e.g. test_image_index=1300).
+
+    Example, after a successful test on 1 image:
+        cfg = IB.save_config(cfg, 'configs/a321220_MgO_2grains.yaml', params=params_test)
+
+    Returns the configuration loaded from the new file: use it for the batch (and its path as CONFIG
+    in the postprocessing notebooks).
+    """
+    pathchanges = {}
+    if params is not None:
+        for field, path in _PARAMS_TO_CONFIG.items():
+            value = getattr(params, field)
+            old = cfg[path[0]][path[1]]
+            if field == 'fit_folder':
+                value = Path(os.path.expanduser(str(value))).resolve()
+                old = None if old is None else Path(old).resolve()
+            if not _same(value, old):
+                pathchanges[path] = value
+
+        cfg_dir = cfg['indexing']['dict_indexrefine']
+        for key, value in params.dict_indexrefine.items():
+            if not _same(value, cfg_dir.get(key)):
+                if key == 'central spots indices':
+                    value = _compact_indices(value)
+                pathchanges[('indexing', 'dict_indexrefine', key)] = value
+
+        oldUB, newUB = get_previousUB(cfg), params.usepreviousUB
+        if isinstance(newUB, np.ndarray):
+            newUB = [newUB]
+        sameUB = (isinstance(oldUB, list) and isinstance(newUB, list) and len(oldUB) == len(newUB)
+                  and all(np.allclose(a, b) for a, b in zip(oldUB, newUB)))
+        if not sameUB and not _same(oldUB, newUB):
+            if isinstance(newUB, list):   # matrices -> names of ub_matrices (existing names or new ones)
+                ub_matrices = dict(cfg['ub_matrices'] or {})
+                names = []
+                for mat in newUB:
+                    name = next((k for k, v in ub_matrices.items() if np.allclose(v, mat)), None)
+                    if name is None:
+                        name = f'UB_{len(ub_matrices) + 1}'
+                        while name in ub_matrices:
+                            name += '_'
+                        ub_matrices[name] = np.asarray(mat, dtype=float).tolist()
+                        pathchanges[('ub_matrices', name)] = ub_matrices[name]
+                    names.append(name)
+                newUB = names
+            pathchanges[('run', 'usepreviousUB')] = newUB
+
+    pathchanges.update({_key_path(name): value for name, value in changes.items()})
+
+    if not pathchanges:
+        print('no parameter differs from the configuration file')
+    for path, value in pathchanges.items():
+        old = cfg
+        for key in path:
+            old = old.get(key) if isinstance(old, dict) else None
+        print(f"  {': '.join(path)}: {_to_plain(old)} -> {_to_plain(value)}")
+
+    header = (f"# saved {datetime.datetime.now():%Y-%m-%d %H:%M} from {Path(cfg['configfile']).name} "
+              f"(IB.save_config)\n")
+    newfile = _write_config(cfg['configfile'], newfile, pathchanges, overwrite=overwrite, header=header)
+    GT.printgreen(f'configuration written: {newfile}')
+    return load_config(newfile)
 
 
 def get_previousUB(cfg: dict):
@@ -344,7 +603,16 @@ class IndexRefineParams:
     outputlistindices: bool = False
     blacklistfile: Optional[str] = None
     CCDLabel: str = 'sCMOS'
+    fit_nbfiles_per_folder: Optional[int] = None   # .fit files in subfolders of fit_folder (see fitfile_folder())
+    subfolder_prefix: str = 'images_'
     LUT: Any = None
+
+    def fitfile_folder(self, image_index: int) -> Path:
+        """folder of the .fit files of an image: fit_folder, or its subfolder <subfolder_prefix><start>_<end>"""
+        if self.fit_nbfiles_per_folder:
+            return Path(self.fit_folder) / GT.subfolder_name(image_index, self.fit_nbfiles_per_folder,
+                                                             self.subfolder_prefix)
+        return Path(self.fit_folder)
 
     def build_LUT(self):
         """compute the angular LUT of key_material once (shared by all images)"""
@@ -383,7 +651,8 @@ def params_from_config(cfg: dict, build_LUT: bool = True, **kwargs) -> IndexRefi
                                writefitfile=run['writefitfile'],
                                starting_grainindex=run['starting_grainindex'],
                                verboselevel=run['verboselevel'],
-                               CCDLabel=cfg['scan']['CCDLabel'])
+                               CCDLabel=cfg['scan']['CCDLabel'],
+                               **fitfiles_layout(cfg))
     params = dataclasses.replace(params, **kwargs)
     if isinstance(params.usepreviousUB, list):
         params.nbGrainstoFind = max(len(params.usepreviousUB), params.nbGrainstoFind)
@@ -393,7 +662,8 @@ def params_from_config(cfg: dict, build_LUT: bool = True, **kwargs) -> IndexRefi
 
 
 def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
-    """index and refine Laue spots of a .cor file. Write .fit file(s) in params.fit_folder
+    """index and refine Laue spots of a .cor file. Write .fit file(s) in params.fit_folder (or in its subfolder,
+    see IndexRefineParams.fitfile_folder())
 
     Returns
     -------
@@ -433,7 +703,8 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
         return [image_index, [], [], f'too few or too many spots to index ({dataset.nbspots})']
 
     previousResults = None
-    relatedfitfile = Path(params.fit_folder) / (filecor[:-4] + '_g0.fit')
+    fitfolder = params.fitfile_folder(image_index)
+    relatedfitfile = fitfolder / (filecor[:-4] + '_g0.fit')
     info = ''
     if not params.ignorefitfileresults:
         if relatedfitfile.exists():
@@ -460,7 +731,7 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
         dataset.inhibitindexing = True
         info += ' Check orientation and refine only (no indexing from scratch).'
 
-    Path(params.fit_folder).mkdir(parents=True, exist_ok=True)
+    fitfolder.mkdir(parents=True, exist_ok=True)
 
     dataset.IndexSpotsSet(None,
                           params.key_material,
@@ -476,7 +747,7 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
                           angletol_list=params.dict_indexrefine['list matching tol angles'],
                           nbGrainstoFind=params.nbGrainstoFind,
                           previousResults=previousResults,
-                          dirnameout_fitfile=Path(params.fit_folder),
+                          dirnameout_fitfile=fitfolder,
                           corfilename=filecor,
                           verbose=params.verboselevel,
                           MatchingRate_List=params.MatchingRate_List,
@@ -521,9 +792,45 @@ def print_result(res: list, minnbindexed: int = 20, minMR: float = 33):
 #  SET OF FILES & MULTIPROCESSING
 # --------------------------------------------------------------------------------------
 def corfile_path(cfg: dict, imageindex: int) -> Path:
-    """full path of .cor file of a given image index"""
+    """full path of .cor file of a given image index (in its subfolder if scan: nbfiles_per_folder)"""
     scan = cfg['scan']
-    return Path(scan['cor_folder']) / f"{scan['prefix']}{imageindex:0{scan['nbdigits']}d}.cor"
+    folder = Path(scan['cor_folder'])
+    if scan['nbfiles_per_folder']:
+        folder = folder / GT.subfolder_name(imageindex, scan['nbfiles_per_folder'], scan['subfolder_prefix'])
+    return folder / f"{scan['prefix']}{imageindex:0{scan['nbdigits']}d}.cor"
+
+
+def fitfiles_layout(cfg: dict) -> dict:
+    """{'fit_nbfiles_per_folder': n or None, 'subfolder_prefix': str}: layout of .fit files in fit_folder
+
+    readers of .fit files accept the same layout, e.g.
+        lay = IB.fitfiles_layout(cfg)
+        parsed_fitfileseries(..., nbfiles_per_folder=lay['fit_nbfiles_per_folder'], subfolder_prefix=lay['subfolder_prefix'])
+    """
+    scan = cfg['scan']
+    return {'fit_nbfiles_per_folder': scan['nbfiles_per_folder'] if cfg['output']['fit_subfolders'] else None,
+            'subfolder_prefix': scan['subfolder_prefix']}
+
+
+def fitfile_path(cfg: dict, imageindex: int, grainindex: int = 0, fit_folder: Optional[Union[str, Path]] = None) -> Path:
+    """full path of the .fit file of a given image and grain index (fit_folder: default output: fit_folder)"""
+    scan, lay = cfg['scan'], fitfiles_layout(cfg)
+    folder = Path(fit_folder or cfg['output']['fit_folder'])
+    if lay['fit_nbfiles_per_folder']:
+        folder = folder / GT.subfolder_name(imageindex, lay['fit_nbfiles_per_folder'], lay['subfolder_prefix'])
+    return folder / f"{scan['prefix']}{imageindex:0{scan['nbdigits']}d}_g{grainindex}.fit"
+
+
+def _corfiles(cfg: dict) -> List[Path]:
+    """prefix####.cor files of cor_folder (or of its subfolders), sorted by image index"""
+    scan = cfg['scan']
+    pattern = f"{scan['prefix']}*.cor"
+    if scan['nbfiles_per_folder']:
+        pattern = f"{scan['subfolder_prefix']}*/{pattern}"
+    files = Path(scan['cor_folder']).glob(pattern)
+    # keep only prefix####.cor (exclude e.g. purged or merged files)
+    files = [ff for ff in files if ff.stem[len(scan['prefix']):].isdigit()]
+    return sorted(files, key=lambda p: GT.getfileindex(p))
 
 
 def select_corfiles(cfg: dict, image_range=None, roi=None) -> List[str]:
@@ -532,7 +839,7 @@ def select_corfiles(cfg: dict, image_range=None, roi=None) -> List[str]:
     image_range: [start, stop] (stop included), default cfg['selection']['image_range']
     roi: [center image index, [half size fast, half size slow]] rectangle in the map,
          default cfg['selection']['roi']
-    None for both: all .cor files of cor_folder with the prefix of the configuration
+    None for both: all .cor files of cor_folder (or of its subfolders) with the prefix of the configuration
     """
     scan = cfg['scan']
     if image_range is None:
@@ -540,9 +847,7 @@ def select_corfiles(cfg: dict, image_range=None, roi=None) -> List[str]:
     if roi is None:
         roi = cfg['selection']['roi']
 
-    files = sorted(Path(scan['cor_folder']).glob(f"{scan['prefix']}*.cor"), key=lambda p: GT.getfileindex(p))
-    # keep only prefix####.cor (exclude e.g. purged or merged files)
-    files = [ff for ff in files if ff.stem[len(scan['prefix']):].isdigit()]
+    files = _corfiles(cfg)
 
     if image_range is not None:
         start, stop = image_range
@@ -566,6 +871,11 @@ def _init_worker(params):
 
 def _index_refine_worker(filename):
     return index_refine(filename, _WORKER_PARAMS)
+
+
+def mp_context():
+    """multiprocessing context of the pools of the batches (forkserver in a jupyter kernel, see GT.mp_context())"""
+    return GT.mp_context(preload=('LaueTools.indexing_batch', 'LaueTools.peaksearch_batch'))
 
 
 def available_cpus() -> int:
@@ -597,13 +907,447 @@ def run_multiprocessing(listfiles: List[str], params: IndexRefineParams, nb_cpus
     t0 = time.time()
     allresults = []
     # parameters (and LUT) are sent once to each worker process
-    with multiprocessing.Pool(processes=nb_cpus, initializer=_init_worker, initargs=(params,)) as pool:
+    with mp_context().Pool(processes=nb_cpus, initializer=_init_worker, initargs=(params,)) as pool:
         for res in tqdm(pool.imap_unordered(_index_refine_worker, listfiles, chunksize=1), total=len(listfiles),
                         mininterval=progress_interval):
             allresults.append(res)
     dt = time.time() - t0
     print(f"It took {int(dt // 60)} min {int(dt % 60)} s to index {len(listfiles)} images with {nb_cpus} cpus.")
     return allresults
+
+
+# --------------------------------------------------------------------------------------
+#  REFINE AGAIN EACH GRAIN (cluster of orientations) WITH ITS OWN UB MATRICES
+# --------------------------------------------------------------------------------------
+def grain_refinement_tasks(result, analyzer, cluster_ids: Optional[List[int]] = None, min_size: int = 30,
+                           region: str = 'points', dilate: int = 0, box_halfsize=10, start: str = 'local',
+                           align: bool = True, envelope_radius: float = 2.0,
+                           verbose: bool = True) -> Dict[int, Dict[int, list]]:
+    """images and starting UB matrices to refine again each grain (cluster of orientations) of a segmentation
+
+    result, analyzer: from orientationclustering.analyze_ub_matrices() (notebook 3_segmentation_grains)
+    cluster_ids: clusters to refine (default: clusters with at least min_size matrices, largest first)
+    region: 'points': map points where the cluster was found
+            'envelope': + points inside the envelope of the cluster (see OC.cluster_envelope(), closing
+                        with envelope_radius): holes where the grain was missed or not the primary grain
+            'box': all map points of a box centred on the cluster barycenter, of half size box_halfsize
+                   (int, or (half size fast axis, half size slow axis)) in map steps
+    dilate: + map points within `dilate` map steps of the region (grain borders)
+    start: 'local': UB matrix of the cluster at this point (or at the nearest point of the cluster),
+                    then the cluster reference matrix if the first one does not match
+           'reference': cluster reference matrix only (same starting UB for all points)
+    align: local UB matrices brought to the symmetry variant of the cluster reference (UB.S, see
+           OC.align_to_cluster_reference()): the same reflection has the same hkl at all points of a grain
+           (needed to select a fixed set of reflections, see grain_spots_selection())
+
+    Returns {cluster_id: {image_index: [candidate UB matrices (3x3 arrays), tested in this order]}}
+    """
+    from LaueTools import orientationclustering as OC
+    from scipy import ndimage as ndi
+
+    if start not in ('local', 'reference'):
+        raise ValueError("start must be 'local' or 'reference'")
+    if region not in ('points', 'envelope', 'box'):
+        raise ValueError("region must be 'points', 'envelope' or 'box'")
+    nrows, ncols = analyzer.check_mapdimension(result.mapdimension)
+    stats = result.get_cluster_stats_dict(analyzer, (nrows, ncols))
+    if cluster_ids is None:
+        cluster_ids = [c.cluster_id for c in result.clusters if c.size >= min_size]
+    matrices = (OC.align_to_cluster_reference(result, analyzer, (nrows, ncols)) if align
+                else np.array([m.matrix for m in analyzer.matrices]).reshape(-1, 3, 3))
+
+    tasks = {}
+    for cid in cluster_ids:
+        cluster = result.get_cluster(cid)
+        if cluster is None:
+            raise ValueError(f'cluster {cid} not found')
+        reference = np.asarray(stats[cid].reference_matrix, dtype=float)
+
+        # UB matrix of the cluster at each of its points (most indexed spots if several)
+        local = {}
+        for i in cluster.matrix_indices:
+            img = int(analyzer.image_indices[i])
+            if img not in local or analyzer.nb_indexed[i] > analyzer.nb_indexed[local[img]]:
+                local[img] = i
+        member_images = np.array(sorted(local))
+        member_rows, member_cols = np.divmod(member_images, ncols)
+
+        mask = OC.cluster_mask(result, analyzer, cid, (nrows, ncols))
+        if region == 'envelope':
+            mask |= OC.cluster_envelope(result, analyzer, cid, radius=envelope_radius,
+                                        mapdimension=(nrows, ncols))['mask']
+        elif region == 'box':
+            half_fast, half_slow = (box_halfsize, box_halfsize) if np.ndim(box_halfsize) == 0 else box_halfsize
+            row0, col0 = (int(round(v)) for v in stats[cid].mean_position)
+            mask[max(row0 - half_slow, 0):row0 + half_slow + 1, max(col0 - half_fast, 0):col0 + half_fast + 1] = True
+        if dilate:
+            mask = ndi.binary_dilation(mask, structure=OC._disk(dilate))
+
+        tasks[cid] = {}
+        for row, col in zip(*np.nonzero(mask)):
+            img = int(row * ncols + col)
+            if start == 'reference':
+                tasks[cid][img] = [reference]
+                continue
+            if img in local:
+                i = local[img]
+            else:   # nearest point of the cluster
+                i = local[int(member_images[np.argmin((member_rows - row) ** 2 + (member_cols - col) ** 2)])]
+            UB = np.asarray(matrices[i], dtype=float)
+            tasks[cid][img] = [UB] if np.allclose(UB, reference) else [UB, reference]
+        if verbose:
+            print(f'cluster {cid:3d}: {cluster.nb_pixels:5d} points -> {len(tasks[cid]):5d} images to refine')
+    return tasks
+
+
+def grain_folder(output_folder: Union[str, Path], cluster_id: int, folder_prefix: str = 'grain_') -> Path:
+    """folder of the .fit files of a grain refined by refine_grains(): <output_folder>/grain_003"""
+    return Path(output_folder) / f'{folder_prefix}{cluster_id:03d}'
+
+
+def _grain_task_list(cfg: dict, tasks: Dict[int, Dict[int, list]], output_folder: Union[str, Path],
+                     folder_prefix: str = 'grain_', cor_folders: Optional[Dict[int, Union[str, Path]]] = None) -> list:
+    """[(cluster_id, .cor file, candidate UBs, .fit folder), ...] (1 item = 1 image of 1 grain)"""
+    cor_folders = cor_folders or {}
+    alltasks = []
+    for cid, images in tasks.items():
+        fitdir = grain_folder(output_folder, cid, folder_prefix)
+        for img, UBs in images.items():
+            corfile = corfile_path(cfg, img)
+            if cid in cor_folders:
+                corfile = Path(cor_folders[cid]) / corfile.name
+            alltasks.append((cid, str(corfile), [np.asarray(UB, dtype=float) for UB in UBs], str(fitdir)))
+    return alltasks
+
+
+def _grain_params(params: IndexRefineParams) -> IndexRefineParams:
+    """parameters of refine_grains(): check orientation and refine only (1 grain per .fit file)"""
+    params = dataclasses.replace(params, skipindexing=True, nbGrainstoFind=1, starting_grainindex=0,
+                                 ignorefitfileresults=True, writefitfile=True, useinternalmultiprocessing=False,
+                                 outputlistindices=False, verbosefilename=False)
+    if params.LUT is None:
+        params.build_LUT()
+    return params
+
+
+def _write_grain_info(cfg: dict, tasks: dict, params: IndexRefineParams, output_folder: Path, folder_prefix: str,
+                      result=None, cor_folders=None, extra: Optional[dict] = None):
+    """settings of a grain refinement in <output_folder>/grain_refinement.yaml"""
+    info = {'date': f'{datetime.datetime.now():%Y-%m-%d %H:%M:%S}',
+            'configfile': str(cfg['configfile']),
+            'cor_folder': str(cfg['scan']['cor_folder']),
+            'segmentation': None if result is None else {'threshold': result.threshold, 'mode': result.mode,
+                                                         'symmetry': result.symmetry
+                                                         if isinstance(result.symmetry, (str, type(None)))
+                                                         else 'custom'},
+            'parameters': {field: getattr(params, field) for field in
+                           ('key_material', 'e_min', 'e_max', 'e_max_MR', 'depth', 'MAXNBSPOTS',
+                            'MatchingRate_List', 'dict_indexrefine')},
+            'grains': {cid: {'folder': grain_folder(output_folder, cid, folder_prefix).name,
+                             'nb_images': len(images),
+                             'cor_folder': None if not cor_folders or cid not in cor_folders else str(cor_folders[cid]),
+                             'starting_matrices': sorted({len(UBs) for UBs in images.values()})}
+                       for cid, images in tasks.items()}}
+    if extra:
+        info.update(extra)
+    output_folder.mkdir(parents=True, exist_ok=True)
+    with open(output_folder / 'grain_refinement.yaml', 'w') as f:
+        f.write(yaml.safe_dump(_to_plain(info), sort_keys=False, default_flow_style=None, width=200))
+
+
+def _refine_task_worker(task):
+    cluster_id, filename, UBs, fit_folder = task
+    params = dataclasses.replace(_WORKER_PARAMS, usepreviousUB=list(UBs), fit_folder=str(fit_folder))
+    return cluster_id, index_refine(filename, params)
+
+
+def run_grain_tasks(alltasks: list, params: IndexRefineParams, nb_cpus: Optional[int] = None,
+                    progress_interval: float = 0.1) -> Dict[int, list]:
+    """run the tasks of _grain_task_list() with a pool of nb_cpus processes. Returns {cluster_id: [results]}"""
+    if nb_cpus is None:
+        nb_cpus = available_cpus()
+    params = _grain_params(params)
+    t0 = time.time()
+    results = {}
+    for cid, *_ in alltasks:
+        results.setdefault(cid, [])
+    with mp_context().Pool(processes=nb_cpus, initializer=_init_worker, initargs=(params,)) as pool:
+        for cid, res in tqdm(pool.imap_unordered(_refine_task_worker, alltasks, chunksize=1),
+                             total=len(alltasks), mininterval=progress_interval):
+            results[cid].append(res)
+    dt = time.time() - t0
+    print(f'It took {int(dt // 60)} min {int(dt % 60)} s to refine {len(results)} grains '
+          f'({len(alltasks)} images) with {nb_cpus} cpus.', flush=True)
+    return results
+
+
+def refine_grains(cfg: dict, tasks: Dict[int, Dict[int, list]], params: IndexRefineParams,
+                  output_folder: Union[str, Path], nb_cpus: Optional[int] = None, folder_prefix: str = 'grain_',
+                  cor_folders: Optional[Dict[int, Union[str, Path]]] = None, result=None,
+                  progress_interval: float = 0.1) -> Dict[int, list]:
+    """refine again each grain at its images with its own UB matrices (check orientation and refine only,
+    no indexing from scratch), in this jupyter session. Same work on the cluster: prepare_slurm_grain_job()
+
+    tasks: from grain_refinement_tasks() (or grain_spots_selection())
+    params: refinement parameters, e.g. params_from_config(cfg) then changed: e_max (nb of spots of the model),
+            dict_indexrefine['list matching tol angles'], dict_indexrefine['MinimumMatchingRate'] (min matching
+            rate % to accept a starting matrix), MatchingRate_List, MAXNBSPOTS ...
+    output_folder: .fit files of grain #cluster_id in <output_folder>/grain_<cluster_id>/<prefix>####_g0.fit
+            (1 grain per .fit file: each grain is refined independently of the other grains of the image)
+    cor_folders: {cluster_id: folder of .cor files} replacing the cor_folder of cfg for these grains
+            (e.g. .cor files restricted to selected spots, see grain_spots_selection())
+    result: ClusterResult of the segmentation (optional, information written in grain_refinement.yaml)
+
+    Returns {cluster_id: list of results of index_refine()}. Settings are saved in <output_folder>/grain_refinement.yaml
+    """
+    output_folder = Path(output_folder).expanduser()
+    params = _grain_params(params)
+    _write_grain_info(cfg, tasks, params, output_folder, folder_prefix, result=result, cor_folders=cor_folders)
+    alltasks = _grain_task_list(cfg, tasks, output_folder, folder_prefix, cor_folders)
+    results = run_grain_tasks(alltasks, params, nb_cpus=nb_cpus, progress_interval=progress_interval)
+    print_grain_refinement(results)
+    return results
+
+
+def prepare_slurm_grain_job(cfg: dict, tasks: Dict[int, Dict[int, list]], params: IndexRefineParams,
+                            output_folder: Union[str, Path], folder_prefix: str = 'grain_',
+                            cor_folders: Optional[Dict[int, Union[str, Path]]] = None, result=None,
+                            machine: str = 'magnifix', nb_cpus: int = 192, time: str = '01:00:00',
+                            mem_per_cpu: str = '2000M', nchunks: int = 1, job_name: Optional[str] = None,
+                            jobs_folder: Optional[Union[str, Path]] = None, env_setup: Optional[List[str]] = None,
+                            python: Optional[str] = None, mail_user: Optional[str] = None) -> dict:
+    """write a slurm job folder doing refine_grains() on the cluster (same arguments + slurm resources as
+    prepare_slurm_job()). Submit with submit_slurm_job(job), follow with slurm_job_status(job), and read the
+    results with load_slurm_grain_results(job)
+
+    The tasks (image, .cor file, starting UBs, .fit folder of each grain) are saved in job_params.pickle and
+    shared among nchunks jobs (job array) of nb_cpus processes.
+    """
+    output_folder = Path(output_folder).expanduser().resolve()
+    params_job = _grain_params(params)
+    alltasks = _grain_task_list(cfg, tasks, output_folder, folder_prefix, cor_folders)
+    nb_cpus, mem_per_cpu, nchunks = _check_slurm_resources(machine, nb_cpus, mem_per_cpu, nchunks, len(alltasks))
+    job_name = job_name or f'grains_{params.key_material}'
+    jobdir = _new_jobdir(Path(jobs_folder) if jobs_folder else output_folder.parent / 'slurm_jobs', job_name)
+
+    _write_grain_info(cfg, tasks, params_job, output_folder, folder_prefix, result=result, cor_folders=cor_folders,
+                      extra={'slurm_job': str(jobdir)})
+    with open(jobdir / 'job_params.pickle', 'wb') as f:
+        pickle.dump({'cfg': cfg, 'params': params_job, 'grain_tasks': alltasks}, f)
+    with open(jobdir / 'job_params.txt', 'w') as f:
+        f.write(f"# grain refinement job {jobdir.name} (config {cfg['configfile']})\n"
+                f"# {len(tasks)} grains, {len(alltasks)} images, .fit files in {output_folder}/{folder_prefix}###\n"
+                f"# settings: {output_folder / 'grain_refinement.yaml'}\n")
+
+    script = _write_slurm_script(jobdir, 'LaueTools.indexing_batch', job_name, machine, nb_cpus, time, mem_per_cpu,
+                                 nchunks, env_setup=env_setup, python=python, mail_user=mail_user)
+    job = {'jobdir': str(jobdir), 'script': str(script), 'command': f'sbatch {script}', 'machine': machine,
+           'nb_cpus': nb_cpus, 'nchunks': nchunks, 'nfiles': len(alltasks), 'job_id': None,
+           'fit_folder': str(output_folder), 'kind': 'grains'}
+    _write_job(job)
+    print(f"job folder: {jobdir}\n{len(tasks)} grains, {len(alltasks)} images, {nchunks} job(s) of {nb_cpus} cpus "
+          f"on {machine}, time limit {time}\n.fit files -> {output_folder}/{folder_prefix}###")
+    print(f"to submit from a terminal (jupyter-slurm):\n    {job['command']}")
+    return job
+
+
+def load_slurm_grain_results(job: Union[dict, str, Path]) -> Optional[Dict[int, list]]:
+    """{cluster_id: [results]} of a job written by prepare_slurm_grain_job() (all chunks). None if no result yet"""
+    pairs = load_slurm_results(job)
+    if pairs is None:
+        return None
+    results = {}
+    for cid, res in pairs:
+        results.setdefault(cid, []).append(res)
+    print_grain_refinement(results)
+    return results
+
+
+def print_grain_refinement(results: Dict[int, list]):
+    """nb of images where each grain was refined, mean nb of indexed spots and matching rate"""
+    print(f"{'grain':>6} {'images':>7} {'refined':>8} {'mean nb spots':>14} {'mean MR %':>10}")
+    for cid, allres in sorted(results.items()):
+        nbs = [res[2][0][1] for res in allres
+               if len(res[1]) and res[1][0][1] is not None and len(res[2]) and res[2][0][1] is not None]
+        nbs = np.array(nbs, dtype=float).reshape(-1, 2)
+        mean = nbs.mean(axis=0) if len(nbs) else [np.nan, np.nan]
+        print(f'{cid:6d} {len(allres):7d} {len(nbs):8d} {mean[0]:14.1f} {mean[1]:10.1f}')
+
+
+# --------------------------------------------------------------------------------------
+#  FIXED SET OF RELIABLE SPOTS PER GRAIN (same reflections at all points -> comparable strain)
+# --------------------------------------------------------------------------------------
+def read_fitfile_spots(fitfile: Union[str, Path]):
+    """indexed spots of a 1-grain .fit file as a pandas DataFrame (columns of the .fit file: spot_index,
+    Intensity, h, k, l, pixDev, Xexp, Yexp, peak_fwaxmaj, peak_fwaxmin, Xdev, Ydev ...) and its UB matrix"""
+    import pandas as pd
+    with open(fitfile, 'r') as f:
+        lines = f.read().splitlines()
+    header = next(i for i, line in enumerate(lines) if line.startswith('##spot_index'))
+    columns = lines[header].lstrip('#').split()
+    rows = []
+    for line in lines[header + 1:]:
+        if line.startswith('#') or not line.strip():
+            break
+        rows.append([float(v) for v in line.split()])
+    ub_line = next(i for i, line in enumerate(lines) if line.startswith(('#UB matrix', 'UB matrix')))
+    UB = np.array([[float(v) for v in lines[ub_line + k].lstrip('#').replace('[', ' ').replace(']', ' ').split()]
+                   for k in (1, 2, 3)])
+    return pd.DataFrame(rows, columns=columns[:len(rows[0])] if rows else columns), UB
+
+
+def read_grain_spots(cfg: dict, grain_dir: Union[str, Path], grainindex: int = 0, isolation: bool = True):
+    """indexed spots of all .fit files of a grain folder (written by refine_grains())
+
+    isolation: add column 'isolation' = distance (pixels) to the nearest other spot of the .cor file
+               (spots of other grains, spurious spots...), read from the .cor file of each image
+
+    Returns (spots DataFrame with columns image, h, k, l, Xexp, Yexp, Intensity, peak_fwaxmaj, peak_fwaxmin,
+    elongation, Xdev, Ydev, dev, isolation ..., {image index: UB matrix})
+    """
+    import pandas as pd
+    from scipy.spatial import cKDTree
+    grain_dir = Path(grain_dir)
+    fitfiles = sorted(grain_dir.rglob(f"{cfg['scan']['prefix']}*_g{grainindex}.fit"))
+    if not fitfiles:
+        raise FileNotFoundError(f"no {cfg['scan']['prefix']}*_g{grainindex}.fit file in {grain_dir}")
+    tables, UBs = [], {}
+    for fitfile in tqdm(fitfiles, mininterval=1):
+        img = GT.getfileindex(fitfile.name.replace(f'_g{grainindex}', ''))
+        spots, UB = read_fitfile_spots(fitfile)
+        if spots.empty:
+            continue
+        UBs[img] = UB
+        spots.insert(0, 'image', img)
+        if isolation:
+            corfile = corfile_path(cfg, img)
+            XY = IOLT.readfile_cor(str(corfile))[0][:, 2:4]
+            dist, _ = cKDTree(XY).query(spots[['Xexp', 'Yexp']].to_numpy(), k=2)
+            spots['isolation'] = dist[:, 1]
+        tables.append(spots)
+    spots = pd.concat(tables, ignore_index=True)
+    for col in ('spot_index', 'h', 'k', 'l'):
+        spots[col] = spots[col].round().astype(int)
+    if {'peak_fwaxmaj', 'peak_fwaxmin'} <= set(spots.columns):
+        fw = spots[['peak_fwaxmaj', 'peak_fwaxmin']].abs()
+        spots['elongation'] = fw.max(axis=1) / fw.min(axis=1).clip(lower=1e-3)
+    if {'Xdev', 'Ydev'} <= set(spots.columns):
+        spots['dev'] = np.hypot(spots['Xdev'], spots['Ydev'])
+    return spots, UBs
+
+
+def spot_quality(spots, max_dev: Optional[float] = 1.0, max_elongation: Optional[float] = 2.0,
+                 max_fwhm: Optional[float] = None, min_isolation: Optional[float] = 10.,
+                 max_pixdev: Optional[float] = None):
+    """boolean Series: spots reliable for strain refinement
+
+    max_dev: max distance (pixels) between fitted spot center and its initial position (Xdev, Ydev of
+             peak search): large for asymmetric or multi-component spots
+    max_elongation: max ratio of the fwhm along the 2 axes of the spot
+    max_fwhm: max fwhm (pixels) of the large axis (None: no limit)
+    min_isolation: min distance (pixels) to the nearest other spot of the image
+    max_pixdev: max residual (pixels) of the spot in the previous refinement (None: no limit; caution, a
+                small limit biases the strain towards the previous solution)
+    """
+    good = np.ones(len(spots), dtype=bool)
+    for col, limit, op in (('dev', max_dev, np.less_equal), ('elongation', max_elongation, np.less_equal),
+                           ('peak_fwaxmaj', max_fwhm, np.less_equal), ('isolation', min_isolation, np.greater_equal),
+                           ('pixDev', max_pixdev, np.less_equal)):
+        if limit is not None and col in spots:
+            good &= op(spots[col].abs() if col == 'peak_fwaxmaj' else spots[col], limit).to_numpy()
+    return good
+
+
+def reference_reflections(spots, good=None, min_fraction: float = 0.8, nb_spots: Optional[int] = None):
+    """reflections (hkl) of a grain reliable at most of its points: the same set is then used at all points
+
+    spots: from read_grain_spots(); good: from spot_quality() (default: all spots)
+    min_fraction: min fraction of the images of the grain where the reflection is indexed AND reliable
+    nb_spots: keep only the nb_spots most frequent reflections (then most intense)
+
+    Returns DataFrame (1 row per hkl): fraction, nb_images, median intensity / dev / elongation / isolation,
+    'selected' (bool), sorted by decreasing fraction
+    """
+    good = np.ones(len(spots), dtype=bool) if good is None else np.asarray(good)
+    nb_images = spots['image'].nunique()
+    grouped = spots.assign(good=good).groupby(['h', 'k', 'l'])
+    table = grouped.agg(nb_images=('good', 'sum'), nb_indexed=('image', 'nunique'),
+                        intensity=('Intensity', 'median'),
+                        **{f'median_{col}': (col, 'median') for col in ('dev', 'elongation', 'isolation', 'pixDev')
+                           if col in spots})
+    table['fraction'] = table['nb_images'] / nb_images
+    table = table.sort_values(['fraction', 'intensity'], ascending=False)
+    table['selected'] = table['fraction'] >= min_fraction
+    if nb_spots is not None:
+        table.loc[table.index[table['selected'].cumsum() > nb_spots], 'selected'] = False
+    return table
+
+
+def grain_spots_selection(cfg: dict, results_folder: Union[str, Path], cluster_ids: Optional[List[int]] = None,
+                          output_cor_folder: Optional[Union[str, Path]] = None, min_fraction: float = 0.8,
+                          nb_spots: Optional[int] = None, min_spots: int = 8, require_all: bool = False,
+                          folder_prefix: str = 'grain_', verbose: bool = True, **quality):
+    """.cor files restricted to a fixed set of reliable reflections per grain, for a 2nd refine_grains()
+
+    1. spots of the .fit files of each grain (results of a 1st refine_grains() in results_folder, with align=True
+       so that hkl are the same at all points of a grain)
+    2. reliable spots (spot_quality(**quality): max_dev, max_elongation, max_fwhm, min_isolation, max_pixdev)
+    3. reference reflections of the grain (reference_reflections(): min_fraction, nb_spots)
+    4. for each image: .cor file with only the reference reflections that are reliable in this image
+       (<output_cor_folder>/grain_###/<name>.cor, other columns of the .cor file kept). Images with less than
+       min_spots such spots (or without all of them if require_all) are skipped
+
+    Returns (tasks {cluster_id: {image: [UB of the 1st refinement]}}, cor_folders {cluster_id: folder},
+    tables {cluster_id: reference_reflections() table}), for
+        refine_grains(cfg, tasks, params, output_folder_2, cor_folders=cor_folders)
+    """
+    results_folder = Path(results_folder)
+    output_cor_folder = Path(output_cor_folder) if output_cor_folder else results_folder / 'selected_corfiles'
+    if cluster_ids is None:
+        cluster_ids = sorted(int(p.name[len(folder_prefix):]) for p in results_folder.glob(f'{folder_prefix}[0-9]*')
+                             if p.is_dir())
+    tasks, cor_folders, tables = {}, {}, {}
+    for cid in cluster_ids:
+        spots, UBs = read_grain_spots(cfg, grain_folder(results_folder, cid, folder_prefix))
+        good = spot_quality(spots, **quality)
+        table = reference_reflections(spots, good, min_fraction=min_fraction, nb_spots=nb_spots)
+        tables[cid] = table
+        reference = set(table.index[table['selected']])
+        keep = good & np.array([hkl in reference for hkl in zip(spots['h'], spots['k'], spots['l'])])
+        outdir = grain_folder(output_cor_folder, cid, folder_prefix)
+        outdir.mkdir(parents=True, exist_ok=True)
+        tasks[cid], skipped = {}, 0
+        for img, selected in spots[keep].groupby('image'):
+            if len(selected) < min_spots or (require_all and len(selected) < len(reference)):
+                skipped += 1
+                continue
+            _write_selected_corfile(corfile_path(cfg, img), selected['spot_index'].to_numpy(), outdir,
+                                    CCDLabel=cfg['scan']['CCDLabel'])
+            tasks[cid][img] = [UBs[img]]
+        cor_folders[cid] = outdir
+        if verbose:
+            nbsel = spots[keep].groupby('image').size()
+            print(f"grain {cid:3d}: {len(reference):3d} reference reflections (of {len(table)}), "
+                  f"{100 * good.mean():.0f}% reliable spots, {len(tasks[cid])} images "
+                  f"(median {nbsel.median() if len(nbsel) else 0:.0f} spots), {skipped} skipped (< {min_spots} spots)")
+    return tasks, cor_folders, tables
+
+
+def _write_selected_corfile(corfile: Path, spot_indices, outputfolder: Path, CCDLabel: str = 'sCMOS') -> str:
+    """write <outputfolder>/<name of corfile> with only the spots spot_indices (rows of corfile), all columns kept"""
+    out = IOLT.readfile_cor(str(corfile), output_CCDparamsdict=True, output_only5columns=False)
+    rawdata, CCDcalibdict = out[0], out[7]
+    props = out[8] if len(out) > 8 else None
+    CCDcalibdict['CCDLabel'] = CCDLabel
+    rows = np.sort(np.asarray(spot_indices, dtype=int))
+    data = rawdata[rows]
+    if props and 'data_spotsproperties' in props:
+        props = dict(props, data_spotsproperties=np.asarray(props['data_spotsproperties'])[rows])
+    else:
+        props = None
+    return IOLT.writefile_cor(corfile.stem, *data[:, :5].T, param=CCDcalibdict, initialfilename=str(corfile),
+                              comments=f'{len(rows)} selected spots (grain_spots_selection)',
+                              dirname_output=str(outputfolder), dict_data_spotsproperties=props)
 
 
 # --------------------------------------------------------------------------------------
@@ -677,6 +1421,9 @@ def save_allresults(cfg: dict, params: IndexRefineParams, allresults: list, summ
                            'prefixfilename': scan['prefix'],
                            'CCDLabel': scan['CCDLabel'],
                            'sizeofzeropadding': scan['nbdigits'],
+                           'nbfiles_per_folder': scan['nbfiles_per_folder'],
+                           'subfolder_prefix': scan['subfolder_prefix'],
+                           'fit_nbfiles_per_folder': params.fit_nbfiles_per_folder,
                            'detfile': scan['detfile'],
                            'mapdims': scan['mapdims'],
                            'invmapdims': scan['invmapdims'],
@@ -897,24 +1644,8 @@ def choose_slurm_machine(nb_cpus: int, verbose: bool = True):
     return machine, nb_cpus
 
 
-def prepare_slurm_job(cfg: dict, params: IndexRefineParams, listfiles: List[str], machine: str = 'magnifix',
-                      nb_cpus: int = 192, time: str = '02:00:00', mem_per_cpu: str = '2000M', nchunks: int = 1,
-                      job_name: Optional[str] = None, jobs_folder: Optional[Union[str, Path]] = None,
-                      env_setup: Optional[List[str]] = None, python: Optional[str] = None,
-                      mail_user: Optional[str] = None) -> dict:
-    """write a job folder with parameters and slurm script to index & refine listfiles with params
-
-    The job uses exactly `params` and `listfiles` (including changes made in the notebook), saved in job_params.pickle
-    nchunks > 1: slurm job array of nchunks jobs, each one analysing 1/nchunks of listfiles
-    machine with 'nodes' > 1 (e.g. 'magnifix2', 'magnifix3'): nchunks is at least the nb of nodes
-    jobs_folder: default <parent folder of params.fit_folder>/slurm_jobs. Job folder: <jobs_folder>/<job_name>_<date>
-    env_setup: shell lines run before python (default: activate the conda environment of this python)
-    python: python executable (default: the one running this notebook)
-
-    Returns job dict (also written in <job folder>/job.json): jobdir, script, command, ...
-    """
-    import json
-    import sys
+def _check_slurm_resources(machine: str, nb_cpus: int, mem_per_cpu: str, nchunks: int, nfiles: int):
+    """(nb_cpus, mem_per_cpu, nchunks) valid for a job on machine (see SLURM_MACHINES)"""
     if machine not in SLURM_MACHINES:
         raise ValueError(f'unknown machine {machine}: {list(SLURM_MACHINES)}')
     mach = SLURM_MACHINES[machine]
@@ -927,30 +1658,32 @@ def prepare_slurm_job(cfg: dict, params: IndexRefineParams, listfiles: List[str]
                        f'would hang): set to {MIN_MEM_PER_CPU_MB}M')
         mem_per_cpu = f'{MIN_MEM_PER_CPU_MB}M'
 
-    nchunks = max(1, min(max(int(nchunks), mach.get('nodes', 1)), len(listfiles)))
+    nchunks = max(1, min(max(int(nchunks), mach.get('nodes', 1)), nfiles))
+    return nb_cpus, mem_per_cpu, nchunks
+
+
+def _new_jobdir(jobs_folder: Union[str, Path], job_name: str) -> Path:
+    """create <jobs_folder>/<job_name>_<date>/logs and return the job folder"""
+    date = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    jobdir = (Path(jobs_folder) / f'{job_name}_{date}').resolve()
+    (jobdir / 'logs').mkdir(parents=True, exist_ok=True)
+    return jobdir
+
+
+def _write_slurm_script(jobdir: Path, module: str, job_name: str, machine: str, nb_cpus: int, time: str,
+                        mem_per_cpu: str, nchunks: int, env_setup: Optional[List[str]] = None,
+                        python: Optional[str] = None, mail_user: Optional[str] = None) -> Path:
+    """write <jobdir>/job.slurm running `python -m <module> --job <jobdir>` (1 node, 1 task of nb_cpus cpus)
+
+    nchunks > 1: slurm job array, each job runs with --chunk $SLURM_ARRAY_TASK_ID --nchunks nchunks
+    env_setup: shell lines run before python (default: activate the conda environment of this python)
+    python: python executable (default: the one running this notebook)
+    """
+    import sys
+    mach = SLURM_MACHINES[machine]
     python = python or sys.executable
     if env_setup is None:
         env_setup = ['module load mamba', f'conda activate {sys.prefix}']
-    job_name = job_name or f'laue_{params.key_material}'
-    date = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-    # default: next to the .fit files folder of params (which may differ from the one of the configuration file)
-    jobs_folder = Path(jobs_folder) if jobs_folder else Path(params.fit_folder).parent / 'slurm_jobs'
-    jobdir = (jobs_folder / f'{job_name}_{date}').resolve()
-    (jobdir / 'logs').mkdir(parents=True, exist_ok=True)
-
-    params_job = dataclasses.replace(params, useinternalmultiprocessing=False, outputlistindices=False,
-                                     verbosefilename=False)
-    if params_job.LUT is None:
-        params_job.build_LUT()
-    with open(jobdir / 'job_params.pickle', 'wb') as f:
-        pickle.dump({'cfg': cfg, 'params': params_job, 'listfiles': [str(ff) for ff in listfiles]}, f)
-    readable = {k: v for k, v in dataclasses.asdict(params_job).items() if k != 'LUT'}
-    with open(jobdir / 'job_params.txt', 'w') as f:
-        f.write(f"# parameters of job {jobdir.name} (config {cfg['configfile']})\n")
-        f.write(f"# {len(listfiles)} .cor files: {Path(listfiles[0]).name} ... {Path(listfiles[-1]).name}\n")
-        f.write(yaml.safe_dump(json.loads(json.dumps(readable, default=lambda o: np.asarray(o).tolist())),
-                               sort_keys=False))
-
     array = nchunks > 1
     log = jobdir / 'logs' / ('%x_%A_%a.out' if array else '%x_%j.out')
     lines = ['#!/bin/bash -l',
@@ -973,10 +1706,51 @@ def prepare_slurm_job(cfg: dict, params: IndexRefineParams, listfiles: List[str]
               'echo "job $SLURM_JOB_ID ($SLURM_JOB_NAME) on $(hostname -s): $SLURM_CPUS_PER_TASK cpus, start $(date)"',
               *env_setup,
               'export OMP_NUM_THREADS=1',
-              f'{python} -u -m LaueTools.indexing_batch --job {jobdir} --ncpus $SLURM_CPUS_PER_TASK{chunk_args}',
+              f'{python} -u -m {module} --job {jobdir} --ncpus $SLURM_CPUS_PER_TASK{chunk_args}',
               'echo "end $(date)"', '']
     script = jobdir / 'job.slurm'
     script.write_text('\n'.join(lines))
+    return script
+
+
+def prepare_slurm_job(cfg: dict, params: IndexRefineParams, listfiles: List[str], machine: str = 'magnifix',
+                      nb_cpus: int = 192, time: str = '02:00:00', mem_per_cpu: str = '2000M', nchunks: int = 1,
+                      job_name: Optional[str] = None, jobs_folder: Optional[Union[str, Path]] = None,
+                      env_setup: Optional[List[str]] = None, python: Optional[str] = None,
+                      mail_user: Optional[str] = None) -> dict:
+    """write a job folder with parameters and slurm script to index & refine listfiles with params
+
+    The job uses exactly `params` and `listfiles` (including changes made in the notebook), saved in job_params.pickle
+    nchunks > 1: slurm job array of nchunks jobs, each one analysing 1/nchunks of listfiles
+    machine with 'nodes' > 1 (e.g. 'magnifix2', 'magnifix3'): nchunks is at least the nb of nodes
+    jobs_folder: default <parent folder of params.fit_folder>/slurm_jobs. Job folder: <jobs_folder>/<job_name>_<date>
+    env_setup: shell lines run before python (default: activate the conda environment of this python)
+    python: python executable (default: the one running this notebook)
+
+    Returns job dict (also written in <job folder>/job.json): jobdir, script, command, ...
+    """
+    import json
+    nb_cpus, mem_per_cpu, nchunks = _check_slurm_resources(machine, nb_cpus, mem_per_cpu, nchunks, len(listfiles))
+    job_name = job_name or f'laue_{params.key_material}'
+    # default: next to the .fit files folder of params (which may differ from the one of the configuration file)
+    jobs_folder = Path(jobs_folder) if jobs_folder else Path(params.fit_folder).parent / 'slurm_jobs'
+    jobdir = _new_jobdir(jobs_folder, job_name)
+
+    params_job = dataclasses.replace(params, useinternalmultiprocessing=False, outputlistindices=False,
+                                     verbosefilename=False)
+    if params_job.LUT is None:
+        params_job.build_LUT()
+    with open(jobdir / 'job_params.pickle', 'wb') as f:
+        pickle.dump({'cfg': cfg, 'params': params_job, 'listfiles': [str(ff) for ff in listfiles]}, f)
+    readable = {k: v for k, v in dataclasses.asdict(params_job).items() if k != 'LUT'}
+    with open(jobdir / 'job_params.txt', 'w') as f:
+        f.write(f"# parameters of job {jobdir.name} (config {cfg['configfile']})\n")
+        f.write(f"# {len(listfiles)} .cor files: {Path(listfiles[0]).name} ... {Path(listfiles[-1]).name}\n")
+        f.write(yaml.safe_dump(json.loads(json.dumps(readable, default=lambda o: np.asarray(o).tolist())),
+                               sort_keys=False))
+
+    script = _write_slurm_script(jobdir, 'LaueTools.indexing_batch', job_name, machine, nb_cpus, time, mem_per_cpu,
+                                 nchunks, env_setup=env_setup, python=python, mail_user=mail_user)
 
     job = {'jobdir': str(jobdir), 'script': str(script), 'command': f'sbatch {script}', 'machine': machine,
            'nb_cpus': nb_cpus, 'nchunks': nchunks, 'nfiles': len(listfiles), 'job_id': None,
@@ -1069,7 +1843,7 @@ def load_slurm_results(job: Union[dict, str, Path]) -> Optional[list]:
     allresults = []
     for part in parts:
         allresults += load_allresults(part)['allresults']
-    print(f"{len(allresults)} results / {job['nfiles']} .cor files")
+    print(f"{len(allresults)} results / {job['nfiles']} {job.get('filetype', '.cor')} files")
     return allresults
 
 
@@ -1118,6 +1892,18 @@ def main(argv=None):
     if args.job:
         with open(Path(args.job) / 'job_params.pickle', 'rb') as f:
             job = pickle.load(f)
+        if 'grain_tasks' in job:   # job of prepare_slurm_grain_job(): check orientation and refine each grain
+            alltasks = job['grain_tasks']
+            if args.nchunks > 1:
+                alltasks = [alltasks[i] for i in np.array_split(np.arange(len(alltasks)), args.nchunks)[args.chunk]]
+            nb_cpus = args.ncpus or available_cpus()
+            print(f'{socket.gethostname()}: {len(alltasks)} grain refinement tasks (part {args.chunk + 1}/'
+                  f'{args.nchunks}), {nb_cpus} processes, material {job["params"].key_material}', flush=True)
+            results = run_grain_tasks(alltasks, job['params'], nb_cpus=nb_cpus, progress_interval=60)
+            with open(Path(args.job) / f'allresults_part{args.chunk:03d}.pickle', 'wb') as f:
+                pickle.dump({'allresults': [(cid, res) for cid, allres in results.items() for res in allres]}, f)
+            print_grain_refinement(results)
+            return
         cfg, params, listfiles = job['cfg'], job['params'], job['listfiles']
     else:
         cfg = load_config(args.config)

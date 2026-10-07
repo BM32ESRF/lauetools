@@ -355,10 +355,14 @@ class UBMatrixAnalyzer:
     input_dir: folder of .fit files
     prefix: file prefix, e.g. 'eiger4m_' for eiger4m_0123_g0.fit
     mapdimension: (nrows, ncols) i.e. (slow axis, fast axis)
+    nbfiles_per_folder: None: .fit files in input_dir. n: .fit files in its subfolders <subfolder_prefix><start>_<end>
+        (see indexing_batch.fitfiles_layout()). UBMatrix.filename is then relative to input_dir
     """
     input_dir: Union[str, Path]
     prefix: str = ''
     mapdimension: Optional[Tuple[int, int]] = None
+    nbfiles_per_folder: Optional[int] = None
+    subfolder_prefix: str = 'images_'
     matrices: List[UBMatrix] = field(default_factory=list)
 
     def __post_init__(self):
@@ -369,7 +373,10 @@ class UBMatrixAnalyzer:
         pattern = re.compile(rf"{re.escape(self.prefix)}(\d+)(?:_g(\d+))?\.fit$")
         self.matrices = []
         nb_skipped = 0
-        for filepath in sorted(self.input_dir.glob(f'{self.prefix}*.fit')):
+        pattern_glob = f'{self.prefix}*.fit'
+        if self.nbfiles_per_folder:
+            pattern_glob = f'{self.subfolder_prefix}*/{pattern_glob}'
+        for filepath in sorted(self.input_dir.glob(pattern_glob), key=lambda fp: fp.name):
             match = pattern.search(filepath.name)
             if match is None:
                 nb_skipped += 1
@@ -386,7 +393,7 @@ class UBMatrixAnalyzer:
                                               image_index=image_index,
                                               # grain index from filename (_g1.fit) else order in file
                                               grain_index=file_grain if file_grain is not None else k,
-                                              filename=filepath.name,
+                                              filename=str(filepath.relative_to(self.input_dir)),
                                               material=grain['material'],
                                               source_grain=k,
                                               pixdev=grain['pixdev'],
@@ -935,7 +942,8 @@ def analyze_ub_matrices(input_dir: Union[str, Path], threshold: float,
                         grain_indices: Optional[List[int]] = None,
                         spatial_connectivity: bool = True, connectivity_type: Union[str, int] = '8',
                         min_cluster_size: int = 1, check_symmetry: bool = True,
-                        verbose: bool = False, plot_results: bool = False, figsize=(8, 7)
+                        verbose: bool = False, plot_results: bool = False, figsize=(8, 7),
+                        nbfiles_per_folder: Optional[int] = None, subfolder_prefix: str = 'images_'
                         ) -> Tuple[Union[ClusterResult, Dict[int, ClusterResult]], UBMatrixAnalyzer]:
     """load UB matrices of .fit files in input_dir and segment the map into clusters
 
@@ -950,10 +958,12 @@ def analyze_ub_matrices(input_dir: Union[str, Path], threshold: float,
     connectivity_type: '4' or '8'
     min_cluster_size: drop clusters with less matrices
     check_symmetry: run check_symmetry_equivalents() and print warnings
+    nbfiles_per_folder, subfolder_prefix: .fit files in subfolders of input_dir (see UBMatrixAnalyzer)
 
     return (result or dict of results, analyzer)
     """
-    analyzer = UBMatrixAnalyzer(input_dir=input_dir, prefix=prefix, mapdimension=tuple(mapdimension))
+    analyzer = UBMatrixAnalyzer(input_dir=input_dir, prefix=prefix, mapdimension=tuple(mapdimension),
+                                nbfiles_per_folder=nbfiles_per_folder, subfolder_prefix=subfolder_prefix)
     n_loaded = analyzer.load_matrices(verbose=int(verbose))
     if n_loaded == 0:
         raise ValueError(f"No UB matrix found in {input_dir} with prefix '{prefix}'")
@@ -1612,13 +1622,17 @@ def _setup_axes(ax, title, xlabel='fast axis (col)', ylabel='slow axis (row)'):
 
 def plot_cluster_map(result: ClusterResult, analyzer: UBMatrixAnalyzer, mapdimension=None,
                      min_size: int = 1, show_ids: bool = True, show_boundaries: bool = True,
-                     ax=None, figsize=(8, 7), origin='lower', output_file: Optional[str] = None):
+                     ax=None, figsize=(8, 7), origin='lower', output_file: Optional[str] = None,
+                     transpose: bool = False, xlabel: Optional[str] = None, ylabel: Optional[str] = None):
     """map of all clusters (one color per cluster, ids written at cluster barycenters)
 
     at map points with several grains, the grain with most indexed spots is shown
+    transpose: swap axes (x = row, slow axis; y = col, fast axis), e.g. to have yech along the vertical axis
+    (generaltools.map_transposed()). xlabel, ylabel: axes labels (default: fast/slow axis)
     """
     labels = cluster_label_map(result, analyzer, mapdimension, min_size)
     nb = len(result.clusters)
+    view = _MapView(origin, transpose)
     if ax is None:
         fig, ax = plt.subplots(figsize=figsize)
     else:
@@ -1626,18 +1640,23 @@ def plot_cluster_map(result: ClusterResult, analyzer: UBMatrixAnalyzer, mapdimen
     masked = np.ma.masked_less(labels, 0)
     cmap = _cluster_colormap(nb)
     cmap.set_bad('white')
-    ax.imshow(masked, cmap=cmap, vmin=-0.5, vmax=nb - 0.5, origin=origin, interpolation='nearest')
+    view.imshow(ax, masked, cmap=cmap, vmin=-0.5, vmax=nb - 0.5)
     if show_boundaries:
-        ax.add_collection(LineCollection(_boundary_segments(labels), colors='k', linewidths=0.8))
+        ax.add_collection(LineCollection(_boundary_segments(view.arr(labels)), colors='k', linewidths=0.8))
     if show_ids:
         for cid in np.unique(labels[labels >= 0]):
             rr, cc = np.nonzero(labels == cid)
             k = np.argmin((rr - rr.mean()) ** 2 + (cc - cc.mean()) ** 2)  # point inside the cluster
-            ax.text(cc[k], rr[k], str(cid), ha='center', va='center', fontsize=7, fontweight='bold',
+            ax.text(*view.xy(rr[k], cc[k]), str(cid), ha='center', va='center', fontsize=7, fontweight='bold',
                     bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0))
     shown = len(np.unique(labels[labels >= 0]))
-    _setup_axes(ax, f"Clusters (threshold {result.threshold}°, {shown} shown, size >= {min_size})")
-    ax.format_coord = _format_coord(labels)
+    ax.set_title(f"Clusters (threshold {result.threshold}°, {shown} shown, size >= {min_size})")
+    view.labels(ax)
+    if xlabel:
+        ax.set_xlabel(xlabel)
+    if ylabel:
+        ax.set_ylabel(ylabel)
+    ax.format_coord = view.format_coord(labels)
     if output_file:
         fig.savefig(output_file, dpi=300, bbox_inches='tight')
     return fig, ax
