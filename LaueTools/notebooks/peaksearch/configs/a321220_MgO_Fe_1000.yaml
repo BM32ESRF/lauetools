@@ -1,0 +1,38 @@
+# MgO / MgFe2O4 map (Guinebretiere et al, a321220, sept 2026)
+# BLISS: amesh yech -6.43556 -6.28556 50 xech 0.93013 1.08013 50 0.5
+name: a321220 MgO Fe 1000
+description: MH73 heat treated, map 2D p7 MgO Fe 1000, EIGER 4M
+
+scan:
+  image_folder: /data/visitor/a321220/bm32/20260915/RAW_DATA/MH73_HT/MH73_HT_map_2D_p7_MgO_Fe_1000/scan0001
+  prefix: eiger4m_
+  suffix: .h5
+  nbdigits: 4
+  CCDLabel: EIGER_4MCdTe
+  detfile: /data/visitor/a321220/bm32/20260915/RAW_DATA/MH73/MH73_Ge/scan0001/calibGe001_MH73_RT_mardi.det
+  hdf5_logfile: /data/visitor/a321220/bm32/20260915/RAW_DATA/MH73_HT/MH73_HT_map_2D_p7_MgO_Fe_1000/MH73_HT_map_2D_p7_MgO_Fe_1000.h5
+  mapdims: [51, 51]
+  fast_motor: yech
+  slow_motor: xech
+  stepsizes: [3., 3.]       # micron (0.15 mm / 50 steps)
+
+output:
+  dat_folder: /data/visitor/a321220/bm32/20260915/PROCESSED_DATA/MH73_HT/MH73_HT_map_2D_p7_MgO_Fe_1000/scan0001/corfiles
+
+peaksearch:
+  # values of PeakSearch_eiger4m_1300_LT_2.psp (LaueTools GUI, image 1300), imported with PB.import_pspfile()
+  background: auto
+  IntensityThreshold: 200
+  PixelNearRadius: 10
+  boxsize: 15
+  xtol: 0.001
+  FitPixelDev: 6.0
+  fit_peaks_gaussian: 1
+  local_maxima_search_method: 0
+  position_definition: 1
+  PeakSizeRange: [0.65, 3.0]
+  npixels: 5                # remove peaks close to the gaps between the modules of the EIGER
+
+run:
+  nb_cpus: 96
+  test_image_index: 1300

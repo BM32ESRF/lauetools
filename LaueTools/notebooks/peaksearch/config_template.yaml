@@ -1,0 +1,84 @@
+# =====================================================================================
+#  LaueTools - configuration of the peak search of a 2D map of Laue patterns (images -> .dat, .cor files)
+#
+#  1) copy this file (e.g. configs/my_experiment.yaml) and edit it
+#  2) set CONFIG = 'configs/my_experiment.yaml' in the first cell of peaksearch_map.ipynb
+#
+#  Paths: absolute, or relative to the folder of this file. '~' and $VARIABLES are expanded.
+#  Parameters left out take their default value (see LaueTools/peaksearch_batch.py DEFAULT_CONFIG)
+#  The .cor files are the input of the indexation (notebooks/indexation): PB.indexing_config() writes its configuration
+# =====================================================================================
+name: my experiment
+description: >
+  sample, beamtime ...
+
+scan:
+  # images: <image_folder>/<prefix>####<suffix>
+  image_folder: /data/visitor/<proposal>/bm32/<date>/RAW_DATA/<sample>/<dataset>/scan0001
+  prefix: img_              # img_0023.tif -> 'img_'
+  suffix: .tif              # img_0023.tif -> '.tif'. null: extension of the detector (.tif sCMOS, .h5 EIGER_4MCdTe)
+  nbdigits: 4               # img_0023.tif -> 4
+  CCDLabel: sCMOS           # sCMOS, sCMOS_4M, EIGER_4MCdTe, ... (keys of dict_LaueTools.dict_CCD)
+  detfile: null             # calibration .det file: needed to write .cor files (input of the indexation)
+  hdf5_logfile: null        # BLISS hdf5 file (optional, to read the scan command)
+  # map dimensions: from BLISS command  dmesh motor1 v v nbsteps1 motor2 v v nbsteps2 exposure_time
+  # mapdims = [nbsteps1 + 1, nbsteps2 + 1] = [nb points fast motor, nb points slow motor]
+  mapdims: [51, 51]
+  fast_motor: yech          # labels of plots axes
+  slow_motor: xech
+  stepsizes: [1., 1.]       # [fast, slow] step sizes (micron) for plots
+
+output:
+  # .dat (peak list) and .cor (peak list + 2theta, chi) files, created if needed. = cor_folder of the indexation
+  dat_folder: /data/visitor/<proposal>/bm32/<date>/PROCESSED_DATA/<sample>/<dataset>/scan0001/corfiles
+  added_string: ''          # img_0023.tif -> img_<added_string>0023.dat
+  # OPTION for large maps: null: all files in dat_folder. n (e.g. 10000): files in subfolders of n files
+  # <dat_folder>/<subfolder_prefix><start>_<end>: images_0_9999/, images_10000_19999/ ...
+  nbfiles_per_folder: null
+  subfolder_prefix: images_
+  write_cor: true           # write .cor files (needs scan: detfile)
+  results_folder: null      # peaksearch_<stamp>.pickle folder (default: dat_folder)
+  results_stamp: peaks
+
+peaksearch:
+  # .psp file of the LaueTools GUI: prefer PB.import_pspfile(cfg, 'my.psp'), which writes its values below once.
+  # pspfile: my.psp (former way) reads the .psp file at each loading and its values replace the ones below
+  pspfile: null
+  # background removed before the local maxima search (and the fit if fit_without_background)
+  # auto: from the image itself (minimum filter), null: raw image, or path to a background image
+  background: auto
+  formulaexpression: A-1.1*B   # A: image, B: background
+  fit_without_background: true
+  # arguments of readmccd.PeakSearch()
+  local_maxima_search_method: 0   # 0: intensity threshold, 1: shifted arrays, 2: convolution (thresholdConvolve, paramsHat)
+  IntensityThreshold: 200   # minimum amplitude of a local maximum. Lower: more (weak) peaks, slower
+  thresholdConvolve: 200    # method 2 only
+  paramsHat: [4, 5, 2]      # method 2 only
+  PixelNearRadius: 5        # min distance (pixel) between 2 local maxima
+  boxsize: 3                # half size (pixel) of the fitted region around each peak
+  fit_peaks_gaussian: 1     # 0: no fit, 1: gaussian, 2: lorentzian
+  xtol: 0.001
+  FitPixelDev: 6            # max distance (pixel) between local maximum and fitted position
+  PeakSizeRange: [0.65, 3]  # accepted fitted peak sizes (pixel)
+  MinIntensity: 0
+  Saturation_value: null    # peaks above are rejected. null: saturation of the detector (65535 sCMOS, 2**32-1 EIGER_4MCdTe)
+  position_definition: 1    # 1: first pixel at (1, 1) (LaueTools convention)
+  maxPixelDistanceRejection: 10.   # distance (pixel) to a spot of blacklist_file to remove a peak
+  NumberMaxofFits: 5000     # images with more local maxima give no peak (IntensityThreshold too low?)
+  reject_negative_baseline: true
+  npixels: 0                # remove peaks within npixels of the gaps between detector modules (sCMOS, EIGER_4MCdTe)
+  blacklist_file: null      # .dat or .fit file whose spots are removed from every peak list (e.g. substrate)
+
+# peaks inside these rectangles (pixel) are removed: [[Xcenter, Ycenter, halfwidth, halfheight], ...]
+# e.g. [[1009, 1000, 7, 1100]]: vertical band X = 1002-1016 (gap of the sCMOS)
+exclusion_boxes: []
+
+run:
+  nb_cpus: 32               # null: all available cpus
+  overwrite: true           # false: only images without .dat file (e.g. to resume an interrupted batch)
+  verboselevel: 0
+  test_image_index: 0       # image for single image tests
+
+selection:
+  image_range: null         # [start, stop] (stop included); null: all images
+  roi: null                 # [center image index, [half size fast, half size slow]]

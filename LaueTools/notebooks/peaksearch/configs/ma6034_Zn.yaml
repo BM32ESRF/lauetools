@@ -1,0 +1,33 @@
+# Zn dendrites (Zheng et al, ma6034, june 2024)
+# parameters of the former PeakSearch_MultiProcessing.ipynb notebook
+name: ma6034 Zn
+description: sample5 30 min coarse large map, sCMOS
+
+scan:
+  image_folder: /data/projects/zndendrites/ma6034/bm32/20240625/RAW_DATA/sample1_test/sample1_test_sample5-30m-new2-coarse-large/scan0001
+  prefix: img_
+  suffix: .tif
+  nbdigits: 4
+  CCDLabel: sCMOS
+  detfile: /data/projects/zndendrites/ma6034/bm32/20240625/RAW_DATA/sample1_test/sample1_test_Ge_20240628/scan0001/Ge111calib_28june2024.det
+  mapdims: [41, 41]
+
+output:
+  dat_folder: ~/LaueTutorialsResults/PeakSearch_ma6034/datfiles
+
+peaksearch:
+  background: auto
+  formulaexpression: A-1.1*B
+  fit_without_background: true
+  IntensityThreshold: 200
+  PixelNearRadius: 5
+  boxsize: 3
+  FitPixelDev: 6
+  PeakSizeRange: [0.65, 3]
+  maxPixelDistanceRejection: 10.
+
+exclusion_boxes: [[1009, 1000, 7, 1100]]   # vertical gap of the sCMOS
+
+run:
+  nb_cpus: 64
+  test_image_index: 600

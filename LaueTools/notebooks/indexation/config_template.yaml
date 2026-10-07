@@ -12,10 +12,14 @@ description: >
   sample, material, beamtime ...
 
 scan:
-  # folder of .cor files (results of peaksearch, see PeakSearch_MultiProcessing notebook)
+  # folder of .cor files (results of peaksearch, see ../peaksearch/peaksearch_map.ipynb)
   cor_folder: /data/visitor/<proposal>/bm32/<date>/PROCESSED_DATA/<sample>/<dataset>/scan0001/corfiles
   prefix: img_              # img_0023.cor -> 'img_'
   nbdigits: 4               # img_0023.cor -> 4
+  # OPTION for large maps: .cor files in subfolders of n files <cor_folder>/<subfolder_prefix><start>_<end>
+  # (as written by the peaksearch with output: nbfiles_per_folder: n). null: all .cor files in cor_folder
+  nbfiles_per_folder: null
+  subfolder_prefix: images_
   CCDLabel: sCMOS           # sCMOS, sCMOS_4M, EIGER_4MCdTe, ...
   detfile: null             # calibration .det file (information only: calibration is in .cor files)
   image_folder: null        # folder of images (information only)
@@ -32,6 +36,9 @@ output:
   fit_folder: ~/LaueResults/my_experiment/fitfiles
   results_folder: null      # allresults_<stamp>.pickle folder (default: fit_folder)
   results_stamp: null       # default: key_material
+  # false (default): all .fit files in fit_folder. true (with scan: nbfiles_per_folder): .fit files in subfolders
+  # of fit_folder with the same names as the subfolders of .cor files
+  fit_subfolders: false
 
 material:
   key_material: MgO         # key of LaueTools dict of materials (or of mymaterials below)

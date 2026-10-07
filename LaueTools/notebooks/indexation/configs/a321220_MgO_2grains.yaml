@@ -1,0 +1,52 @@
+# saved 2026-10-05 18:12 from a321220_MgO.yaml (IB.save_config)
+# MgO / MgFe2O4 map (Guinebretiere et al, a321220, sept 2026)
+name: a321220 MgO
+description: MH73 heat treated, map 2D p7 MgO Fe 800, EIGER 4M
+
+scan:
+  cor_folder: /data/visitor/a321220/bm32/20260915/PROCESSED_DATA/MH73_HT/MH73_HT_map_2D_p7_MgO_Fe_800/scan0001/corfiles
+  prefix: eiger4m_
+  nbdigits: 4
+  CCDLabel: EIGER_4MCdTe
+  detfile: /data/visitor/a321220/bm32/20260915/RAW_DATA/MH73/MH73_Ge/scan0001/calibGe001_MH73_RT_mardi.det
+  image_folder: /data/visitor/a321220/bm32/20260915/RAW_DATA/MH73_HT/MH73_HT_map_2D_p7_MgO_Fe_800/scan0001
+  mapdims: [51, 51]
+  fast_motor: yech
+  slow_motor: xech
+  stepsizes: [1., 1.]
+
+output:
+  fit_folder: /gpfs/gd/data/visitor/a321220/bm32/20260915/PROCESSED_DATA/MH73_HT/MH73_HT_map_2D_p7_MgO_Fe_800/scan0001/fitfile_2grains
+
+material:
+  key_material: MgO
+
+indexing:
+  e_min: 5
+  e_max: 22
+  e_max_MR: 19
+  nbGrainstoFind: 2
+  maxnbspots_MReval: 200
+  stop_Nb_Matches: 300
+  dict_indexrefine:
+    central spots indices: 10
+    NBMAXPROBED: 21
+    AngleTolLUT: 0.2
+    nlutmax: 4
+    MATCHINGRATE_ANGLE_TOL: 0.2
+    MinimumMatchingRate: 5
+    MinimumNumberMatches: 10
+    list matching tol angles: [0.2, 0.15, 0.1]
+
+run:
+  nb_cpus: 64
+  usepreviousUB: false      # [MgO_1] + skipindexing: true to only refine MgO_1 orientation
+  skipindexing: false
+  test_image_index: 1300
+
+postprocess:
+  reference_image_index: 1300
+  symmetry: cubic
+
+ub_matrices:
+  MgO_1: [[0.869813580591771, -0.430218649782814, -0.241266913625943], [0.485622204715895, 0.687373469684947, 0.538989041675287], [-0.065871535157326, -0.582999578810338, 0.807138574820726]]
