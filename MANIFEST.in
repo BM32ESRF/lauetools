@@ -8,6 +8,10 @@ prune doc/_build
 prune LaueTools/LaueImages
 global-exclude *.html *.mccd *.tif *.tiff *.h5 *.hdf5 *.angles *.pickle *.npy
 global-exclude *.local.ipynb *.local.yaml
+# jupyter checkpoints (copies with outputs), personal and temporary files of the notebooks folders
+global-exclude *-checkpoint.* *_jsm.ipynb Untitled*.ipynb slurm-*.out
+prune LaueTools/notebooks/notebooks
+exclude LaueTools/notebooks/testZrO2_*
 global-exclude *.pyc
 prune */__pycache__
 exclude LaueTools/Diamond/*.ipynb

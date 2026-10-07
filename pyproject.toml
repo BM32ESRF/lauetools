@@ -57,6 +57,10 @@ lauetools-copy = "LaueTools.cli:copy_resources"
 lauetools-copy-materials = "LaueTools.cli:copy_materials"
 lauetools-add-material = "LaueTools.cli_add_material:main"
 
+# commands without terminal (on Windows: .exe without console window)
+[project.gui-scripts]
+lauetools-copy-gui = "LaueTools.cli:copy_resources_gui"
+
 [project.urls]
 Homepage = "https://github.com/BM32ESRF/lauetools"
 
@@ -75,12 +79,25 @@ LaueTools = [
     "notebooks/indexation/*.yaml",
     "notebooks/indexation/*.md",
     "notebooks/indexation/configs/*.yaml",
+    # peak search notebook and its YAML configuration files
+    "notebooks/peaksearch/*.ipynb",
+    "notebooks/peaksearch/*.yaml",
+    "notebooks/peaksearch/*.md",
+    "notebooks/peaksearch/configs/*.yaml",
+    # quickstart notebook (scans of the experiment -> grain maps)
+    "notebooks/quickstart/*.ipynb",
+    "notebooks/quickstart/*.md",
 ]
 
 # Exclude all other heavy files
 [tool.setuptools.exclude-package-data]
-"lauetools" = [
+LaueTools = [
     "*.ipynb_checkpoints/*",  # Exclude checkpoint files
+    # personal or temporary notebooks (working copies with outputs: see scripts/notebook_to_html.py --publish)
+    "notebooks/*.local.ipynb",
+    "notebooks/*/*.local.ipynb",
+    "notebooks/Untitled*.ipynb",
+    "notebooks/*/*_jsm.ipynb",
     "*.cor",
     "*.fit",
     "*.irp",

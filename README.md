@@ -71,6 +71,15 @@ With pip installation, LaueTools package will be included to python packages. Th
 
 ### Some useful notebooks workflow to treat images dataset
 
+The notebooks are installed with LaueTools. To copy them (with their YAML configuration files, the tutorials notebooks and the scripts) to a folder of your choice:
+
+	lauetools-copy -d my_folder          (default folder: ./lauetools_examples)
+	lauetools-copy-gui                   (choose the folder in a dialog, no terminal needed)
+	lauetools-copy -d my_folder -w notebooks   (only the quickstart, peaksearch and indexation notebooks)
+	lauetools-copy -d my_folder --download     (also download the example images from GitHub to my_folder/LaueImages)
+
+Files already present in the folder are not overwritten (option `--force` to overwrite them). Then start with `jupyter lab my_folder/notebooks/quickstart/laue_maps_quickstart.ipynb`.
+
 - **[PixelMonitoring.ipynb](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-pixelmonitoring/PixelMonitoring_polycrystalsMgO_Sept2026.ipynb)**:
   Mosaic plot (map of 2D ROI centered on user-defined Laue spot) and GrainImaging plots (maps of scattering signal derived from ROI quantities).
   [PixelMonitoring.html](https://github.com/BM32ESRF/lauetools/releases/download/3.2.10-pixelmonitoring/PixelMonitoring_polycrystalsMgO_Sept2026.html)
