@@ -385,6 +385,9 @@ elif not(USE_MATERIALS_LIBRARY):
         "NiO": ["NiO", [2.96, 2.96, 7.23, 90, 90, 120], "no"],
         "NiMnIn_modulated": ["NiMnIn_modulated", [4.3919, 5.6202, 4.3315, 90, 93.044, 90], "h+k=2n, modulated"],  # average I2/m SG 12 # modulated structure Yan et al Acta Mat 88 (2015) 375
         "NiMnIn": ["NiMnIn", [4.3919, 5.6202, 4.3315, 90, 93.044, 90], "h+k=2n"],  # I2/m SG 12 
+        "NiMnGa_theo": ["NiMnGa_theo", [5.982, 5.945, 5.5577, 90, 90, 90.3], "h+k=2n"],
+        "NiMnGa_exp": ["NiMnGa_exp", [5.982, 5.982*5.05/5., 5.982*5.02/5., 89.6, 89.9, 90.1], "h+k=2n"],
+        "NiMnGa_base110": ["NiMnGa_base110", [4.26, 5.51, 20.69, 90,90.3,90], "no"],
         "NiMnIn_2ac": ["NiMnIn_2ac", [2*4.3919, 5.6202, 2*4.3315, 90, 93.044, 90], "2h+k=2n"],  # I2/m SG 12 
         "Nb14W3O44": ["Nb14W3O44", [21.002, 21.002, 3.82, 90, 90, 90], "no"],  #space group 82 to be checked
         "Olivine_forsterite": ["Olivine_forsterite", [4.754,10.1971,5.9806, 90, 90, 90], "no"],
