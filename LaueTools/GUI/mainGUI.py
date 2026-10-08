@@ -93,6 +93,7 @@ from LaueTools.GUI.OpenSpotsListFileGUI import (askUserForFilename, OpenPeakList
 from LaueTools.GUI.ManualIndexFrame import ManualIndexFrame
 from LaueTools.GUI.MatrixEditor import MatrixEditor_Dialog
 import LaueTools.GUI.OpenSpotsListFileGUI as OSLFGUI
+from LaueTools.cli import writable_examples_folder
 
 LaueToolsProjectFolder = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 
@@ -1218,7 +1219,7 @@ class LaueToolsGUImainframe(wx.Frame):
         geomoperator = dict_CCD[self.CCDLabel][3]
         initialParameter["detectordiameter"] = max(framedim[0], framedim[1]) * pixelsize * 1.1
         initialParameter["filename"] = 'img_Ge_sCMOS_0000_2peaks.cor' #'img_Ge_sCMOS_0000_181peaks.cor' # 'dat_Ge0001.cor'
-        initialParameter["dirname"] = os.path.join(LaueToolsProjectFolder, "Examples", "Ge")
+        initialParameter["dirname"] = writable_examples_folder("Ge")
         initialParameter["dict_Materials"] = self.dict_Materials
 
         # print("initialParameter when launching calibration", initialParameter)
@@ -1653,7 +1654,7 @@ class LaueToolsGUImainframe(wx.Frame):
         """
         #DEFAULTFILE = "defaultGe0001.cor"  # MARCCD165  ... old!
         DEFAULTFILE = "img_Ge_sCMOS_0000_181peaks.cor"
-        defaultdatafile = os.path.join(LaueToolsProjectFolder, "Examples", "Ge", DEFAULTFILE)
+        defaultdatafile = os.path.join(writable_examples_folder("Ge"), DEFAULTFILE)
 
         #print("self.detectordiameter in OpenDefaultData()", self.detectordiameter)
         print('Open default Ge peaklist .cor file')

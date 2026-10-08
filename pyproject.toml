@@ -72,6 +72,9 @@ LaueTools = [
     # Include only small example images (e.g., < 1 MB each)
     "LaueImages/small_example_*.tif",
     "LaueImages/small_example_*.dat",
+    # default Ge peaks lists used by mainGUI (Detector Calibration, Autoindexation): see cli.DEFAULT_EXAMPLES
+    "Examples/Ge/img_Ge_sCMOS_0000_181peaks.cor",
+    "Examples/Ge/img_Ge_sCMOS_0000_2peaks.cor",
     # Include output-free notebooks (if any)
     "notebooks/*.ipynb",
     # indexing notebooks and their YAML configuration files
@@ -98,7 +101,8 @@ LaueTools = [
     "notebooks/*/*.local.ipynb",
     "notebooks/Untitled*.ipynb",
     "notebooks/*/*_jsm.ipynb",
-    "*.cor",
+    "scripts/*.cor",  # not "*.cor": it would also exclude the default Examples/Ge/*.cor files listed above
+    "notebooks/*.cor",
     "*.fit",
     "*.irp",
     "*.psp",

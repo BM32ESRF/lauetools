@@ -86,6 +86,40 @@ def copy_examples(dest, what=("notebooks", "tutorials", "scripts", "images"), fo
     return copied, skipped
 
 
+# small default files installed with LaueTools (Examples/<name>) and used by the GUIs to test them rapidly
+# (e.g. Ge peaks lists for Detector Calibration and Autoindexation in mainGUI)
+DEFAULT_EXAMPLES = {"Ge": ["img_Ge_sCMOS_0000_181peaks.cor", "img_Ge_sCMOS_0000_2peaks.cor"]}
+USER_EXAMPLES_DIR = os.path.join(os.path.expanduser("~"), ".lauetools", "Examples")
+
+
+def writable_examples_folder(name="Ge", verbose=True):
+    """Folder of the default example files Examples/<name> where the GUIs can also write their results.
+
+    - the installed folder LaueTools/Examples/<name> if it is writable (git clone, user's own environment)
+    - otherwise (read-only installation, e.g. shared python environment) ~/.lauetools/Examples/<name>,
+      where the default files are copied the first time (files already there are not overwritten)
+
+    :return: path of the folder (the installed folder if no writable copy can be made)
+    """
+    src = os.path.join(LAUETOOLSFOLDER, "Examples", name)
+    if os.access(src, os.W_OK):
+        return src
+    dest = os.path.join(USER_EXAMPLES_DIR, name)
+    try:
+        os.makedirs(dest, exist_ok=True)
+        for filename in DEFAULT_EXAMPLES.get(name, []):
+            s, d = os.path.join(src, filename), os.path.join(dest, filename)
+            if os.path.exists(s) and not os.path.exists(d):
+                shutil.copy2(s, d)
+                os.chmod(d, os.stat(d).st_mode | 0o200)  # user can overwrite it
+                if verbose:
+                    print(f"copied {filename} to {dest}")
+    except OSError as err:
+        print(f"Cannot make a writable copy of {src} in {dest}: {err}")
+        return src
+    return dest
+
+
 # example images (too large for the PyPI package) are files attached to this GitHub release:
 # every file attached to it is downloaded by lauetools-copy --download (no code change to add one)
 GITHUB_REPO = "BM32ESRF/lauetools"
