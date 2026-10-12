@@ -1796,6 +1796,10 @@ def Compute_data2thetachi(filename:str, sorting_intensity:str="yes", detectorpar
     if forceextension_lines_to_extract is not None:
         extension = "forcedextension"
 
+    # spots properties (other columns of the file), if any
+    listcolumnsname = []
+    data_spotsproperties = None
+
     if extension == "peaks":  # single line header   # TODO to remove
         data_xyI = np.loadtxt(filename, usecols=(0, 1, 2), skiprows=1)
 
@@ -1842,6 +1846,17 @@ def Compute_data2thetachi(filename:str, sorting_intensity:str="yes", detectorpar
             data_xyI = np.loadtxt(filename, usecols=(2, 3, 4), skiprows=1)
         except:
             raise ValueError("%s can not be read" % filename)
+        if addspotproperties:
+            # spots properties: columns following 2theta chi X Y I
+            try:
+                with open(filename) as f:
+                    columnsname_cor = f.readline().split()
+                alldata_cor = np.loadtxt(filename, skiprows=1, ndmin=2)
+                if alldata_cor.shape[1] == len(columnsname_cor) > 5:
+                    listcolumnsname = columnsname_cor[5:]
+                    data_spotsproperties = alldata_cor[:, 5:]
+            except (ValueError, OSError):
+                pass
     else:
         raise ValueError("Unknown file extension for %s" % filename)
 
@@ -1852,6 +1867,10 @@ def Compute_data2thetachi(filename:str, sorting_intensity:str="yes", detectorpar
         nb_peaks = 1
     else:
         nb_peaks = sha[0]
+
+    if data_spotsproperties is None:  # no spots properties in the file
+        listcolumnsname = []
+        data_spotsproperties = np.zeros((nb_peaks, 0))
 
     if detectorparams is None:
         raise ValueError("Missing detectorparams arg in Compute_data2thetachi() of find2thetachi module")

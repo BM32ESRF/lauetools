@@ -48,7 +48,7 @@ from matplotlib.figure import Figure
 if sys.version_info.major == 3:
     #from .. import dict_LaueTools as DictLT
     import LaueTools.dict_LaueTools as DictLT
-    import LaueTools.dict_LaueTools as DictLT
+    from LaueTools.GUI.MaterialsEditor import MaterialComboBox, MaterialsRefreshButton
     import LaueTools.LaueGeometry as F2TC
     import LaueTools.indexingAnglesLUT as INDEX
     import LaueTools.indexingImageMatching as IIM
@@ -277,9 +277,10 @@ class CrystalParamPanel(wx.Panel):
             defaultmaterial='Ge'
         else:
             defaultmaterial=self.listsorted_materials[0]
-        self.comboElem = wx.ComboBox(self, -1, defaultmaterial,
-                                        choices=self.listsorted_materials,
-                                        style=wx.CB_READONLY)
+        self.comboElem = MaterialComboBox(self, -1, defaultmaterial,
+                                        choices=self.listsorted_materials)
+        self.refreshmaterialsbtn = MaterialsRefreshButton(self, self.comboElem, lambda: DictLT.dict_Materials,
+                                        onrefresh=self.OnRefreshMaterials, size=(70, -1))
 
         t3 = wx.StaticText(self, -1, "Tmatrix")  # in sample Frame columns are a*,b*,c* expressed in is,js,ks vector frame
         self.comboBmatrix = wx.ComboBox(self, 2424, "Identity",
@@ -337,6 +338,7 @@ class CrystalParamPanel(wx.Panel):
         h1box.Add(self.emaxC, 0, wx.EXPAND|wx.ALL, 5)
         h1box.Add(t2, 0, wx.EXPAND|wx.ALL, 5)
         h1box.Add(self.comboElem, 0, wx.EXPAND|wx.ALL, 5)
+        h1box.Add(self.refreshmaterialsbtn, 0, wx.EXPAND|wx.ALL, 5)
         h1box.Add(t5, 0, wx.EXPAND|wx.ALL, 5)
         h1box.Add(self.comboExtinctions, 0, wx.EXPAND, 5)
 
@@ -437,6 +439,9 @@ class CrystalParamPanel(wx.Panel):
         listrot = sorted(listrot, key=str.lower)
         self.comboMatrix.Clear()
         self.comboMatrix.AppendItems(listrot)
+
+    def OnRefreshMaterials(self, labels):
+        self.listsorted_materials = labels
 
     def OnLoadMaterials(self, _):
         # self.mainframe.GetParent().OnLoadMaterials(1)
@@ -804,7 +809,7 @@ class MoveCCDandXtal(wx.Panel):
         a1.SetToolTipString("Angle 1: angle around y axis (horizontal and perp. to incoming beam)")
         a2.SetToolTipString("Angle 2: angle around x axis (// incoming beam")
 
-        rottip = ("[For 2theta/chi coordinates]\n Rotate crystal such as rotating the Laue Pattern around a selected axis.\n")
+        rottip = ("[For 2theta/chi, pixels and gnomonic coordinates]\n Rotate crystal such as rotating the Laue Pattern around a selected axis.\n")
         rottip += 'Click on a point in plot to select an invariant Laue spot by rotation. Then press "+" or "-" keys to rotation the pattern.\n'
         rottip += "Step angle can be adjusted (default 10 degrees).\n"
         rottip += "Press the Rotate button to disable the rotation and enable other functionnalities."
@@ -885,8 +890,11 @@ class StrainXtal(wx.Panel):
             plusbtn = wx.Button(self, -1, "+", size=(40, 30))
             stepctrl = wx.TextCtrl(self, -1, "0.05", size=(60, 30))
             fitchckbox = wx.CheckBox(self, -1, "fit")
-            fitchckbox.SetValue(True)
-            fitchckbox.Disable()
+            fitchckbox.SetValue(False)
+            fitchckbox.SetToolTipString("Refine this lattice parameter with the 'Start Fit' button, together with "
+                                "the checked detector parameters and orientation angles.\n"
+                                "At least one of a, b, c must stay fixed: Laue spots positions do not "
+                                "depend on the unit cell volume.")
             currentctrl = wx.TextCtrl(self, -1, str(self.lattice_parameters_dict[key_param]),
                 size=(60, -1), style=wx.TE_PROCESS_ENTER)
 
@@ -923,6 +931,10 @@ class StrainXtal(wx.Panel):
             getattr(self, "currentctrl_%s" % key_param).Bind(wx.EVT_TEXT_ENTER,
                                                             self.ModifyLatticeParams)
 
+        # check boxes of the lattice parameters to refine (a, b, c, alpha, beta, gamma)
+        self.listoflatticefitctrl = [getattr(self, "fitchckbox_%s" % key_param)
+                                                for key_param in self.lattice_parameters_key]
+
         twogridshbox = wx.BoxSizer(wx.HORIZONTAL)
         twogridshbox.Add(grid, 0, wx.EXPAND)
         twogridshbox.AddSpacer(15)
@@ -931,6 +943,15 @@ class StrainXtal(wx.Panel):
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(headertxt, 0, wx.ALIGN_CENTER_HORIZONTAL)
         vbox.Add(twogridshbox, 0, wx.EXPAND)
+
+        # materials created when modifying the lattice parameters (strained_<material>)
+        self.savematerialchck = wx.CheckBox(self, -1, "Save created materials in materials.yaml")
+        self.savematerialchck.SetValue(False)
+        self.savematerialchck.Enable(isinstance(DictLT.dict_Materials, DictLT.Materials))
+        self.savematerialchck.SetToolTipString("Unchecked: the material 'strained_<material>' created when modifying "
+                    "a lattice parameter is kept only until LaueTools is closed.\n"
+                    "Checked: it is also saved permanently in the materials file materials.yaml")
+        vbox.Add(self.savematerialchck, 0, wx.TOP | wx.LEFT, 8)
 
         self.SetSizer(vbox)
 
@@ -1067,6 +1088,50 @@ class StrainXtal(wx.Panel):
             self.lattice_parameters_dict[key_param] = evaluated_value
             getattr(self, f"currentctrl_{key_param}").SetValue(str(evaluated_value))
 
+    def StoreStrainedMaterial(self, new_key_material):
+        """Set in dict_Materials the material new_key_material with the current lattice parameters
+        and the extinction of the current material.
+
+        The material is kept until LaueTools is closed. It is also written in materials.yaml
+        only if the check box 'Save created materials in materials.yaml' is checked.
+        """
+        new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
+        current_material = DictLT.dict_Materials[self.key_material]
+        extinction = current_material['extinction'] if isinstance(current_material, dict) else current_material[2]
+
+        if isinstance(DictLT.dict_Materials, DictLT.Materials) and self.savematerialchck.GetValue():
+            try:
+                yaml_file = DictLT.dict_Materials.add_or_update_material(label=new_key_material,
+                                                                    lattice=new_lattice_params,
+                                                                    extinction=extinction)
+                self.mainframe.sb.SetStatusText("Material %s saved in %s" % (new_key_material, yaml_file))
+                return
+            except (OSError, ValueError) as error:
+                wx.MessageBox("Material %s cannot be saved:\n%s\n\nIt is kept until LaueTools is closed."
+                              % (new_key_material, error), "Save material", wx.OK | wx.ICON_ERROR)
+
+        # material of the current session only
+        DictLT.dict_Materials[new_key_material] = [new_key_material, new_lattice_params, extinction]
+
+    def SetLatticeParameters(self, latticeparameters):
+        """Set the 6 lattice parameters [a, b, c, alpha, beta, gamma] (e.g. refined by the fit) as those
+        of the material 'strained_<material>', which becomes the selected material.
+
+        :return: label of the material
+        """
+        for key_param, value in zip(self.lattice_parameters_key, latticeparameters):
+            self.lattice_parameters_dict[key_param] = float(value)
+            getattr(self, f"currentctrl_{key_param}").SetValue(str(float(value)))
+
+        new_key_material = "strained_%s" % self.key_material if "strained" not in self.key_material else self.key_material
+        self.StoreStrainedMaterial(new_key_material)
+
+        comboElem = self.mainframe.crystalparampanel.comboElem
+        if comboElem.FindString(new_key_material) == -1:
+            comboElem.Append(new_key_material)
+        comboElem.SetValue(new_key_material)
+        return new_key_material
+
     def ModifyLatticeParamsStep(self, event, sign_of_step):
         """Modify lattice parameters by a step (increment/decrement)."""
         name = event.GetEventObject().myname
@@ -1084,23 +1149,7 @@ class StrainXtal(wx.Panel):
         # Build new_key_material
         new_key_material = "strained_%s" % self.key_material if "strained" not in self.key_material else self.key_material
 
-        # Update dict_Materials
-        if isinstance(DictLT.dict_Materials, DictLT.Materials):
-            # Materials object: use add_or_update_material
-            current_material = DictLT.dict_Materials.get_material_as_list(self.key_material)
-            new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
-            DictLT.dict_Materials.add_or_update_material(
-                label=new_key_material,
-                lattice=new_lattice_params,
-                extinction=current_material[2]  # Preserve extinction
-            )
-        else:
-            # Basic dictionary: direct assignment
-            new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
-            DictLT.dict_Materials[new_key_material] = {
-                'lattice': new_lattice_params,
-                'extinction': DictLT.dict_Materials[self.key_material][-1]
-            }
+        self.StoreStrainedMaterial(new_key_material)
 
         # Update combo box if needed
         if self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1:
@@ -1122,23 +1171,7 @@ class StrainXtal(wx.Panel):
 
         new_key_material = "strained_%s" % self.key_material if "strained" not in self.key_material else self.key_material
 
-        # Update dict_Materials
-        if isinstance(DictLT.dict_Materials, DictLT.Materials):
-            # Materials object: use add_or_update_material
-            current_material = DictLT.dict_Materials.get_material_as_list(self.key_material)
-            new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
-            DictLT.dict_Materials.add_or_update_material(
-                label=new_key_material,
-                lattice=new_lattice_params,
-                extinction=current_material[2]  # Preserve extinction
-            )
-        else:
-            # Basic dictionary: direct assignment
-            new_lattice_params = [self.lattice_parameters_dict[_key_param] for _key_param in self.lattice_parameters_key]
-            DictLT.dict_Materials[new_key_material] = {
-                'lattice': new_lattice_params,
-                'extinction': DictLT.dict_Materials[self.key_material]['extinction']
-            }
+        self.StoreStrainedMaterial(new_key_material)
 
         # Update combo box if needed
         if self.mainframe.crystalparampanel.comboElem.FindString(new_key_material) == -1:
@@ -1347,6 +1380,7 @@ class MainCalibrationFrame(wx.Frame):
         # save previous result to undo goto fit results-----------------
         self.previous_CCDParam = copy.copy(self.CCDParam)
         self.previous_UBmatrix = np.eye(3)
+        self.previous_material = None  # (label, material) before the refinement of lattice parameters
 
         self.twicetheta = None
         self.chi = None
@@ -1816,47 +1850,19 @@ class MainCalibrationFrame(wx.Frame):
             else:
                 self.initialParameter['initialfilename'] = filepath
 
-            # write a basic temporary calib_.dat file from .cor file
+            # array to write a basic temporary calib_.dat file from .cor file
+            # (10 columns, or 12 if the .cor file contains Xfiterr and Yfiterr: other columns may be missing)
             if addspotproperties:
                 columnsname = dict_data_spotsproperties['columnsname']
                 if verbose>0: print('with addspotproperties, columnsname', columnsname)
-
-                nbcols = len(columnsname)
-                
-                # nbcols = 11
-
-                # if 'Xfiterr' in columnsname:
-                #     nbcols += 2
-
+                Data_array = IOLT.peaklistarray_from_spotsproperties(
+                                                dict_data_spotsproperties['data_spotsproperties'],
+                                                columnsname, peak_X=data_x, peak_Y=data_y,
+                                                peak_Isub=dataintensity)
             else:
-                nbcols = 10  # ???
-            
-            if verbose>0: print('Preparing array to write in .dat with shape: ', (len(data_theta), nbcols))
-            Data_array = np.zeros((len(data_theta), nbcols))
-            
-            Data_array[:, 0] = data_x
-            Data_array[:, 1] = data_y
-            Data_array[:, 2] = dataintensity
-
-            if addspotproperties:
-                alldata = dict_data_spotsproperties['data_spotsproperties']
-
-                colpeakbkg = columnsname.index('peak_bkg')
-                peakbkg= alldata[:,colpeakbkg]
-
-                Data_array[:, 2] = peakbkg + dataintensity
-                Data_array[:, 3] = dataintensity
-
-                # if Data_array[:, 4:].shape != alldata[:,6:].shape:
-                #     raise ValueError(f'Number of columns discrepancy between two arrays {Data_array[:, 4:].shape},{alldata[:,6:].shape}. First element of each are: {Data_array[0, 4:]} and {alldata[0,6:]}')
-
-
-                if verbose>1:
-                    print('sha',Data_array[:, 4:nbcols-2].shape, alldata[:,6:].shape)
-                
-                Data_array[:, 4:nbcols-2] = alldata[:,6:]
-                if verbose>1:
-                    print('Data_array[0]', Data_array[0])
+                Data_array = IOLT.peaklistarray_from_spotsproperties(None, [], peak_X=data_x,
+                                                peak_Y=data_y, peak_Isub=dataintensity)
+            if verbose>0: print('Array to write in .dat with shape: ', Data_array.shape)
 
             if not self.USEDEFAULTDATAFILE:
                 # write calib_.dat temporary file
@@ -2307,6 +2313,16 @@ class MainCalibrationFrame(wx.Frame):
 
         self.CCDParam = copy.copy(self.previous_CCDParam)
         self.UBmatrix = self.previous_UBmatrix
+
+        if self.previous_material is not None:
+            # material and lattice parameters before the refinement of lattice parameters
+            key_material, material = self.previous_material
+            if list(self.dict_Materials[key_material][1]) != list(material[1]):
+                # it was already the material strained_<material>, modified by the refinement
+                self.dict_Materials[key_material] = material
+            self.crystalparampanel.comboElem.SetValue(key_material)
+            self.strainxtal.update_latticeparameters()
+            self.previous_material = None
 
         #         print "new ccd:", self.CCDParam
         #         print "new UBmatrix", self.UBmatrix
@@ -2821,8 +2837,29 @@ class MainCalibrationFrame(wx.Frame):
 
         allparameters = np.array(self.CCDParam + [0, 0, 0])  # 3 last params = 3 quaternion angles not used here
 
+        # lattice parameters to refine (check boxes of the lattice parameters panel)
+        boollattice = [ctrl.GetValue() for ctrl in self.strainxtal.listoflatticefitctrl]
+        fitlattice = any(boollattice)
+        if fitlattice:
+            if all(boollattice[:3]):
+                wx.MessageBox("a, b and c cannot be refined together: Laue spots positions do not depend "
+                            "on the unit cell volume.\nUncheck at least one of them.", "INFO")
+                return
+            key_material = self.crystalparampanel.comboElem.GetValue()
+            try:
+                latticeparameters = [float(evaluate_lattice_param(param))
+                                                for param in self.dict_Materials[key_material][1]]
+                if len(latticeparameters) != 6:
+                    raise ValueError
+            except (ValueError, TypeError):
+                wx.MessageBox("Lattice parameters of %s are not 6 numbers [a, b, c, alpha, beta, gamma]: "
+                            "they cannot be refined." % key_material, "INFO")
+                return
+            # 5 detector parameters, 3 angles, 6 lattice parameters
+            allparameters = np.array(self.CCDParam + [0, 0, 0] + latticeparameters, dtype=float)
+
         # select the parameters that must be fitted
-        boolctrl = [ctrl.GetValue() for ctrl in self.moveccdandxtal.listofparamfitctrl]
+        boolctrl = [ctrl.GetValue() for ctrl in self.moveccdandxtal.listofparamfitctrl] + boollattice
         varyingparameters = []
         init_values = []
         for k, val in enumerate(boolctrl):
@@ -2841,7 +2878,8 @@ class MainCalibrationFrame(wx.Frame):
                     "Angle2(deg)",  # detector parameter
                     "theta1(deg)",
                     "theta2(deg)",
-                    "theta3(deg)"]  # misorientation with respect to initial UBmatrix(/ elementary axis rotation)
+                    "theta3(deg)",  # misorientation with respect to initial UBmatrix(/ elementary axis rotation)
+                    "a(Angst.)", "b(Angst.)", "c(Angst.)", "alpha(deg)", "beta(deg)", "gamma(deg)"]  # lattice parameters
 
         # start fit
         initial_values = np.array(init_values)  # [dd, xcen, ycen, ang1, ang2, theta1, theta2, theta3]
@@ -2875,6 +2913,13 @@ class MainCalibrationFrame(wx.Frame):
                             % (nb_fittingparams, nb_fittingparams),
                             "INFO")
             event.Skip()
+            return
+
+        if fitlattice:
+            # detector, orientation and lattice parameters model (B0 matrix computed from lattice parameters)
+            self.StartFit_latticeparameters(event, initial_values, Data_Q, allparameters,
+                                            arr_indexvaryingparameters, sim_indices, pixX, pixY,
+                                            pureRotation, weights, listparam)
             return
 
         if verbose>1:print("Initial error--------------------------------------\n")
@@ -2985,9 +3030,72 @@ class MainCalibrationFrame(wx.Frame):
         elif len(arr_indexvaryingparameters) == 1:
             allresults[arr_indexvaryingparameters[0]] = results[0]
 
+        self.EndFit(event, results, allresults, arr_indexvaryingparameters, residues_nonweighted, newmatrix)
+
+    def StartFit_latticeparameters(self, event, initial_values, Data_Q, allparameters,
+                                    arr_indexvaryingparameters, sim_indices, pixX, pixY,
+                                    pureRotation, weights, listparam):
+        """
+        Refinement, called by StartFit(), when at least one lattice parameter is selected:
+        5 detector geometry parameters, 3 orientation angles and 6 lattice parameters model
+        (see FitO.fit_calibration_latticeparameters())
+
+        :param allparameters: array of the 14 parameters [dd, xcen, ycen, xbet, xgam, 0, 0, 0, a, b, c, alpha, beta, gamma]
+        :param arr_indexvaryingparameters: indices in allparameters of the parameters to refine
+        """
+        verbose = self.verbose
+        kwargs = dict(initrot=self.UBmatrix, pureRotation=pureRotation,
+                        pixelsize=self.pixelsize, dim=self.framedim, kf_direction=self.kf_direction)
+        args = (Data_Q, allparameters, arr_indexvaryingparameters, sim_indices, pixX, pixY)
+
+        initialresidues = FitO.error_function_calibration_latticeparameters(initial_values, *args,
+                                                                    weights=None, **kwargs)
+        try:
+            results = FitO.fit_calibration_latticeparameters(initial_values, *args, verbose=verbose - 1,
+                                                                    weights=weights, **kwargs)
+            # verbose=1 to output 3 values
+            _, deltamat, newmatrix = FitO.error_function_calibration_latticeparameters(results, *args,
+                                                        verbose=1, weights=weights, **kwargs)
+            (residues_nonweighted, _, _,
+            self.SpotsData) = FitO.error_function_calibration_latticeparameters(results, *args,
+                                            verbose=0, weights=None, allspots_info=1, **kwargs)
+            if not np.all(np.isfinite(residues_nonweighted)):
+                raise ValueError("refined parameters do not give a valid unit cell")
+        except (ValueError, FloatingPointError, np.linalg.LinAlgError) as error:
+            wx.MessageBox("Refinement with lattice parameters failed:\n%s\n\n"
+                        "Try with less parameters, or more spots links." % error, "INFO")
+            return
+
+        allresults = np.array(allparameters, dtype=float)
+        allresults[arr_indexvaryingparameters] = results
+        latticeparameters = allresults[8:14]
+
+        txtlattice = "a=%.5f b=%.5f c=%.5f alpha=%.4f beta=%.4f gamma=%.4f" % tuple(latticeparameters)
+        if verbose >= 0:
+            print("\nRefined parameters:")
+            for k in arr_indexvaryingparameters:
+                print("  %s: %s -> %s" % (listparam[k], allparameters[k], allresults[k]))
+            print("lattice parameters: ", txtlattice)
+            print("mean pixel deviation: %.4f -> %.4f (%d spots)" % (np.mean(initialresidues),
+                                                np.mean(residues_nonweighted), len(residues_nonweighted)))
+        self.sb.SetStatusText("Refined lattice parameters: %s" % txtlattice)
+
+        self.EndFit(event, results, allresults, arr_indexvaryingparameters, residues_nonweighted, newmatrix,
+                                                    latticeparameters=latticeparameters)
+
+    def EndFit(self, event, results, allresults, arr_indexvaryingparameters, residues_nonweighted, newmatrix,
+                                                    latticeparameters=None):
+        """
+        Display the results of the fit, update (if 'GOTO fit results' is checked) detector parameters,
+        orientation matrix and plot, and update the .cor file
+
+        :param latticeparameters: refined lattice parameters [a, b, c, alpha, beta, gamma], if any
+        """
+        verbose = self.verbose
+
         self.residues_fit = residues_nonweighted
         # display fit results
-        dataresults = (allresults.tolist()
+        dataresults = (allresults[:8].tolist()
                     + [np.mean(self.residues_fit)]
                     + [len(self.residues_fit)])
         self.display_results(dataresults)
@@ -2999,6 +3107,13 @@ class MainCalibrationFrame(wx.Frame):
             # saving previous results
             self.previous_CCDParam = copy.copy(self.CCDParam)
             self.previous_UBmatrix = copy.copy(self.UBmatrix)
+            self.previous_material = None
+
+            if latticeparameters is not None:
+                # refined lattice parameters are those of the material strained_<material>, now selected
+                key_material = self.crystalparampanel.comboElem.GetValue()
+                self.previous_material = (key_material, copy.deepcopy(self.dict_Materials[key_material]))
+                self.strainxtal.SetLatticeParameters(latticeparameters)
 
             if len(arr_indexvaryingparameters) > 1:
                 for k, val in enumerate(arr_indexvaryingparameters):
@@ -3172,61 +3287,35 @@ class MainCalibrationFrame(wx.Frame):
         initialfile = self.initialParameter["initialfilename"]
         #print('initialfile  :', initialfile)
 
+        # spots properties of the peaks list, whatever the number of columns
+        # (e.g. Xfiterr and Yfiterr are not in all files)
         if initialfile.endswith('dat'):
             data_peak = IOLT.read_Peaklist(initialfile)
-            initialfileextension = 'dat'
-            _, nbcolumns_dat = data_peak.shape
+            columnsname_peak = IOLT.getcolumnsname_dat(initialfile)
         elif initialfile.endswith('cor'):
-            data_peak,_,_,_,_,_,_,dict_spotsproperties = IOLT.readfile_cor(initialfile,output_only5columns=False)
-            initialfileextension = 'cor'
-            _, nbcolumns_cor = data_peak.shape
-        
+            data_peak = IOLT.readfile_cor(initialfile, output_only5columns=False)[0]
+            columnsname_peak = IOLT.getcolumnsname_dat(initialfile)
+        else:
+            wx.MessageBox("Peaks list file must be a .dat or .cor file:\n%s" % initialfile, "INFO")
+            return
 
-        selected_data_peak = np.take(data_peak, indExp, axis=0)
+        selected_data_peak = np.take(np.atleast_2d(data_peak), indExp, axis=0)
+        peakprops = IOLT.getspotsproperties_byname(selected_data_peak, columnsname_peak)
 
-        # print('selected_data_peak.shape',selected_data_peak.shape)
-        
-        if initialfileextension == 'dat' and initialfile != 'calib_.dat':
-            nbcolumns_cor = 0
-            if nbcolumns_dat == 11:
-                (Xexp, Yexp, _, peakAmplitude,
-            peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-            Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax) = selected_data_peak.T
-            elif nbcolumns_dat == 13:
-                (Xexp, Yexp, _, peakAmplitude,
-            peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-            Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax, XfitErr, YfitErr) = selected_data_peak.T
-            
-
-        elif initialfileextension == 'cor':
-            nbcolumns_dat = 0
-            if nbcolumns_cor==5:
-                (_, _, Xexp, Yexp, peakAmplitude) = selected_data_peak.T
-                _ = peakAmplitude
-                unknowns = np.zeros(len(Xexp))
-                peak_fwaxmaj = unknowns
-                peak_fwaxmin = unknowns
-                peak_inclination = unknowns
-                Xdev_peakFit = unknowns
-                Ydev_peakFit, peak_bkg, IntensityMax = unknowns, unknowns, unknowns
-            else:
-                if verbose>1: print('%d of colmuns in initialfile'%nbcolumns_cor, initialfile)
-                if nbcolumns_cor== 15:
-                    (_,_, Xexp, Yexp, peakAmplitude,
-                    I_tot,
-                peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-                Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax, XfitErr, YfitErr) = selected_data_peak.T
-
-                elif nbcolumns_cor== 13:
-                    (_,_, Xexp, Yexp, peakAmplitude,
-                    I_tot,
-                peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-                Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax) = selected_data_peak.T
-                    
-                elif nbcolumns_dat == 18:
-                    (_,_,_,_,_,Xexp, Yexp, I_tot, peakAmplitude,
-                peak_fwaxmaj, peak_fwaxmin, peak_inclination,
-                Xdev_peakFit, Ydev_peakFit, peak_bkg, IntensityMax, XfitErr, YfitErr) = selected_data_peak.T
+        unknowns = np.zeros(len(indExp))
+        Xexp = peakprops.get('peak_X', np.take(self.data_x, indExp))
+        Yexp = peakprops.get('peak_Y', np.take(self.data_y, indExp))
+        peakAmplitude = peakprops.get('peak_Isub', unknowns)
+        peak_fwaxmaj = peakprops.get('peak_fwaxmaj', unknowns)
+        peak_fwaxmin = peakprops.get('peak_fwaxmin', unknowns)
+        peak_inclination = peakprops.get('peak_inclination', unknowns)
+        Xdev_peakFit = peakprops.get('Xdev', unknowns)
+        Ydev_peakFit = peakprops.get('Ydev', unknowns)
+        peak_bkg = peakprops.get('peak_bkg', unknowns)
+        IntensityMax = peakprops.get('Ipixmax', unknowns)
+        hasfiterrors = 'Xfiterr' in peakprops and 'Yfiterr' in peakprops
+        if hasfiterrors:
+            XfitErr, YfitErr = peakprops['Xfiterr'], peakprops['Yfiterr']
 
         Xdev_calibFit, Ydev_calibFit = spotsData[4:6]
 
@@ -3242,7 +3331,7 @@ class MainCalibrationFrame(wx.Frame):
                 peak_fwaxmaj, peak_fwaxmin, peak_inclination,
                 Xdev_peakFit, Ydev_peakFit]
         
-        if nbcolumns_cor in (15,18) or nbcolumns_dat == 15:
+        if hasfiterrors:
             Columns.append(XfitErr)
             Columns.append(YfitErr)
 
@@ -3275,10 +3364,28 @@ class MainCalibrationFrame(wx.Frame):
         dict_matrices["framedim"] = self.framedim
         dict_matrices["CCDLabel"] = self.CCDLabel
 
+        # lattice parameters and deviatoric strain with respect to the unstrained material
+        try:
+            strainresults = self.StrainResults()
+            UB_ref, B0_ref = strainresults.pop("UBmat_reference"), strainresults.pop("B0_reference")
+            dict_matrices.update(strainresults)
+            if strainresults["reference_material"] != self.key_material:
+                # current material is strained_<material> (maybe known only in this session):
+                # the crystal is written with respect to the unstrained material, as in the .fit files
+                # of PlotRefineGUI:  q = UBmat B0 G*  with B0 of Element (UBB0 is unchanged)
+                dict_matrices["Element"] = strainresults["reference_material"]
+                dict_matrices["UBmat"] = UB_ref
+                dict_matrices["B0"] = B0_ref
+                Umat_ref = CP.matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=UB_ref)
+                dict_matrices["Umat2"] = Umat_ref
+                dict_matrices["Bmat_tri"] = np.dot(Umat_ref.T, UB_ref)
+        except (KeyError, ValueError, TypeError, np.linalg.LinAlgError) as error:
+            print("Lattice parameters and strain are not written in .fit file:", error)
+
         columnsname = "spot_index Itot h k l Xtheo Ytheo Xexp Yexp XdevCalib YdevCalib pixDevCalib "
         columnsname += "2theta_theo chi_theo Energy PeakAmplitude Imax PeakBkg "
         columnsname += "PeakFwhm1 PeakFwhm2 PeakTilt XdevPeakFit YdevPeakFit"
-        if nbcolumns_cor == 15 or nbcolumns_dat == 15:
+        if hasfiterrors:
             columnsname += " XfitEerr YfitErr"
         columnsname +="\n"
 
@@ -3313,6 +3420,9 @@ class MainCalibrationFrame(wx.Frame):
 
         dlg.Destroy()
 
+        if filenamefit is None:  # cancelled by user
+            return
+
         IOLT.writefitfile(fullpath,
                         data,
                         len(indExp),
@@ -3327,6 +3437,45 @@ class MainCalibrationFrame(wx.Frame):
 
 
         wx.MessageBox("Fit results saved in %s" % fullpath, "INFO")
+
+    def StrainResults(self):
+        """
+        Lattice parameters of the crystal and its deviatoric strain with respect to the unstrained
+        material, computed as in PlotRefineGUI and indexingSpotsSet (q = UB B0 G*).
+
+        The unstrained material is the current one, or <material> if the current one is
+        strained_<material> (created by the refinement or the modification of lattice parameters).
+
+        :return: dict with keys 'LatticeParameters' [a, b, c, alpha, beta, gamma] of UB.B0,
+            'devstrain_crystal', 'devstrain_sample', 'equivalent_strain' (see IOLT.writefitfile()),
+            'reference_material', and the matrices 'UBmat_reference', 'B0_reference' of the same crystal
+            with respect to the unstrained material (q = UBmat_reference B0_reference G*)
+        """
+        key_reference = self.key_material
+        if key_reference.startswith("strained_") and key_reference[len("strained_"):] in self.dict_Materials:
+            key_reference = key_reference[len("strained_"):]
+
+        latticeparams_ref = [float(evaluate_lattice_param(param))
+                                        for param in self.dict_Materials[key_reference][1]]
+        if len(latticeparams_ref) != 6:
+            raise ValueError("lattice parameters of %s are not 6 numbers" % key_reference)
+        B0_ref = CP.calc_B_RR(latticeparams_ref)
+
+        UBB0 = np.dot(self.UBmatrix, self.B0matrix)
+        # same crystal with respect to the unstrained material:  q = UB_ref B0_ref G*
+        UB_ref = np.dot(UBB0, np.linalg.inv(B0_ref))
+
+        devstrain, _ = CP.compute_deviatoricstrain(copy.copy(UB_ref), B0_ref, latticeparams_ref)
+        devstrain_sample = CP.strain_from_crystal_to_sample_frame2(devstrain, UB_ref,
+                                                                latticeparams=latticeparams_ref)
+
+        return {"LatticeParameters": CP.directlatticeparameters_fromBmatrix(UBB0),
+                "devstrain_crystal": devstrain,
+                "devstrain_sample": devstrain_sample,
+                "equivalent_strain": CP.equivalent_strain(devstrain),
+                "reference_material": key_reference,
+                "UBmat_reference": UB_ref,
+                "B0_reference": B0_ref}
 
     def show_alltogglestate(self, flag):
         if flag:
@@ -4935,6 +5084,13 @@ class MainCalibrationFrame(wx.Frame):
             twth2, chi2 = self.convertpixels2twotheta(X2, Y2)
             #             print 'twth2, chi2', twth2, chi2
             axis2theta, axischi = self.convertpixels2twotheta(self.centerx, self.centery)
+        elif self.datatype == "gnomon":
+            gX1, gY1 = self.press
+            gX2, gY2 = event.xdata, event.ydata
+
+            twth1, chi1 = self.convertgnomon2twotheta(gX1, gY1)
+            twth2, chi2 = self.convertgnomon2twotheta(gX2, gY2)
+            axis2theta, axischi = self.convertgnomon2twotheta(self.centerx, self.centery)
         else:
             return
 
@@ -4956,6 +5112,14 @@ class MainCalibrationFrame(wx.Frame):
             self.press = twth2, chi2
         elif self.datatype == "pixels":
             self.press = X2, Y2
+        elif self.datatype == "gnomon":
+            self.press = gX2, gY2
+
+    def convertgnomon2twotheta(self, gX, gY):
+        """convert one gnomonic projection point (gX, gY) into (2theta, chi) in deg"""
+        tws, chs = IIM.Fromgnomon_to_2thetachi([np.array([gX, gX]),
+                                                np.array([gY, gY])], 0)[:2]
+        return tws[0], chs[0]
 
     def convertpixels2twotheta(self, X, Y):
 
@@ -4998,8 +5162,8 @@ class MainCalibrationFrame(wx.Frame):
         rotation axis : q1unit^q2unit
         cos anglerot = q1unit.q2unit
         """
-        # from self.centerx, self.centery
-        qaxis = self.selectrotationaxis(twthaxis, chiaxis)
+        # from self.centerx, self.centery (already converted in 2theta chi)
+        qaxis = self.rotationaxis_from_2thetachi(twthaxis, chiaxis)
 
         qaxis = np.array(qaxis)
 
@@ -5070,6 +5234,13 @@ class MainCalibrationFrame(wx.Frame):
 
             print("twtheta, chi", twtheta, chi)
 
+        return self.rotationaxis_from_2thetachi(twtheta, chi)
+
+    def rotationaxis_from_2thetachi(self, twtheta, chi):
+        """
+        return 3D vector of rotation axis (q unit vector) from twtheta and chi (in deg)
+        whatever the plot coordinates (self.datatype)
+        """
         theta = twtheta / 2.0
 
         sintheta = np.sin(theta * DEG)

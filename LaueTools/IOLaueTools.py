@@ -1036,6 +1036,77 @@ def getcolumnsname_dat(fullpath):
 
     return columnsname
 
+# names of the columns of spots properties in .dat and .cor files (first name is the one of .dat file)
+SPOTSPROPERTIES_COLUMNSNAME = {'peak_X': ('peak_X', 'X'),
+                                'peak_Y': ('peak_Y', 'Y'),
+                                'peak_Itot': ('peak_Itot',),
+                                'peak_Isub': ('peak_Isub', 'peak_I', 'I'),
+                                'peak_fwaxmaj': ('peak_fwaxmaj',),
+                                'peak_fwaxmin': ('peak_fwaxmin',),
+                                'peak_inclination': ('peak_inclination',),
+                                'Xdev': ('Xdev',),
+                                'Ydev': ('Ydev',),
+                                'peak_bkg': ('peak_bkg',),
+                                'Ipixmax': ('Ipixmax',),
+                                'Xfiterr': ('Xfiterr',),
+                                'Yfiterr': ('Yfiterr',)}
+
+def getspotsproperties_byname(data, columnsname):
+    """
+    return the spots properties found in a peaks list, whatever the number and the order of the columns
+
+    :param data: array of the peaks list, shape = (nb of spots, nb of columns)
+    :param columnsname: list of the names of the columns of data (as in the header of .dat or .cor file)
+
+    :return: dict {name: array of values} with the names of SPOTSPROPERTIES_COLUMNSNAME found in
+        columnsname (whatever the case, e.g. Xfiterr or XfitErr). Missing properties
+        (e.g. Xfiterr and Yfiterr of old files) are not in the dict.
+    """
+    data = np.atleast_2d(np.array(data))
+    lowernames = [str(name).lower() for name in columnsname]
+    properties = {}
+    for name, aliases in SPOTSPROPERTIES_COLUMNSNAME.items():
+        for alias in aliases:
+            if alias.lower() in lowernames:
+                col = lowernames.index(alias.lower())
+                if col < data.shape[1]:
+                    properties[name] = data[:, col]
+                    break
+    return properties
+
+def peaklistarray_from_spotsproperties(data, columnsname, peak_X=None, peak_Y=None, peak_Isub=None):
+    """
+    build the array of peaks to write a .dat file with writefile_Peaklist() from a peaks list
+    with any number of columns of spots properties (e.g. read in a .cor file)
+
+    :param data: array of the peaks list, shape = (nb of spots, nb of columns). Can be None
+    :param columnsname: list of the names of the columns of data
+    :param peak_X, peak_Y, peak_Isub: pixel positions and intensity (background subtracted) of the peaks
+        used instead of those of data
+
+    :return: array with 10 columns: peak_X, peak_Y, peak_Isub, peak_fwaxmaj, peak_fwaxmin,
+        peak_inclination, Xdev, Ydev, peak_bkg, Ipixmax, and 2 more columns Xfiterr, Yfiterr
+        only if they are both in data. Properties missing in data are set to 0.
+    """
+    properties = {} if data is None else getspotsproperties_byname(data, columnsname)
+    for name, values in (('peak_X', peak_X), ('peak_Y', peak_Y), ('peak_Isub', peak_Isub)):
+        if values is not None:
+            properties[name] = np.array(values, dtype=float)
+
+    if 'peak_X' not in properties or 'peak_Y' not in properties:
+        raise ValueError("pixel positions of the peaks are missing (columns: %s)" % list(columnsname))
+    nbpeaks = len(properties['peak_X'])
+
+    if 'peak_Isub' not in properties and 'peak_Itot' in properties:
+        properties['peak_Isub'] = properties['peak_Itot'] - properties.get('peak_bkg', 0.)
+
+    names = ['peak_X', 'peak_Y', 'peak_Isub', 'peak_fwaxmaj', 'peak_fwaxmin', 'peak_inclination',
+            'Xdev', 'Ydev', 'peak_bkg', 'Ipixmax']
+    if 'Xfiterr' in properties and 'Yfiterr' in properties:
+        names += ['Xfiterr', 'Yfiterr']
+
+    return np.array([properties.get(name, np.zeros(nbpeaks)) for name in names], dtype=float).T
+
 def getspotsproperties_dat(fullpath, verbose=0):
     """
     return dict of spots properties from .dat file
@@ -1251,6 +1322,10 @@ def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
     if "devstrain_sample" in dict_matrices:
         footer += "deviatoric strain in sample2 frame (10-3 unit)\n"
         footer += str(np.round(np.array(dict_matrices["devstrain_sample"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
+
+    if "reference_material" in dict_matrices:
+        footer += "unstrained reference material of the strain\n"
+        footer += "%s\n" % str(dict_matrices["reference_material"])
 
     if "equivalent_strain" in dict_matrices:
         footer += "equivalent (von Mises) strain sqrt(2/3 dev:dev), frame independent (10-3 unit)\n"
@@ -1511,6 +1586,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
             iline = linepos_grain_list[grain_index]
 
             nb_indexed_spots = 0
+            nb_UNindexed_spots = 0
             ubb0found = 0
             while iline < linepos_grain_list[grain_index + 1]:
 
@@ -1614,6 +1690,7 @@ def readfitfile_multigrains(fitfilename, verbose=0, readmore=False,
                         lineval = (line.rstrip("\n").replace("#", "").replace("[", "").replace("]", "").split())
                         UBB0mat[jline_matrix, :] = np.array(lineval, dtype=float)
                         jline_matrix += 1
+                        iline += 1   # line counter must follow the file (grains of multigrain .fit files)
 
                     ubb0found = 0
 

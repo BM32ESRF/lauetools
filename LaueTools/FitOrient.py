@@ -509,6 +509,129 @@ def fit_on_demand_calibration(starting_param, miller, allparameters,
         return None
 
 
+def error_function_calibration_latticeparameters(param_values,
+                                        DATA_Q,
+                                        allparameters,
+                                        arr_indexvaryingparameters,
+                                        nspots,
+                                        pixX,
+                                        pixY,
+                                        initrot=IDENTITYMATRIX,
+                                        pureRotation=0,
+                                        verbose=0,
+                                        pixelsize=165.0 / 2048,
+                                        dim=(2048, 2048),
+                                        weights=None,
+                                        allspots_info=0,
+                                        kf_direction="Z>0"):
+    """
+    cost function of model of single crystal and plane detector, as error_function_on_demand_calibration(),
+    where the lattice parameters of the crystal can also vary.
+
+    q = initrot . B0(a, b, c, alpha, beta, gamma) . G*   (B0 from CP.calc_B_RR())
+
+    :param param_values: values of the varying parameters
+    :param allparameters: 14 elements: 5 detector parameters [dd, xcen, ycen, xbet, xgam],
+        3 misorientation angles (deg) with respect to initrot, 6 direct space lattice parameters
+        [a, b, c, alpha, beta, gamma] (Angstrom and degrees)
+    :param arr_indexvaryingparameters: indices in allparameters of the varying parameters
+
+    .. note:: Laue spots positions do not depend on the unit cell volume: at least one of a, b, c
+        must be kept fixed
+
+    :return: same outputs as error_function_on_demand_calibration()
+    """
+    arr_indexvaryingparameters = np.array(arr_indexvaryingparameters, dtype=int)
+    param_values = np.atleast_1d(np.array(param_values, dtype=float))
+
+    islattice = arr_indexvaryingparameters >= 8
+
+    latticeparameters = np.array(allparameters[8:14], dtype=float)
+    latticeparameters[arr_indexvaryingparameters[islattice] - 8] = param_values[islattice]
+    B0matrix = CP.calc_B_RR(latticeparameters)
+
+    return error_function_on_demand_calibration(param_values[~islattice],
+                                        DATA_Q,
+                                        np.array(allparameters[:8], dtype=float),
+                                        arr_indexvaryingparameters[~islattice],
+                                        nspots,
+                                        pixX,
+                                        pixY,
+                                        initrot=initrot,
+                                        vecteurref=B0matrix,
+                                        pureRotation=pureRotation,
+                                        verbose=verbose,
+                                        pixelsize=pixelsize,
+                                        dim=dim,
+                                        weights=weights,
+                                        allspots_info=allspots_info,
+                                        kf_direction=kf_direction)
+
+
+def fit_calibration_latticeparameters(starting_param, miller, allparameters,
+                                arr_indexvaryingparameters,
+                                nspots,
+                                pixX,
+                                pixY,
+                                initrot=IDENTITYMATRIX,
+                                pureRotation=0,
+                                verbose=0,
+                                pixelsize=165.0 / 2048,
+                                dim=(2048, 2048),
+                                weights=None,
+                                kf_direction="Z>0"):
+    """
+    Refine detector parameters, misorientation angles and lattice parameters (any selection of them)
+    by minimizing the pixel distances between experimental and simulated spots.
+
+    Parameters as in error_function_calibration_latticeparameters().
+
+    :param starting_param: initial values of the varying parameters
+    :return: array of the refined values of the varying parameters
+    :raises ValueError: if a, b and c are refined together (the unit cell volume cannot be determined)
+    """
+    parameters = ["distance (mm)", "Xcen (pixel)", "Ycen (pixel)", "Angle1 (deg)", "Angle2 (deg)",
+                "theta1", "theta2", "theta3", "a", "b", "c", "alpha", "beta", "gamma"]
+
+    arr_indexvaryingparameters = np.array(arr_indexvaryingparameters, dtype=int)
+    starting_param = np.atleast_1d(np.array(starting_param, dtype=float))
+
+    if all(k in arr_indexvaryingparameters for k in (8, 9, 10)):
+        raise ValueError("a, b and c cannot be refined together: Laue spots positions do not depend "
+                        "on the unit cell volume")
+
+    if verbose > 0:
+        print("Fitting parameters:  ", [parameters[k] for k in arr_indexvaryingparameters])
+        print("With initial values", starting_param)
+
+    # scales and bounds of the parameters
+    xscale = np.ones(len(arr_indexvaryingparameters))
+    lower = np.full(len(arr_indexvaryingparameters), -np.inf)
+    upper = np.full(len(arr_indexvaryingparameters), np.inf)
+    for pos, k in enumerate(arr_indexvaryingparameters):
+        if k == 4:  # For transmission geometry, changing gam scale is useful
+            xscale[pos] = .1
+        elif k in (8, 9, 10):  # lengths
+            lower[pos] = 0.01 * starting_param[pos]
+            xscale[pos] = 0.01 * starting_param[pos]
+        elif k in (11, 12, 13):  # angles
+            lower[pos], upper[pos] = 1., 179.
+
+    solution = least_squares(error_function_calibration_latticeparameters,
+                            starting_param,
+                            args=(miller, allparameters, arr_indexvaryingparameters, nspots, pixX, pixY),
+                            kwargs=dict(initrot=initrot, pureRotation=pureRotation, verbose=0,
+                                        pixelsize=pixelsize, dim=dim, weights=weights,
+                                        allspots_info=0, kf_direction=kf_direction),
+                            bounds=(lower, upper),
+                            x_scale=xscale)
+    if verbose > 0:
+        print("refined values", solution['x'])
+        print('mean residues', np.mean(solution['fun']))
+
+    return solution['x']
+
+
 def error_function_on_demand_strain(param_strain,
                                         DATA_Q,
                                         allparameters,
