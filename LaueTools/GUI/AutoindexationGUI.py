@@ -38,6 +38,8 @@ if sys.version_info.major == 3:
     from .. import IOLaueTools as IOLT
     from .. import generaltools as GT
     from .. import dict_LaueTools as DictLT
+    from . MaterialsEditor import MaterialComboBox
+    from .. import spotsproposal as SPROP
     from . PlotRefineGUI import Plot_RefineFrame
     from . ResultsIndexationGUI import RecognitionResultCheckBox
     from . import OpenSpotsListFileGUI as OSLFGUI
@@ -50,6 +52,7 @@ else:
     import IOLaueTools as IOLT
     import generaltools as GT
     import dict_LaueTools as DictLT
+    import spotsproposal as SPROP
     from GUI.PlotRefineGUI import Plot_RefineFrame
     from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
     import OpenSpotsListFileGUI as OSLFGUI
@@ -66,7 +69,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
     def __init__(self, parent, _id, indexation_parameters, title,
                                         StorageDict=None, DataSetObject=None):
 
-        wx.Frame.__init__(self, parent, _id, title, size=(900, 800))
+        wx.Frame.__init__(self, parent, _id, title, size=(1000, 800))
 
         if parent is not None:
             self.parent = parent
@@ -172,8 +175,22 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.setBchck = wx.CheckBox(self, -1, "")
         self.setBchck.SetValue(True)
-        rsstxt = wx.StaticText(self, -1, "Spots Set B: ")
+        rsstxt = wx.StaticText(self, -1, "Spots Set B (0 to MAXINDEXPROBED): ")
         self.spotlistB = wx.TextCtrl(self, -1, "to10", (200, -1))
+
+        proptxt = wx.StaticText(self, -1, "Propose spots set A: ")
+        self.propzonesbtn = wx.Button(self, -1, "Zones intersects")
+        zonestoltxt = wx.StaticText(self, -1, "tol.(deg)")
+        self.zonestol = wx.TextCtrl(self, -1, "0.05", size=(55, -1))
+        self.proptripletsbtn = wx.Button(self, -1, "Triplets")
+        tripletstoltxt = wx.StaticText(self, -1, "tol.(deg)")
+        self.tripletstol = wx.TextCtrl(self, -1, "0.03", size=(55, -1))
+        self.propmergebtn = wx.Button(self, -1, "Merge")
+        nbproptxt = wx.StaticText(self, -1, "nb spots")
+        self.nbproposedspots = wx.SpinCtrl(self, -1, "10", (60, -1), min=2, max=50)
+        self.propzonesbtn.Bind(wx.EVT_BUTTON, self.OnProposeSpotsZones)
+        self.proptripletsbtn.Bind(wx.EVT_BUTTON, self.OnProposeSpotsTriplets)
+        self.propmergebtn.Bind(wx.EVT_BUTTON, self.OnProposeSpotsMerge)
 
         lutrectxt = wx.StaticText(self, -1, "Angles LUT Recognition")
         lutrectxt.SetFont(font3)
@@ -263,6 +280,20 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         h3box.Add(rsstxt, 0, wx.EXPAND|wx.ALL, 10)
         h3box.Add(self.spotlistB, 0, wx.EXPAND|wx.ALL, 10)
 
+        h3bisbox = wx.BoxSizer(wx.HORIZONTAL)
+        h3bisbox.Add(proptxt, 0, wx.EXPAND|wx.ALL, 10)
+        h3bisbox.Add(self.propzonesbtn, 0, wx.EXPAND|wx.ALL, 5)
+        h3bisbox.Add(zonestoltxt, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 10)
+        h3bisbox.Add(self.zonestol, 0, wx.EXPAND|wx.ALL, 5)
+        h3bisbox.AddSpacer(10)
+        h3bisbox.Add(self.proptripletsbtn, 0, wx.EXPAND|wx.ALL, 5)
+        h3bisbox.Add(tripletstoltxt, 0, wx.EXPAND|wx.TOP|wx.BOTTOM, 10)
+        h3bisbox.Add(self.tripletstol, 0, wx.EXPAND|wx.ALL, 5)
+        h3bisbox.AddSpacer(10)
+        h3bisbox.Add(self.propmergebtn, 0, wx.EXPAND|wx.ALL, 5)
+        h3bisbox.Add(nbproptxt, 0, wx.EXPAND|wx.ALL, 10)
+        h3bisbox.Add(self.nbproposedspots, 0, wx.EXPAND|wx.ALL, 5)
+
         h4box = wx.BoxSizer(wx.HORIZONTAL)
         h4box.Add(drtatxt, 0, wx.EXPAND|wx.ALL, 10)
         h4box.Add(self.DRTA, 0, wx.EXPAND|wx.ALL, 10)
@@ -315,6 +346,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         vbox.Add(title1, 0, wx.EXPAND, 5)
         vbox.Add(h2box, 0, wx.EXPAND, 5)
         vbox.Add(h3box, 0, wx.EXPAND, 5)
+        vbox.Add(h3bisbox, 0, wx.EXPAND, 5)
         vbox.AddSpacer(5)
         vbox.Add(lutrectxt, 0, wx.EXPAND, 5)
         vbox.Add(h4box, 0, wx.EXPAND, 5)
@@ -356,7 +388,10 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         luttxt.SetToolTipString(luttip)
         self.nLUT.SetToolTipString(luttip)
 
-        tsstip = "If checked, set of spot index to compute all mutual angles between spots of setA and setB. CAUTION! Largest indices of A and B must fullfil max(A)<max(B)"
+        tsstip = ('If checked, set of spot indices to compute all mutual angles between spots of setA and setB: '
+                  '"to12" means spot indices 0 to 12 (included), i.e. MAXINDEXPROBED = 12 (written in .irp file); '
+                  'or a list [0,3,5,12], a range "5to20" (5 to 20 included), or a single index 5. '
+                  'CAUTION! Largest indices of A and B must fullfil max(A) <= max(B) = MAXINDEXPROBED')
         rsstxt.SetToolTipString(tsstip)
         self.spotlistB.SetToolTipString(tsstip)
 
@@ -364,10 +399,33 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         mssstxt.SetToolTipString(mssstip)
         self.nbspotmaxformatching.SetToolTipString(mssstip)
 
-        cstip = 'Experimental spot index (integer), list of spot indices to be considered as central spots, OR for example "to12" meaning spot indices ranging from 0 to 12 (included). All mutual angles between spots of setA will be considered for recognition. If setB is checked, all mutual angles between spots of setA and spots of setB will be calculated and compared to angles in reference LUT for recognition. CAUTION! Largest indices of A and B must fullfil max(A)<max(B)'
+        cstip = 'Experimental spot index (integer), list of spot indices to be considered as central spots, OR for example "to12" meaning spot indices ranging from 0 to 12 (included), or "80to90" (80 to 90 included). All mutual angles between spots of setA will be considered for recognition. If setB is checked, all mutual angles between spots of setA and spots of setB will be calculated and compared to angles in reference LUT for recognition. CAUTION! Largest indices of A and B must fullfil max(A) <= max(B) = MAXINDEXPROBED'
         # cstip += 'List of spots must written in with bracket (e.g. [0,1,2,5,8]). Central spots index must be strictly lower to nb of spots of the "recognition set".'
         cstxt.SetToolTipString(cstip)
         self.spotlistA.SetToolTipString(cstip)
+
+        propzonestip = ('Fill spots set A with the spots lying at the intersections of the largest number of zone axes '
+                        '(lines of aligned spots in the gnomonic projection). These spots are likely to have low Miller '
+                        'indices. No material nor lattice parameter is used.')
+        self.propzonesbtn.SetToolTipString(propzonestip)
+        proptripletstip = ('Fill spots set A with the spots belonging to the largest number of recognised triplets of '
+                        'spots: 3 spots whose 3 mutual angles are those of 3 directions with Miller indices up to 2 '
+                        'of the selected material. Lattice parameters of the material must be accurate.')
+        self.proptripletsbtn.SetToolTipString(proptripletstip)
+        proptxt.SetToolTipString('Proposed spots are written in spots set A in increasing order, and spots set B is '
+                        'unchecked: angles between all pairs of proposed spots are then used for the recognition.')
+        self.propmergebtn.SetToolTipString('Fill spots set A with the spots proposed by both methods '
+                        '(Zones intersects and Triplets), each computed with its own tolerance if not done yet.')
+        nbproptip = 'Number of spots proposed by each method'
+        nbproptxt.SetToolTipString(nbproptip)
+        self.nbproposedspots.SetToolTipString(nbproptip)
+        zonestoltip = ('Largest angular distance (deg) of a spot to a zone axis. It must be small: 0.03 - 0.08 deg.')
+        zonestoltxt.SetToolTipString(zonestoltip)
+        self.zonestol.SetToolTipString(zonestoltip)
+        tripletstoltip = ('Largest difference (deg) between the angle of 2 spots and the reference angle of 2 directions '
+                        'of the material. It must be small: 0.03 - 0.05 deg.')
+        tripletstoltxt.SetToolTipString(tripletstoltip)
+        self.tripletstol.SetToolTipString(tripletstoltip)
 
         drtatip = "Tolerance angle (in degree) within which an experimental angle (between a central and a recognition set spot) must be close to a reference angle in LUT to be used for simulation the Laue pattern (to be matched to the experimenal one)."
         drtatxt.SetToolTipString(drtatip)
@@ -405,10 +463,20 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         #print('In SetMaterialsCombo()')
         #print('self.dict_Materials', self.dict_Materials)
 
+        # materials added in the file by an other program (e.g. lauetools-materials editor)
+        DictLT.reload_materials(self.dict_Materials)
         self.list_materials = sorted(self.dict_Materials.keys())
 
-        self.combokeymaterial = wx.ComboBox(self, -1, "Ge", (140, 170), size=(150, -1),
-                                        choices=self.list_materials)#, style=wx.CB_READONLY)
+        if self.combokeymaterial is not None:
+            # Refresh button: update the list of the existing combo
+            self.combokeymaterial.SetItems(self.list_materials)
+            if self.combokeymaterial.GetValue() not in self.list_materials:
+                self.combokeymaterial.SetValue(self.list_materials[0])
+            self.sb.SetStatusText("%d materials" % len(self.list_materials))
+            return
+
+        self.combokeymaterial = MaterialComboBox(self, -1, "Ge", (140, 170), size=(150, -1),
+                                        choices=self.list_materials)
 
         # Bind to EVT_COMBOBOX (for dropdown selection)
         self.combokeymaterial.Bind(wx.EVT_COMBOBOX, self.EnterCombokeymaterial)
@@ -434,8 +502,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         """
         Handle dropdown selection.
         """
-        item = event.GetSelection()
-        self.key_material = self.list_materials[item]
+        self.key_material = str(self.combokeymaterial.GetValue())
         self.filterMatrix.SetValue(CP.hasCubicSymmetry(self.key_material, dictmaterials=self.dict_Materials))
         self.sb.SetStatusText("Selected material: %s" % str(self.dict_Materials[self.key_material]))
         event.Skip()
@@ -491,6 +558,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                         self.spotlistA, self.ResolutionAngstromctrl, self.nLUT,
                         sethklcentral, True, nbSpotsToIndex,
                         [MatchingAngleTol, MatchingAngleTol / 2.0],
+                        self.emax,   # emax MR: this board computes the matching rate up to emax
                         self.spotsorder]
 
         self.dict_param = {}
@@ -517,52 +585,167 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         save indexation parameters in .irp file
         """
         ISS.saveIndexRefineConfigFile(self.dict_param_list, outputfilename=outputfile)
+        self.save_yaml_configfile(outputfile)
+
+    def save_yaml_configfile(self, irpfile):
+        """write next to the .irp file the YAML configuration of indexing_batch (same parameters) to index all the
+        .cor files of the series of the current file (notebooks, FileSeries board, SLURM jobs)
+
+        :return: path of the YAML file, None if not written (the GUI goes on)
+        """
+        import re
+        try:
+            if sys.version_info.major == 3:
+                from .. import indexing_batch as IB
+            else:
+                import indexing_batch as IB
+            corfile = str(self.DataPlot_filename)
+            corfolder = os.path.dirname(corfile) if os.path.isabs(corfile) else str(self.dirname)
+            match = re.fullmatch(r"(.*?)(\d+)\.cor", os.path.basename(corfile))
+            if match is None:
+                print("No YAML configuration written: %s is not a <prefix><index>.cor file" % corfile)
+                return None
+            prefix, digits = match.group(1), match.group(2)
+            yamlfile = os.path.splitext(str(irpfile))[0] + ".yaml"
+            changes = {"test_image_index": int(digits)}
+            if not self.setBchck.GetValue():
+                # spots set B not checked: angles between spots of set A only
+                spotsA = self.readspotssetctrl(self.spotlistA)[0]
+                changes["spots set B"] = spotsA if isinstance(spotsA, list) else [spotsA]
+            IB.config_from_irp(irpfile, yamlfile, corfolder, self.IndexationParameters["writefolder"], prefix,
+                               len(digits), overwrite=True, check=False, **changes)
+            print("indexing_batch configuration written: %s" % yamlfile)
+            return yamlfile
+        except Exception as err:   # never stop the indexation of the GUI
+            print("No YAML configuration written from %s: %s" % (irpfile, err))
+            return None
+
+    def OnProposeSpotsZones(self, _):
+        """fill spots set A with spots at the intersections of zone axes"""
+        self.setproposedspots(('zones',))
+
+    def OnProposeSpotsTriplets(self, _):
+        """fill spots set A with spots belonging to recognised triplets of low indices directions"""
+        self.setproposedspots(('triplets',))
+
+    def OnProposeSpotsMerge(self, _):
+        """fill spots set A with the spots proposed by both methods (computed if not done yet)"""
+        self.setproposedspots(('zones', 'triplets'), recompute=False)
+
+    def setproposedspots(self, methods, recompute=True):
+        """write in spots set A (in increasing order) the spots proposed by the methods and uncheck spots set B
+
+        :param methods: tuple of 'zones' and/or 'triplets'
+        :param recompute: False to use the last proposal of a method computed with the same parameters
+        """
+        if not hasattr(self, 'proposedspots'):
+            self.proposedspots = {}
+        merged, infos = set(), []
+        for method in methods:
+            key = self.proposalparameters(method)
+            if key is None:
+                return
+            if recompute or self.proposedspots.get(method, (None,))[0] != key:
+                result = self.proposespots(method, key)
+                if result is None:
+                    return
+                self.proposedspots[method] = (key, result)
+            proposed, info = self.proposedspots[method][1]
+            merged.update(proposed)
+            infos.append("%s: %s (%s)" % (method, sorted(proposed), info))
+
+        merged = sorted(merged)
+        if len(merged) < 2:
+            wx.MessageBox("No spots can be proposed. %s\nTry a larger tolerance." % ". ".join(infos), "INFO")
+            return
+
+        self.spotlistA.SetValue(str(merged))
+        self.setAchck.SetValue(True)
+        # angles between all pairs of proposed spots are probed
+        self.setBchck.SetValue(False)
+        self.sb.SetStatusText("Spots set A = %d proposed spots. %s" % (len(merged), ". ".join(infos)))
+
+    def proposalparameters(self, method):
+        """parameters of the proposal of spots of a method: (method, tolerance, nb of spots probed,
+        nb of proposed spots, key_material (triplets only)). None if not valid
+        """
+        txtctrl = self.zonestol if method == 'zones' else self.tripletstol
+        try:
+            tol = float(txtctrl.GetValue())
+        except ValueError:
+            tol = -1
+        if tol <= 0:
+            wx.MessageBox("Tolerance of spots proposal (%s) must be a positive number (deg)" % method, "Error")
+            return None
+        key_material = None
+        if method == 'triplets':
+            key_material = str(self.combokeymaterial.GetValue())
+            if key_material not in self.dict_Materials:
+                wx.MessageBox("Unknown material: %s" % key_material, "Error")
+                return None
+        return (method, tol, int(self.nbspotmaxformatching.GetValue()), int(self.nbproposedspots.GetValue()),
+                key_material)
+
+    def proposespots(self, method, parameters, nbmaxspots=500):
+        """propose spots likely to have low Miller indices.
+
+        Spot indices are those of the spots set used for indexation (see OnStart()): spots not yet indexed,
+        limited to 'Spots set Size' (and to the nbmaxspots first spots to limit the computing time)
+
+        :param method: 'zones' or 'triplets', see spotsproposal module
+        :param parameters: see proposalparameters()
+
+        :return: list of proposed spots (best first), str info. None if failed
+        """
+        _, tol, nbspots, nbproposed, key_material = parameters
+        nbspots = min(nbspots, len(self.current_exp_spot_index_list), nbmaxspots)
+        if nbspots < 5:
+            wx.MessageBox("Not enough spots (%d) to propose spots" % nbspots, "Error")
+            return None
+        index_to_select = np.take(self.current_exp_spot_index_list, np.arange(nbspots))
+        twotheta = 2. * np.array(self.IndexationParameters["AllDataToIndex"]["data_theta"])[index_to_select]
+        chi = np.array(self.IndexationParameters["AllDataToIndex"]["data_chi"])[index_to_select]
+
+        t0 = time.time()
+        wx.BeginBusyCursor()
+        try:
+            if method == 'zones':
+                order, scores, zones = SPROP.rank_spots_by_zones(twotheta, chi, tol=tol)
+                info = "%d zone axes, tol. %s deg" % (len(zones), tol)
+                scorename = "nb of zone axes"
+            else:
+                order, scores = SPROP.rank_spots_by_triplets(twotheta, chi, self.dict_Materials[key_material][1],
+                                                            maxindex=2, tol=tol)
+                info = "%s, tol. %s deg" % (key_material, tol)
+                scorename = "nb of triplets"
+        finally:
+            wx.EndBusyCursor()
+
+        proposed = [int(spot) for spot in order[:min(nbproposed, nbspots)] if scores[spot] > 0]
+        print("Proposed spots (%s) among the %d first spots, %s, %.1f s" % (method, nbspots, info, time.time() - t0))
+        print("spot index: %s  (best first)" % scorename)
+        for spot in proposed:
+            print("%5d: %d" % (spot, scores[spot]))
+        return proposed, info
 
     def readspotssetctrl(self, txtctrl):
-        """read, parse a spotset txtctrl
+        """read, parse a spotset txtctrl: '5', '[0,3,8]', 'to12' (0 to 12 included), '80to90' (80 to 90 included),
+        '0to5, 10' ... (see ISS.parse_spots_set())
+
+        :return: spot index (int) or list of spot indices, nb of spots, True if the set is 0 to n
         """
         spot_list = str(txtctrl.GetValue()).strip()
-        israngefromzero = False
 
-        if not spot_list:
-            return 0, 1, israngefromzero
+        if not spot_list or spot_list.startswith("-"):
+            return 0, 1, False
+        try:
+            spots = ISS.parse_spots_set(spot_list)
+        except ValueError:
+            return 0, 1, False
 
-        if spot_list[0] != "-":
-            # print "coucou"
-            # this a list of spots
-            if spot_list.startswith("["):
-                # print "coucou2"
-                spot_index_central = str(spot_list)[1:-1].split(",")
-                spot_index_central = [int(item.strip()) for item in spot_index_central if item.strip()]
-                # print spot_index_central
-                nb_central_spots = len(spot_index_central)
-                if nb_central_spots == 0:
-                    return 0, 1, False
-                spot_index_central = list(spot_index_central)
-
-            # this is range from 0 to a spot index
-            elif spot_list.startswith("to"):
-                try:
-                    end_index = int(spot_list[2:].strip())
-                except ValueError:
-                    return 0, 1, False
-                spot_index_central = list(range(end_index + 1))
-                nb_central_spots = len(spot_index_central)
-                israngefromzero = True
-
-            #this is a single spot index (integer)
-            else:
-                try:
-                    spot_index_central = int(spot_list)
-                except ValueError:
-                    return 0, 1, False
-                nb_central_spots = 1
-
-        else:  # minus in front of integer
-            spot_index_central = 0
-            nb_central_spots = 1
-
-        return spot_index_central, nb_central_spots, israngefromzero
+        if len(spots) == 1:
+            return spots[0], 1, False
+        return spots, len(spots), spots == list(range(len(spots)))
 
     def parse_spotssetctrls(self):
         """

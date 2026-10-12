@@ -57,11 +57,20 @@ indexing:
   maxnbspots_MReval: 10000
   MIN_NUMBERSPOTS_FOR_INDEXING: 6
   MAX_NUMBERSPOTS_FOR_INDEXING: 10000
+  # spots removed from each .cor file before indexing (e.g. spots of the substrate). The .cor files without
+  # them are written in <fit_folder>/purged_corfiles. null, or a .cor, .dat or .fit file (relative to this file),
+  # or a list of pixel positions [[X1, Y1], [X2, Y2], ...], or a list of files
+  blacklist: null
+  blacklist_tolerance: 2.   # pixel, spots closer than this to a blacklisted spot are removed
   MatchingRate_List: null   # min matching rates (%) to go on refining; default [2, 2, ...]
   dict_indexrefine:
-    # spots set A: n (-> 0..n-1), 'start:stop', or list [0, 2, 58]. CAUTION max(A) < NBMAXPROBED
+    # spots set A: n (-> 0..n-1, in this file only), 'to12' (0..12), '80to90' (80..90), 'start:stop' (start..stop-1),
+    # or list [0, 2, 58]. CAUTION max(A) <= MAXINDEXPROBED
     central spots indices: 10
-    NBMAXPROBED: 25         # spots set B = 0 .. NBMAXPROBED-1
+    MAXINDEXPROBED: 25      # spots set B = 0 .. MAXINDEXPROBED (included). Former name: NBMAXPROBED
+    # or spots set B given explicitly (same syntax as set A, e.g. 'to40' or [0, 3, 5, 12]): only pairs of spots
+    # (one of A, one of B) are tested and MAXINDEXPROBED is not used. null: set B defined by MAXINDEXPROBED
+    spots set B: null
     AngleTolLUT: 0.2        # deg, tolerance to recognise angles in the angular LUT
     nlutmax: 4              # max Miller index in the angular LUT
     MATCHINGRATE_ANGLE_TOL: 0.2
@@ -95,3 +104,28 @@ postprocess:
 
 ub_matrices: {}
 #  myUB: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+
+# null: one material (key_material). Or sequence of indexing steps (substrate, several materials): each step indexes
+# grains of its material on the spots not yet indexed; .fit files in <folders_root>/fitfiles_<folder>
+# (notebooks 1b_index_refine_substrate.ipynb, 1c_index_refine_multimaterials.ipynb; LaueTools/indexing_sequence.py)
+sequence: null
+#  strategy: ordered            # ordered | round_robin | best_of
+#  max_grains: 6                # max nb of grains per image (all materials)
+#  max_grains_per_material: 3
+#  min_gain_indexed_spots: 8    # a kept grain (round_robin: a round) must index at least this nb of spots
+#  best_of_criterion: nb_indexed   # best_of: nb_indexed or matching_rate
+#  folders_root: null           # null: parent folder of output: fit_folder
+#  steps:
+#  - name: substrate
+#    key_material: Al2O3
+#    folder: substrate          # fitfiles_substrate (default: key_material)
+#    nbGrainstoFind: 1
+#    usepreviousUB: [Al2O3_ref] # names of ub_matrices tested first
+#    dict_indexrefine: {central spots indices: to9, MAXINDEXPROBED: 30}   # changes of indexing: dict_indexrefine
+#    accept: {min_nb_indexed: 20, min_matching_rate: 20, max_pixdev: 1.}
+#    next: always               # ordered: always | if_found | if_not_found
+#  - name: sample
+#    key_material: Al
+#    nbGrainstoFind: 3
+#    e_max_MR: 19
+#    e_max: 27

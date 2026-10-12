@@ -106,12 +106,20 @@ DEFAULT_CONFIG = {
         'crudeMReval': True,
         'maxnbspots_MReval': 10000,
         'stop_Nb_Matches': 40,
+        # spots removed from each .cor file before indexing (e.g. spots of the substrate):
+        # null, a .cor, .dat or .fit file, a list of [X, Y] pixel positions, or a list of files
+        # (the .cor files without these spots are written in <fit folder>/purged_corfiles)
+        'blacklist': None,
+        'blacklist_tolerance': 2.,  # pixel, max distance of a spot to a blacklisted spot to be removed
         'dict_indexrefine': {
-            # spots set A (int n means range(n)). CAUTION max(A) < NBMAXPROBED
+            # spots set A (int n means range(n)). CAUTION max(A) <= MAXINDEXPROBED
             'central spots indices': 10,
             'AngleTolLUT': 0.2,   # tolerance angle [deg] to recognise angles in the angular LUT
             'nlutmax': 4,         # max miller index in the angular LUT
-            'NBMAXPROBED': 25,    # spots set B = [0, ..., NBMAXPROBED-1]
+            'MAXINDEXPROBED': 25,  # spots set B = [0, ..., MAXINDEXPROBED] (included). Former name: NBMAXPROBED
+            # None: set B defined by MAXINDEXPROBED. Or set B (same syntax as set A): only pairs (spot of A, spot of B)
+            # are tested, MAXINDEXPROBED is not used
+            'spots set B': None,
             'MATCHINGRATE_ANGLE_TOL': 0.2,  # deg, tolerance angle for the first matching rate computation
             'MinimumMatchingRate': 5,       # minimum MR (%) to accept a previous results matrix for refinement
             'MinimumNumberMatches': 10,     # minimum nb of matches to keep a potential UB
@@ -151,6 +159,9 @@ DEFAULT_CONFIG = {
         'laue_group': 'auto',           # IPF colors: 'auto' (from lattice parameters), 'm-3m', '6/mmm', '-3m1', '4/mmm', 'mmm'
     },
     'ub_matrices': {},   # named UB matrices {name: 3x3 list}, usable in run: usepreviousUB
+    # null: single material indexing. Or sequence of indexing steps (substrate, several materials ...),
+    # see LaueTools/indexing_sequence.py
+    'sequence': None,
 }
 
 _PATH_KEYS = (('scan', 'cor_folder'), ('scan', 'detfile'), ('scan', 'image_folder'), ('scan', 'hdf5_logfile'),
@@ -175,14 +186,37 @@ def _resolve_path(path, basedir: Path):
     return ppath
 
 
-def _parse_indices(value) -> List[int]:
-    """spots indices: int n -> [0, ..., n-1], 'start:stop' -> [start, ..., stop-1], or list"""
-    if isinstance(value, int):
-        return list(range(value))
-    if isinstance(value, str):
-        start, stop = value.split(':')
-        return list(range(int(start), int(stop)))
-    return [int(v) for v in value]
+_SPOTS_SET_KEYS = ('central spots indices', 'spots set B')
+# former names of parameters of dict_indexrefine (still accepted in configuration files and in changes)
+_KEY_ALIASES = {'NBMAXPROBED': 'MAXINDEXPROBED'}
+
+
+def _rename_former_keys(cfg: Optional[dict]) -> Optional[dict]:
+    """configuration (as read in a file, or overrides) with former parameter names replaced (see _KEY_ALIASES)"""
+    dir_ = ((cfg or {}).get('indexing') or {}).get('dict_indexrefine')
+    if isinstance(dir_, dict):
+        for old, new in _KEY_ALIASES.items():
+            if old in dir_:
+                value = dir_.pop(old)
+                dir_.setdefault(new, value)
+    return cfg
+
+
+def _parse_indices(value) -> Optional[List[int]]:
+    """spots set read in a configuration file: int n -> [0, ..., n-1] (convention of the YAML files),
+    otherwise as ISS.parse_spots_set(): 'to12' -> [0, ..., 12], '80to90' -> [80, ..., 90],
+    'start:stop' -> [start, ..., stop-1], list, None"""
+    if isinstance(value, (int, np.integer)) and not isinstance(value, bool):
+        return list(range(int(value)))
+    return ISS.parse_spots_set(value)
+
+
+def _spots_set_change(name: str, value):
+    """value of a spots set given in python (int n -> [n], 'to12', list ... see ISS.parse_spots_set()),
+    as written in a configuration file (never a bare int, whose meaning differs in YAML files)"""
+    if name.replace('_', ' ') not in _SPOTS_SET_KEYS or value is None:
+        return value
+    return _compact_indices(ISS.parse_spots_set(value))
 
 
 def load_config(configfile: Union[str, Path], overrides: Optional[dict] = None) -> dict:
@@ -199,9 +233,9 @@ def load_config(configfile: Union[str, Path], overrides: Optional[dict] = None) 
     configfile = Path(configfile).expanduser().resolve()
     with open(configfile, 'r') as f:
         usercfg = yaml.safe_load(f) or {}
-    cfg = _deep_update(copy.deepcopy(DEFAULT_CONFIG), usercfg)
+    cfg = _deep_update(copy.deepcopy(DEFAULT_CONFIG), _rename_former_keys(usercfg))
     if overrides:
-        _deep_update(cfg, overrides)
+        _deep_update(cfg, _rename_former_keys(copy.deepcopy(overrides)))
     cfg['configfile'] = configfile
 
     for section, key in _PATH_KEYS:
@@ -216,8 +250,22 @@ def load_config(configfile: Union[str, Path], overrides: Optional[dict] = None) 
     else:
         cfg['scan']['invmapdims'] = None
 
+    blacklist = cfg['indexing']['blacklist']   # files: relative to the folder of the configuration file
+    if isinstance(blacklist, str):
+        cfg['indexing']['blacklist'] = _resolve_path(blacklist, configfile.parent)
+    elif isinstance(blacklist, list) and any(isinstance(b, str) for b in blacklist):
+        cfg['indexing']['blacklist'] = [_resolve_path(b, configfile.parent) if isinstance(b, str) else b
+                                        for b in blacklist]
+
     dir_ = cfg['indexing']['dict_indexrefine']
-    dir_['central spots indices'] = _parse_indices(dir_['central spots indices'])
+    for key in _SPOTS_SET_KEYS:
+        dir_[key] = _parse_indices(dir_.get(key))
+    if isinstance(cfg.get('sequence'), dict):   # steps of a sequence: same conventions as dict_indexrefine
+        for step in cfg['sequence'].get('steps') or []:
+            _rename_former_keys({'indexing': {'dict_indexrefine': step.get('dict_indexrefine')}})
+            for key in _SPOTS_SET_KEYS:
+                if key in (step.get('dict_indexrefine') or {}):
+                    step['dict_indexrefine'][key] = _parse_indices(step['dict_indexrefine'][key])
     if cfg['indexing']['MatchingRate_List'] is None:
         cfg['indexing']['MatchingRate_List'] = [2] * len(dir_['list matching tol angles'])
     if cfg['output']['results_stamp'] is None:
@@ -267,15 +315,29 @@ def check_config(cfg: dict, verbose: bool = True) -> bool:
                       "Add it in mymaterials: {key: [key, [a, b, c, alpha, beta, gamma], extinction]}")
 
     dir_ = cfg['indexing']['dict_indexrefine']
-    if max(dir_['central spots indices']) >= int(dir_['NBMAXPROBED']):
-        errors.append(f"indexing: NBMAXPROBED ({dir_['NBMAXPROBED']}) must be larger than the largest "
-                      f"central spots index ({max(dir_['central spots indices'])})")
+    if dir_.get('spots set B') is None and max(dir_['central spots indices']) > int(dir_['MAXINDEXPROBED']):
+        warnings.append(f"indexing: MAXINDEXPROBED ({dir_['MAXINDEXPROBED']}) must be at least the largest central "
+                        f"spots index ({max(dir_['central spots indices'])}): {max(dir_['central spots indices'])} "
+                        "will be used (or set 'spots set B')")
+    elif dir_.get('spots set B') is not None and len(set(dir_['spots set B']) | set(dir_['central spots indices'])) < 2:
+        errors.append("indexing: 'spots set B' and 'central spots indices' must contain at least 2 different spots")
     if len(cfg['indexing']['MatchingRate_List']) < len(dir_['list matching tol angles']):
         errors.append("indexing: MatchingRate_List must be at least as long as 'list matching tol angles'")
     try:
         get_previousUB(cfg)
     except (KeyError, ValueError) as err:
         errors.append(f'run: usepreviousUB: {err}')
+    if cfg.get('sequence') is not None:
+        from LaueTools import indexing_sequence as IS
+        errors.extend(IS.check_sequence(cfg))
+    if cfg['indexing']['blacklist'] is not None:
+        try:
+            nbblack = len(read_blacklist(cfg['indexing']['blacklist']))
+            if verbose:
+                print(f"blacklist: {nbblack} spots removed (within {cfg['indexing']['blacklist_tolerance']} pixel) "
+                      "from each .cor file before indexing")
+        except (OSError, ValueError, IndexError) as err:
+            errors.append(f'indexing: blacklist: {err}')
 
     if verbose:
         for msg in warnings:
@@ -322,6 +384,7 @@ def _leaf_keys(tree: dict = DEFAULT_CONFIG, path: tuple = ()) -> Dict[str, tuple
 def _key_path(name: str, tree: dict = DEFAULT_CONFIG) -> tuple:
     """path of a parameter given by its name ('central_spots_indices' is accepted for 'central spots indices')"""
     leaves = _leaf_keys(tree)
+    name = _KEY_ALIASES.get(name, name)
     for candidate in (name, name.replace('_', ' ')):
         if candidate in leaves:
             return leaves[candidate]
@@ -356,10 +419,10 @@ def _same(a, b) -> bool:
 
 
 def _compact_indices(indices):
-    """[0, ..., n-1] -> n, [s, ..., e-1] -> 's:e' (contiguous), else list"""
+    """[0, ..., n] -> 'to<n>', [s, ..., e] -> '<s>to<e>' (contiguous, last index included), else list"""
     indices = [int(i) for i in indices]
     if len(indices) > 3 and indices == list(range(indices[0], indices[-1] + 1)):
-        return len(indices) if indices[0] == 0 else f'{indices[0]}:{indices[-1] + 1}'
+        return f'to{indices[-1]}' if indices[0] == 0 else f'{indices[0]}to{indices[-1]}'
     return indices
 
 
@@ -390,7 +453,8 @@ def _write_config(source: Union[str, Path], newfile: Union[str, Path], changes: 
         def to_yaml(value):
             if isinstance(value, list):
                 seq = CommentedSeq([to_yaml(v) for v in value])
-                seq.fa.set_flow_style()
+                if not any(isinstance(v, dict) for v in value):   # lists of dicts (steps): block style
+                    seq.fa.set_flow_style()
                 return seq
             if isinstance(value, dict):
                 cmap = CommentedMap()
@@ -421,6 +485,14 @@ def _write_config(source: Union[str, Path], newfile: Union[str, Path], changes: 
             if node.get(key) is None:
                 node[key] = newsection()
             node = node[key]
+        former = [old for old, new in _KEY_ALIASES.items() if new == path[-1] and old in node]
+        if former and hasattr(node, 'insert'):   # ruamel: new name at the place of the former one
+            position = list(node.keys()).index(former[0])
+            del node[former[0]]
+            node.insert(position, path[-1], to_yaml(_to_plain(value)))
+            continue
+        for old in former:
+            del node[old]
         node[path[-1]] = to_yaml(_to_plain(value))
 
     newfile.parent.mkdir(parents=True, exist_ok=True)
@@ -443,15 +515,16 @@ def new_config(newfile: Union[str, Path], template: Optional[Union[str, Path]] =
     changes: parameters given by their name, whatever their section, e.g.
         IB.new_config('configs/myexp.yaml', cor_folder='/data/.../corfiles', prefix='img_', mapdims=[51, 51],
                       fit_folder='/data/.../fitfiles', key_material='Al', nbGrainstoFind=2,
-                      central_spots_indices=10)
+                      central_spots_indices='to9')
     ('central_spots_indices' stands for 'central spots indices', 'list_matching_tol_angles' for
-    'list matching tol angles').
+    'list matching tol angles'). Spots sets ('central spots indices', 'spots set B'): as in dict_indexrefine,
+    e.g. 'to9' (0 to 9), '80to90', [0, 1, 8], 5 (-> [5]) (see ISS.parse_spots_set()).
 
     check: check_config() of the new configuration (False e.g. if the .cor files do not exist yet)
     Returns the configuration loaded from the new file (as load_config()).
     """
     template = TEMPLATE_CONFIG if template is None else template
-    pathchanges = {_key_path(name): value for name, value in changes.items()}
+    pathchanges = {_key_path(name): _spots_set_change(name, value) for name, value in changes.items()}
     header = f'# created {datetime.datetime.now():%Y-%m-%d %H:%M} from {Path(template).name} (IB.new_config)\n'
     newfile = _write_config(template, newfile, pathchanges, overwrite=overwrite, header=header)
     GT.printgreen(f'configuration written: {newfile}')
@@ -465,7 +538,7 @@ def new_config(newfile: Union[str, Path], template: Optional[Union[str, Path]] =
 _PARAMS_TO_CONFIG = {name: ('indexing', name) for name in
                      ('e_min', 'e_max', 'e_max_MR', 'nbGrainstoFind', 'depth', 'MIN_NUMBERSPOTS_FOR_INDEXING',
                       'MAX_NUMBERSPOTS_FOR_INDEXING', 'MAXNBSPOTS', 'crudeMReval', 'maxnbspots_MReval',
-                      'stop_Nb_Matches', 'MatchingRate_List')}
+                      'stop_Nb_Matches', 'MatchingRate_List', 'blacklist', 'blacklist_tolerance')}
 _PARAMS_TO_CONFIG.update({'key_material': ('material', 'key_material'),
                           'mymaterials': ('material', 'mymaterials'),
                           'fit_folder': ('output', 'fit_folder'),
@@ -501,10 +574,11 @@ def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['IndexRef
 
         cfg_dir = cfg['indexing']['dict_indexrefine']
         for key, value in params.dict_indexrefine.items():
+            if key in _SPOTS_SET_KEYS:
+                value = ISS.parse_spots_set(value)
             if not _same(value, cfg_dir.get(key)):
-                if key == 'central spots indices':
-                    value = _compact_indices(value)
-                pathchanges[('indexing', 'dict_indexrefine', key)] = value
+                pathchanges[('indexing', 'dict_indexrefine', key)] = (_spots_set_change(key, value)
+                                                                      if key in _SPOTS_SET_KEYS else value)
 
         oldUB, newUB = get_previousUB(cfg), params.usepreviousUB
         if isinstance(newUB, np.ndarray):
@@ -527,7 +601,7 @@ def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['IndexRef
                 newUB = names
             pathchanges[('run', 'usepreviousUB')] = newUB
 
-    pathchanges.update({_key_path(name): value for name, value in changes.items()})
+    pathchanges.update({_key_path(name): _spots_set_change(name, value) for name, value in changes.items()})
 
     if not pathchanges:
         print('no parameter differs from the configuration file')
@@ -542,6 +616,130 @@ def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['IndexRef
     newfile = _write_config(cfg['configfile'], newfile, pathchanges, overwrite=overwrite, header=header)
     GT.printgreen(f'configuration written: {newfile}')
     return load_config(newfile)
+
+
+# --------------------------------------------------------------------------------------
+#  .irp FILES (index & refine parameters of the GUIs and of FileSeries) -> YAML configuration
+# --------------------------------------------------------------------------------------
+def _irp_value(value, kind=str):
+    """value of a .irp option (read as text) -> python value"""
+    if not isinstance(value, str):
+        return value
+    text = value.strip()
+    if text in ('None', 'none', ''):
+        return None
+    if kind is bool:
+        return text in ('True', 'true', '1')
+    if kind is list:
+        import ast
+        return list(ast.literal_eval(text))
+    return kind(text)
+
+
+def irp_to_changes(irpfile: Union[str, Path], material_index: int = 0, verbose: bool = True) -> dict:
+    """parameters of a .irp file (material #material_index) as configuration changes {parameter name: value}
+    (see new_config()), with the settings used by FileSeries (indexFilesSeries) for the parameters not in .irp files:
+    matching rate up to 'emax MR' (emax if missing), crudeMReval=False, stop_Nb_Matches=1000, MatchingRate_List 1 % at each step.
+    Parameters of .irp files not used by indexing_batch (ResolutionAngstrom, setCentralSpotsHKL) are reported."""
+    params_list = ISS.readIndexRefineConfigFile(str(irpfile))
+    if not params_list:
+        raise ValueError(f'can not read the .irp file {irpfile}')
+    if len(params_list) > 1 and verbose:
+        GT.printyellow(f'{irpfile} contains {len(params_list)} materials: only material #{material_index} '
+                       f"({params_list[material_index].get('key material')}) is converted")
+    irp = params_list[material_index]
+    maxindex, setB = ISS.maxindexprobed_from_irp(irp['MAXINDEXPROBED'])
+    tolangles = [float(a) for a in _irp_value(irp['List Matching Tol Angles'], list)]
+    emax = float(irp['emax'])
+    emax_MR = _irp_value(irp.get('emax MR'), float)   # matching rate during indexing (None: emax)
+    changes = {'key_material': irp['key material'],
+               'nbGrainstoFind': int(irp['nbGrainstoFind']),
+               'e_min': float(irp['emin']), 'e_max': emax, 'e_max_MR': emax if emax_MR is None else emax_MR,
+               'MatchingRate_List': [1] * len(tolangles),
+               'crudeMReval': False, 'stop_Nb_Matches': 1000,
+               'central spots indices': ISS.parse_spots_set(irp['central spots indices']),
+               'MAXINDEXPROBED': maxindex, 'spots set B': setB,
+               'AngleTolLUT': float(irp['AngleTolLUT']),
+               'MATCHINGRATE_ANGLE_TOL': float(irp['MATCHINGRATE ANGLE TOL']),
+               'MATCHINGRATE_THRESHOLD_IAL': float(irp['MATCHINGRATE THRESHOLD IAL']),
+               'MinimumNumberMatches': int(irp['MinimumNumberMatches']),
+               'list matching tol angles': tolangles}
+    if irp.get('nLUTmax') is not None:
+        changes['nlutmax'] = int(irp['nLUTmax'])
+    if irp.get('UseIntensityWeights') is not None:
+        changes['UseIntensityWeights'] = _irp_value(irp['UseIntensityWeights'], bool)
+    if irp.get('nbSpotsToIndex') is not None:
+        changes['nbSpotsToIndex'] = int(irp['nbSpotsToIndex'])
+    ignored = {key: irp[key] for key in ('ResolutionAngstrom', 'setCentralSpotsHKL')
+               if _irp_value(irp.get(key)) not in (None, False, 'False', 0, '0')}
+    if ignored and verbose:
+        GT.printyellow(f'parameters of {Path(irpfile).name} not used by indexing_batch: {ignored}')
+    return changes
+
+
+def config_from_irp(irpfile: Union[str, Path], newfile: Union[str, Path], cor_folder: Union[str, Path],
+                    fit_folder: Union[str, Path], prefix: str, nbdigits: int = 4, image_range=None, mapdims=None,
+                    guessed_matrices: Optional[Union[str, Path]] = None, minimum_matching_rate: Optional[float] = None,
+                    material_index: int = 0, template: Optional[Union[str, Path]] = None, overwrite: bool = False,
+                    check: bool = True, **changes) -> dict:
+    """YAML configuration file of indexing_batch from a .irp file (of the GUIs, FileSeries) and the settings of the
+    FileSeries Index & Refine board
+
+    irpfile: .irp file (index & refine parameters); only one material (material_index) is converted
+    cor_folder, fit_folder, prefix, nbdigits: .cor files <cor_folder>/<prefix>####.cor, .fit files in fit_folder
+    image_range: [first, last] image indices (None: all .cor files)
+    mapdims: [nb points fast axis, nb points slow axis] (None: [largest image index + 1, 1])
+    guessed_matrices: .mat or .mats file of UB matrices tested before indexing from scratch (as FileSeries
+        'Guessed Matrix(ces)'), with minimum_matching_rate (%) to accept them. .ubs files are not supported
+    changes: other parameters by name (see new_config()), e.g. detfile='...det', CCDLabel='sCMOS', nb_cpus=8
+
+    Returns the configuration loaded from newfile (as load_config())
+    """
+    allchanges = irp_to_changes(irpfile, material_index)
+    import re
+    cor_folder = Path(cor_folder)
+    corfiles = sorted(cor_folder.glob(f'{prefix}*.cor'))
+    indices = [int(m.group(1)) for f in corfiles if (m := re.fullmatch(rf'{re.escape(prefix)}(\d+)\.cor', f.name))]
+    if image_range is not None:
+        image_range = [int(image_range[0]), int(image_range[1])]
+    if mapdims is None:
+        # 1D map containing all image indices (image index = position in the map)
+        last = image_range[1] if image_range is not None else max(indices, default=0)
+        mapdims = [last + 1, 1]
+    allchanges.update({'cor_folder': str(cor_folder), 'fit_folder': str(fit_folder), 'prefix': prefix,
+                       'nbdigits': int(nbdigits), 'image_range': image_range, 'mapdims': list(mapdims),
+                       'name': Path(newfile).stem, 'description': f'converted from {irpfile}'})
+    if corfiles and 'CCDLabel' not in changes:
+        res = IOLT.readfile_cor(str(corfiles[0]), output_CCDparamsdict=True)
+        if res is not None and res[-1].get('CCDLabel') not in (None, 'None'):
+            allchanges['CCDLabel'] = res[-1]['CCDLabel']
+    if guessed_matrices not in (None, 'None', 'none', ''):
+        if str(guessed_matrices).endswith('.ubs'):
+            raise ValueError(f'{guessed_matrices}: .ubs files (check orientation parameters) are not supported by '
+                             'indexing_batch')
+        _, matrices = IOLT.readListofMatrices(str(guessed_matrices))
+        names = [f'guessed_{k + 1}' for k in range(len(matrices))]
+        allchanges['ub_matrices'] = {n: np.asarray(m, dtype=float).tolist() for n, m in zip(names, matrices)}
+        allchanges['usepreviousUB'] = names
+        allchanges['skipindexing'] = False
+    if minimum_matching_rate is not None:
+        allchanges['MinimumMatchingRate'] = float(minimum_matching_rate)
+    allchanges.update(changes)
+    return new_config(newfile, template=template, overwrite=overwrite, check=check, **allchanges)
+
+
+def merge_grain_fitfiles(fit_folder: Union[str, Path], stem: str) -> Optional[Path]:
+    """write <fit_folder>/<stem>.fit with the spots of all grains (<stem>_g0.fit, <stem>_g1.fit ...), as written
+    by FileSeries (read by FileSeries Build Summary). Returns the written file (None if no grain file)"""
+    import re
+    fit_folder = Path(fit_folder)
+    grainfiles = [f for f in fit_folder.glob(f'{stem}_g*.fit') if re.fullmatch(rf'{re.escape(stem)}_g\d+\.fit', f.name)]
+    grainfiles.sort(key=lambda f: int(re.search(r'_g(\d+)\.fit$', f.name).group(1)))
+    if not grainfiles:
+        return None
+    merged = fit_folder / f'{stem}.fit'
+    merged.write_text(''.join(f.read_text() + '\n' for f in grainfiles))
+    return merged
 
 
 def get_previousUB(cfg: dict):
@@ -601,11 +799,16 @@ class IndexRefineParams:
     verbosefilename: bool = False
     useinternalmultiprocessing: bool = False
     outputlistindices: bool = False
-    blacklistfile: Optional[str] = None
+    blacklistfile: Optional[str] = None     # former name of blacklist (used if blacklist is None)
+    # spots removed before indexing: .cor/.dat/.fit file, array [[X, Y], ...] of pixel positions, or a list of them
+    blacklist: Any = None
+    blacklist_tolerance: float = 2.          # pixel
     CCDLabel: str = 'sCMOS'
     fit_nbfiles_per_folder: Optional[int] = None   # .fit files in subfolders of fit_folder (see fitfile_folder())
     subfolder_prefix: str = 'images_'
     LUT: Any = None
+    # None: single material. Or sequence of indexing steps (see indexing_sequence.normalize_sequence())
+    sequence: Optional[dict] = None
 
     def fitfile_folder(self, image_index: int) -> Path:
         """folder of the .fit files of an image: fit_folder, or its subfolder <subfolder_prefix><start>_<end>"""
@@ -623,6 +826,13 @@ class IndexRefineParams:
         self.LUT = IAL.build_AnglesLUT_fromlatticeparameters(latticeparameters,
                                                              self.dict_indexrefine['nlutmax'])
         return self
+
+
+def _sequence_of(cfg: dict) -> Optional[dict]:
+    if cfg.get('sequence') is None:
+        return None
+    from LaueTools import indexing_sequence as IS
+    return IS.normalize_sequence(cfg)
 
 
 def params_from_config(cfg: dict, build_LUT: bool = True, **kwargs) -> IndexRefineParams:
@@ -645,6 +855,8 @@ def params_from_config(cfg: dict, build_LUT: bool = True, **kwargs) -> IndexRefi
                                crudeMReval=ind['crudeMReval'],
                                maxnbspots_MReval=ind['maxnbspots_MReval'],
                                stop_Nb_Matches=ind['stop_Nb_Matches'],
+                               blacklist=ind['blacklist'],
+                               blacklist_tolerance=ind['blacklist_tolerance'],
                                ignorefitfileresults=run['ignorefitfileresults'],
                                usepreviousUB=get_previousUB(cfg),
                                skipindexing=run['skipindexing'],
@@ -652,6 +864,7 @@ def params_from_config(cfg: dict, build_LUT: bool = True, **kwargs) -> IndexRefi
                                starting_grainindex=run['starting_grainindex'],
                                verboselevel=run['verboselevel'],
                                CCDLabel=cfg['scan']['CCDLabel'],
+                               sequence=_sequence_of(cfg),
                                **fitfiles_layout(cfg))
     params = dataclasses.replace(params, **kwargs)
     if isinstance(params.usepreviousUB, list):
@@ -677,10 +890,19 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
     if not filename.exists():
         return [image_index, [], [], 'missing .cor file']
 
-    if params.blacklistfile:
-        corfile_written = removespots_fromfile(params.blacklistfile, filename, prependprefix='purged',
-                                               CCDLabel=params.CCDLabel)
-        filename = filename.parent / corfile_written
+    blacklist_info = ''
+    original_corfile = None   # set if spots are removed: indices of the purged .cor file -> rows of this file
+    blacklist = params.blacklist if params.blacklist is not None else params.blacklistfile
+    if blacklist is not None:
+        # .cor file without blacklisted spots in the (writable) folder of .fit files
+        purgedfolder = params.fitfile_folder(image_index) / 'purged_corfiles'
+        purged = _purge_corfile(blacklist, filename, params.blacklist_tolerance, None, purgedfolder, 'purged_', None)
+        if purged is None:
+            return [image_index, [], [], '.cor file is empty!']
+        corfile_written, nbefore, nafter = purged
+        original_corfile = filename
+        filename = purgedfolder / corfile_written
+        blacklist_info = f'{nbefore - nafter} blacklisted spots removed ({nafter} left). '
 
     dataset = ISS.spotsset()
     dataset.useinternalmultiprocessing = params.useinternalmultiprocessing
@@ -702,14 +924,36 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
             or dataset.nbspots > params.MAX_NUMBERSPOTS_FOR_INDEXING):
         return [image_index, [], [], f'too few or too many spots to index ({dataset.nbspots})']
 
+    if params.sequence is not None:   # indexing by a sequence of steps (substrate, several materials ...)
+        from LaueTools import indexing_sequence as IS
+        records, seqinfo, trace = IS.run_sequence(dataset, params, filecor, image_index)
+        if records is None:
+            return [image_index, [], [], seqinfo]
+        if original_corfile is not None:
+            # spot indices of the purged .cor file (without blacklisted spots) -> rows of the original .cor file
+            original_rows = purged_to_original_rows(filename, original_corfile)
+            for r in records:
+                r['spot_indices'] = [int(original_rows[i]) for i in r['spot_indices']]
+                if r['fitfile']:
+                    restore_spot_indices(r['fitfile'], original_corfile, purged_corfile=filename)
+        if params.verbosefilename:
+            print(f'For {filecor}: {seqinfo}')
+        toreturn = [image_index,
+                    [(n, r['UB']) for n, r in enumerate(records)],
+                    [(n, [r['nb_indexed'], r['matching_rate']]) for n, r in enumerate(records)],
+                    blacklist_info + seqinfo, records, trace]
+        if params.outputlistindices:
+            toreturn.append(records[0]['spot_indices'] if records else [])
+        return toreturn
+
     previousResults = None
     fitfolder = params.fitfile_folder(image_index)
     relatedfitfile = fitfolder / (filecor[:-4] + '_g0.fit')
-    info = ''
+    info = blacklist_info
     if not params.ignorefitfileresults:
         if relatedfitfile.exists():
             return [image_index, [], [], 'not reanalyzed']
-        info = '.fit file was missing. '
+        info += '.fit file was missing. '
 
     usepreviousUB = params.usepreviousUB
     if usepreviousUB == 'fromfitfile':
@@ -717,9 +961,9 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
             # read matrix from .fit file to skip indexing and go directly to refinement step
             UB_g0 = IOLT.readfitfile_multigrains(str(relatedfitfile))[3].reshape((3, 3))
             previousResults = (1, [np.array(UB_g0)], 0, 0)
-            info = 'Tried UB matrix from .fit file. '
+            info += 'Tried UB matrix from .fit file. '
         else:
-            info = 'Could not try UB matrix because .fit file was missing. '
+            info += 'Could not try UB matrix because .fit file was missing. '
     elif usepreviousUB in (False, None):
         pass
     elif isinstance(usepreviousUB, (list, tuple)):
@@ -753,9 +997,18 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
                           MatchingRate_List=params.MatchingRate_List,
                           depth=params.depth,
                           dictmaterials=params.mymaterials,
-                          writefitfile=params.writefitfile)
+                          writefitfile=params.writefitfile,
+                          emax_matchringrate=params.e_max_MR)   # matching rate up to e_max_MR (keV)
 
     listspotindices = dataset.getSpotsFamily(params.starting_grainindex)
+    if original_corfile is not None:
+        # spot indices of the purged .cor file (without blacklisted spots) -> rows of the original .cor file
+        original_rows = purged_to_original_rows(filename, original_corfile)
+        listspotindices = [int(original_rows[i]) for i in listspotindices]
+        if params.writefitfile:
+            for fitfile in fitfolder.glob(f'{filecor[:-4]}_g*.fit'):
+                if fitfile_source(fitfile) == str(filename):   # written now from the purged .cor file
+                    restore_spot_indices(fitfile, original_corfile, purged_corfile=filename)
     if params.verbosefilename:
         print(f'For {filecor}: grain #{params.starting_grainindex}, nb indexed spots: {len(listspotindices)}')
     info += ' Treated by IndexSpotsSet().'
@@ -1460,48 +1713,227 @@ def load_allresults(filepath: Union[str, Path]) -> dict:
 # --------------------------------------------------------------------------------------
 #  .cor files tools (remove spots of a substrate, merge files)
 # --------------------------------------------------------------------------------------
-def _write_corfile(rawdata, CCDcalibdict, fullpath, outputfilename, outputfolder):
+def _write_corfile(rawdata, CCDcalibdict, fullpath, outputfilename, outputfolder, colnames=None):
+    """write the spots of rawdata (rows of a .cor file). colnames: names of the columns after the 5 first ones
+    (spots properties of peak search, written too)"""
     twicetheta, chi, data_x, data_y, dataintensity = rawdata[:, :5].T
+    data_props = None
+    if colnames and rawdata.shape[1] > 5:
+        data_props = (rawdata[:, 5:5 + len(colnames)], colnames[:rawdata.shape[1] - 5])
     return IOLT.writefile_cor(outputfilename, twicetheta, chi, data_x, data_y, dataintensity,
-                              param=CCDcalibdict, initialfilename=str(fullpath), dirname_output=str(outputfolder))
+                              param=CCDcalibdict, initialfilename=str(fullpath), dirname_output=str(outputfolder),
+                              data_props=data_props)
+
+
+def _read_corfile(fullpath, CCDLabel=None):
+    """rawdata (all columns), CCDcalibdict and names of the columns after the 5 first ones of a .cor file
+
+    CCDLabel: replaces the one of the .cor file (None: kept)
+    """
+    fullpath = Path(fullpath)
+    if fullpath.suffix != '.cor':
+        raise ValueError(f'{fullpath} extension is not .cor !')
+    res = IOLT.readfile_cor(str(fullpath), output_CCDparamsdict=True)
+    if res is None:
+        raise ValueError(f'{fullpath} is empty')   # (no spot)
+    rawdata, CCDcalibdict = np.atleast_2d(res[0]), res[-1]
+    if CCDLabel is not None:
+        CCDcalibdict['CCDLabel'] = CCDLabel
+    with open(fullpath, 'r') as f:
+        colnames = f.readline().split()[5:]
+    return rawdata, CCDcalibdict, colnames
 
 
 def removespots_fromlist(blacklistindices, fullpath, outputfilename=None, outputfolder=None,
-                         prependprefix='p', CCDLabel='sCMOS'):
+                         prependprefix='p', CCDLabel=None):
     """write a .cor file without the spots of given indices
 
     outputfilename: stem only (no suffix). Default: prependprefix + stem of fullpath
+    CCDLabel: detector of the written file (None: the one of the .cor file)
     Returns the name of the written .cor file
     """
     fullpath = Path(fullpath)
-    if fullpath.suffix != '.cor':
-        raise ValueError(f'{fullpath} extension is not .cor !')
-    rawdata, _, _, _, _, _, _, CCDcalibdict = IOLT.readfile_cor(str(fullpath), output_CCDparamsdict=True)
-    CCDcalibdict['CCDLabel'] = CCDLabel
+    rawdata, CCDcalibdict, colnames = _read_corfile(fullpath, CCDLabel)
     keep_indices = sorted(set(range(len(rawdata))) - set(np.ravel(blacklistindices).tolist()))
     print(f'nb of spots: initial {len(rawdata)}, final {len(keep_indices)}')
     return _write_corfile(np.take(rawdata, keep_indices, axis=0), CCDcalibdict, fullpath,
-                          outputfilename or prependprefix + fullpath.stem, outputfolder or fullpath.parent)
+                          outputfilename or prependprefix + fullpath.stem, outputfolder or fullpath.parent,
+                          colnames)
+
+
+# --------------------------------------------------------------------------------------
+#  BLACKLIST: spots (e.g. of a substrate) removed before indexing
+# --------------------------------------------------------------------------------------
+def _fitfile_xy(fitfile) -> np.ndarray:
+    """pixel positions (Xexp, Yexp) of the indexed spots of all grains of a .fit file, shape (n, 2)"""
+    xy, cols = [], None
+    with open(fitfile, 'r') as f:
+        for line in f:
+            if line.startswith('##spot_index'):
+                cols = line.lstrip('#').split()
+                ix, iy = cols.index('Xexp'), cols.index('Yexp')
+            elif cols is not None:
+                if line.startswith('#') or not line.strip():
+                    cols = None   # end of the block of spots of a grain
+                else:
+                    vals = line.split()
+                    xy.append((float(vals[ix]), float(vals[iy])))
+    return np.array(xy, dtype=float).reshape(-1, 2)
+
+
+def read_blacklist(blacklist) -> np.ndarray:
+    """pixel positions [X, Y] of blacklisted spots, shape (n, 2)
+
+    blacklist:
+    - None: no spot
+    - a file: .cor or .dat (peak search), .fit (indexed spots of all grains, e.g. of the substrate)
+    - an array of pixel positions [[X1, Y1], [X2, Y2], ...], shape (n, 2)
+    - a list of files and/or arrays (all their spots)
+    """
+    if blacklist is None:
+        return np.empty((0, 2))
+    if isinstance(blacklist, (str, Path)):
+        path = Path(os.path.expandvars(os.path.expanduser(str(blacklist))))
+        if not path.exists():
+            raise FileNotFoundError(f'blacklist file not found: {path}')
+        if path.suffix == '.cor':
+            res = IOLT.readfile_cor(str(path))
+            return np.empty((0, 2)) if res is None else np.atleast_2d(res[0])[:, 2:4].astype(float)
+        if path.suffix == '.dat':
+            return np.atleast_2d(IOLT.read_Peaklist(str(path)))[:, :2].astype(float)
+        if path.suffix == '.fit':
+            return _fitfile_xy(path)
+        raise ValueError(f'blacklist file {path} must be a .cor, .dat or .fit file')
+    if isinstance(blacklist, (list, tuple)) and any(isinstance(b, (str, Path)) for b in blacklist):
+        return np.vstack([read_blacklist(b) for b in blacklist])
+    xy = np.asarray(blacklist, dtype=float)
+    if xy.size == 0:
+        return np.empty((0, 2))
+    xy = np.atleast_2d(xy)
+    if xy.ndim != 2 or xy.shape[1] != 2:
+        raise ValueError(f'blacklist array must be [[X1, Y1], [X2, Y2], ...] (shape (n, 2)), not shape {xy.shape}')
+    return xy
+
+
+def blacklisted_indices(XY, blacklist, dist_tolerance: float = 2.) -> np.ndarray:
+    """indices of the spots of XY (pixel positions, shape (n, 2)) closer than dist_tolerance (pixel)
+    to a spot of blacklist (see read_blacklist())"""
+    from scipy.spatial import cKDTree
+    black = read_blacklist(blacklist)
+    XY = np.atleast_2d(np.asarray(XY, dtype=float))
+    if len(black) == 0 or XY.size == 0:
+        return np.array([], dtype=int)
+    dist = cKDTree(black).query(XY[:, :2], distance_upper_bound=dist_tolerance)[0]
+    return np.flatnonzero(dist <= dist_tolerance)
+
+
+def _purge_corfile(blacklist, fullpath, dist_tolerance, outputfilename, outputfolder, prependprefix, CCDLabel):
+    """write the .cor file without blacklisted spots. Returns (written file name, nb of spots before, after),
+    None if the .cor file has no spot"""
+    fullpath = Path(fullpath)
+    if IOLT.readfile_cor(str(fullpath)) is None:
+        return None
+    rawdata, CCDcalibdict, colnames = _read_corfile(fullpath, CCDLabel)
+    toremove = blacklisted_indices(rawdata[:, 2:4], blacklist, dist_tolerance)
+    purged = np.delete(rawdata, toremove, axis=0)
+    outputfolder = Path(outputfolder or fullpath.parent)
+    outputfolder.mkdir(parents=True, exist_ok=True)
+    written = _write_corfile(purged, CCDcalibdict, fullpath, outputfilename or prependprefix + fullpath.stem,
+                             outputfolder, colnames)
+    return written, len(rawdata), len(purged)
+
+
+def removespots_blacklisted(blacklist, fullpath, dist_tolerance: float = 2., outputfilename=None, outputfolder=None,
+                            prependprefix='p', CCDLabel=None, verbose=True):
+    """write a .cor file without the spots closer than dist_tolerance (pixel) to the blacklisted spots
+
+    blacklist: .cor, .dat or .fit file, array [[X1, Y1], ...] of pixel positions, or a list of them
+    (see read_blacklist())
+    outputfilename: stem only (no suffix). Default: prependprefix + stem of fullpath
+    outputfolder: default: folder of fullpath
+    CCDLabel: detector of the written file (None: the one of the .cor file)
+    Returns the name of the written .cor file
+    """
+    purged = _purge_corfile(blacklist, fullpath, dist_tolerance, outputfilename, outputfolder, prependprefix, CCDLabel)
+    if purged is None:
+        raise ValueError(f'{fullpath} is empty')
+    written, nbefore, nafter = purged
+    if verbose:
+        print(f'nb of spots: initial {nbefore}, final {nafter} ({nbefore - nafter} blacklisted spots removed)')
+    return written
 
 
 def removespots_fromfile(blacklistfile, fullpath, dist_tolerance=2, outputfilename=None, outputfolder=None,
-                         CCDLabel='sCMOS', prependprefix='p'):
-    """write a .cor file without the spots (within dist_tolerance pixel) contained in the .cor blacklistfile
+                         CCDLabel=None, prependprefix='p'):
+    """write a .cor file without the spots (within dist_tolerance pixel) of blacklistfile (.cor, .dat or .fit)
 
-    outputfilename: stem only (no suffix). Default: prependprefix + stem of fullpath
+    Same as removespots_blacklisted(), which accepts also arrays of pixel positions.
     Returns the name of the written .cor file
     """
-    fullpath = Path(fullpath)
-    if fullpath.suffix != '.cor':
-        raise ValueError(f'{fullpath} extension is not .cor !')
-    rawdata, _, _, _, _, _, _, CCDcalibdict = IOLT.readfile_cor(str(fullpath), output_CCDparamsdict=True)
-    CCDcalibdict['CCDLabel'] = CCDLabel
-    rawdata_black = IOLT.readfile_cor(str(blacklistfile), output_CCDparamsdict=True)[0]
-    _, _, keep_indices = GT.removeClosePoints_two_sets(rawdata[:, 2:4].T, rawdata_black[:, 2:4].T,
-                                                       dist_tolerance=dist_tolerance)
-    print(f'nb of spots: initial {len(rawdata)}, final {len(keep_indices)}')
-    return _write_corfile(np.take(rawdata, keep_indices, axis=0), CCDcalibdict, fullpath,
-                          outputfilename or prependprefix + fullpath.stem, outputfolder or fullpath.parent)
+    return removespots_blacklisted(blacklistfile, fullpath, dist_tolerance=dist_tolerance,
+                                   outputfilename=outputfilename, outputfolder=outputfolder,
+                                   prependprefix=prependprefix, CCDLabel=CCDLabel)
+
+
+def _match_rows(XY, corfile, tolerance: float = 0.01) -> np.ndarray:
+    """rows of corfile of the spots at pixel positions XY (shape (n, 2)), within tolerance (pixel)"""
+    from scipy.spatial import cKDTree
+    corXY = np.atleast_2d(IOLT.readfile_cor(str(corfile))[0])[:, 2:4]
+    dist, rows = cKDTree(corXY).query(np.atleast_2d(XY), k=min(2, len(corXY)))
+    dist, rows = np.atleast_2d(dist.T).T, np.atleast_2d(rows.T).T
+    if np.any(dist[:, 0] > tolerance):
+        raise ValueError(f'{np.sum(dist[:, 0] > tolerance)} spot(s) not found in {corfile} (within {tolerance} pixel)')
+    if dist.shape[1] > 1 and np.any(dist[:, 1] <= tolerance):
+        raise ValueError(f'spots of {corfile} closer than {tolerance} pixel: rows can not be identified')
+    return rows[:, 0]
+
+
+def purged_to_original_rows(purged_corfile, original_corfile, tolerance: float = 0.01) -> np.ndarray:
+    """rows of original_corfile of the spots of purged_corfile (a copy without some spots, e.g. blacklisted):
+    result[i] = row in original_corfile of row i of purged_corfile (identified by pixel positions X, Y)"""
+    res = IOLT.readfile_cor(str(purged_corfile))
+    if res is None:
+        return np.array([], dtype=int)
+    return _match_rows(np.atleast_2d(res[0])[:, 2:4], original_corfile, tolerance)
+
+
+def fitfile_source(fitfile) -> Optional[str]:
+    """.cor file written in the first line of a .fit file ('... Refinement from experimental file: <path>')"""
+    with open(fitfile, 'r') as f:
+        first = f.readline()
+    return first.split('experimental file:', 1)[1].strip() if 'experimental file:' in first else None
+
+
+def restore_spot_indices(fitfile, original_corfile, purged_corfile=None, tolerance: float = 0.01) -> int:
+    """rewrite the spot_index column of a .fit file obtained from a purged copy of original_corfile (e.g. without
+    blacklisted spots): spot_index becomes the row of the spot in original_corfile (found from Xexp, Yexp).
+    The first line then refers to original_corfile. Returns the nb of spots changed"""
+    lines = Path(fitfile).read_text().splitlines(keepends=True)
+    spotlines, cols = [], None   # (line number, columns of X and Y) of the spots of all grains
+    for k, line in enumerate(lines):
+        if line.startswith('##spot_index'):
+            cols = line.lstrip('#').split()
+            ixy = cols.index('Xexp'), cols.index('Yexp')
+        elif cols is not None:
+            if line.startswith('#') or not line.strip():
+                cols = None   # end of the spots of a grain
+            else:
+                spotlines.append((k, ixy))
+    if not spotlines:
+        return 0
+    XY = [[float(lines[k].split()[ix]), float(lines[k].split()[iy])] for k, (ix, iy) in spotlines]
+    rows = _match_rows(XY, original_corfile, tolerance)
+    nbchanged = 0
+    for (k, _), row in zip(spotlines, rows):
+        vals = lines[k].split()
+        nbchanged += int(int(row) != int(float(vals[0])))
+        vals[0] = f'{int(row):.6f}'
+        lines[k] = ' '.join(vals) + '\n'
+    if lines and 'experimental file:' in lines[0]:
+        note = f' (spots indexed from {purged_corfile})' if purged_corfile is not None else ''
+        lines[0] = lines[0].split('experimental file:', 1)[0] + f'experimental file: {original_corfile}{note}\n'
+    Path(fitfile).write_text(''.join(lines))
+    return nbchanged
 
 
 def merge_corfiles(filecor1, filecor2, outputfilename, outputfolder):

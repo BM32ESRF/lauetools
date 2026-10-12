@@ -181,7 +181,7 @@ Class methods and attributes rely on a dictionnary of spots properties. key = ex
 
     dict_loop = {'MATCHINGRATE_THRESHOLD_IAL': 100,
                        'MATCHINGRATE_ANGLE_TOL': 0.2,
-                       'NBMAXPROBED': 6,
+                       'MAXINDEXPROBED': 6,
                        'central spots indices': [0,],
                        'AngleTolLUT': 0.5,
                        'UseIntensityWeights': False,
@@ -360,7 +360,7 @@ properties dictionary (i.e. with status unindexed)
     
     providing new set of matrices Using Angles LUT template matching
     nbspots 12
-    NBMAXPROBED 6
+    MAXINDEXPROBED 6
     nbspots 12
     set_central_spots_hkl None
     Computing LUT from material data

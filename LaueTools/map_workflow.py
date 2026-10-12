@@ -309,6 +309,8 @@ def _differences(cfg: dict, changes: dict, tree: dict) -> dict:
         node = cfg
         for key in IB._key_path(name, tree):
             node = node.get(key) if isinstance(node, dict) else None
+        if name.replace('_', ' ') in IB._SPOTS_SET_KEYS and value is not None:
+            value = IB.ISS.parse_spots_set(value)   # python syntax of spots sets (5 -> [5])
         if not IB._same(value, node):
             diff[name] = value
     return diff
@@ -391,6 +393,22 @@ def _results_file(step: str, cfg: dict) -> Path:
     return Path(cfg['output']['results_folder']) / f"allresults_{cfg['output']['results_stamp']}.pickle"
 
 
+def _indexing_fingerprint_keys(indexing: dict) -> dict:
+    """indexing parameters for the fingerprint, written as before the new parameters, so that maps indexed before
+    are not indexed again: parameters added later are left out when they have their default (no effect) value,
+    and renamed parameters keep their former name (MAXINDEXPROBED -> NBMAXPROBED)"""
+    keys = {k: v for k, v in indexing.items()
+            if not (k in ('blacklist', 'blacklist_tolerance') and indexing.get('blacklist') is None)}
+    dir_ = dict(keys['dict_indexrefine'])
+    if dir_.get('spots set B') is None:
+        dir_.pop('spots set B', None)
+    for old, new in IB._KEY_ALIASES.items():
+        if new in dir_:
+            dir_[old] = dir_.pop(new)
+    keys['dict_indexrefine'] = dir_
+    return keys
+
+
 def _fingerprint(step: str, cfg: dict) -> str:
     """hash of the parameters of a configuration that change the results of a step (not names, plots, cpus ...)"""
     import hashlib
@@ -406,10 +424,13 @@ def _fingerprint(step: str, cfg: dict) -> str:
         keys = {'scan': {k: scan[k] for k in ('cor_folder', 'prefix', 'nbdigits', 'CCDLabel', 'nbfiles_per_folder',
                                               'subfolder_prefix')},
                 'output': {k: out[k] for k in ('fit_folder', 'fit_subfolders')},
-                'material': cfg['material'], 'indexing': cfg['indexing'], 'selection': cfg['selection'],
+                'material': cfg['material'], 'indexing': _indexing_fingerprint_keys(cfg['indexing']),
+                'selection': cfg['selection'],
                 'run': {k: cfg['run'][k] for k in ('usepreviousUB', 'skipindexing', 'starting_grainindex')},
                 'ub_matrices': cfg['ub_matrices'],
                 'peaksearch_results': [p.stat().st_mtime for p in peaks]}   # new peak search -> new indexation
+        if cfg.get('sequence') is not None:   # (key absent for single material: fingerprints of former maps)
+            keys['sequence'] = cfg['sequence']
     text = json.dumps(IB._to_plain(keys), sort_keys=True, default=str)
     return hashlib.sha1(text.encode()).hexdigest()
 

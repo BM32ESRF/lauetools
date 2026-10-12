@@ -528,7 +528,7 @@ can edit/modify the module (then a restart of the kernel is necessary)
                        'AngleTolLUT': 0.5,
                        'nlutmax':3,
                        'central spots indices': [0,1,2,3,4],  # spots set A 
-                       'NBMAXPROBED': 10,  # spots set B
+                       'MAXINDEXPROBED': 10,  # spots set B
                        'MATCHINGRATE_ANGLE_TOL': 0.2,
                     # refinement parameters (loop over narrower matching angles)
                        'list matching tol angles':[0.5,0.2,0.1],
@@ -620,7 +620,7 @@ as shown below**
     
     providing new set of matrices Using Angles LUT template matching
     nbspots 82
-    NBMAXPROBED 10
+    MAXINDEXPROBED 10
     nbspots 82
     set_central_spots_hkl [0, 1, 1]
     Central set of exp. spotDistances from spot_index_central_list probed

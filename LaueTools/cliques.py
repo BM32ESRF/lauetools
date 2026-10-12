@@ -74,7 +74,7 @@ class CliquesFindingBoard(wx.Frame):
         compsavebtn.Bind(wx.EVT_BUTTON, self.OnComputeSaveAnglesFile)
 
         wx.StaticText(self.panel, -1, "Angle list (default 'CUBIC'):", (15, 175))
-        loadanglesbtn = wx.Button(self.panel, -1, "Load" (180, 170), (60, 30))
+        loadanglesbtn = wx.Button(self.panel, -1, "Load", (180, 170), (60, 30))
         loadanglesbtn.Bind(wx.EVT_BUTTON, self.OnLoadAnglesFile)
 
         self.indexchkbox = wx.CheckBox(self.panel, -1, "Use cliques for indexation", (15, 215))
@@ -89,11 +89,21 @@ class CliquesFindingBoard(wx.Frame):
         self.Centre()
 
     def OnComputeSaveAnglesFile(self, _):
-        # open dialog  for structur
-        key_material = 'Ti'
+        # dict_Materials is either a dict or a DictLT.Materials object
+        dict_Materials = getattr(self.parent, 'dict_Materials', DictLT.dict_Materials)
+        list_materials = sorted(dict_Materials.keys())
+        dlg = wx.SingleChoiceDialog(self, "Select material or structure", "Angles LUT",
+                                                                            list_materials)
+        if 'Ti' in list_materials:
+            dlg.SetSelection(list_materials.index('Ti'))
+        if dlg.ShowModal() != wx.ID_OK:
+            dlg.Destroy()
+            return
+        key_material = dlg.GetStringSelection()
+        dlg.Destroy()
         nLUT = 5
 
-        latticeparameters = DictLT.dict_Materials[key_material][1]
+        latticeparameters = dict_Materials[key_material][1]
 
         sortedangles = FO.computesortedangles(latticeparameters, nLUT)
 

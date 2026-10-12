@@ -30,7 +30,7 @@ indexing:
   depth: 25
   dict_indexrefine:
     central spots indices: 4
-    NBMAXPROBED: 10
+    MAXINDEXPROBED: 10
     AngleTolLUT: 0.2
     nlutmax: 5
     MATCHINGRATE_ANGLE_TOL: 0.3

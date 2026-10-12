@@ -25,7 +25,7 @@ indexing:
   nbGrainstoFind: 1
   dict_indexrefine:
     central spots indices: [0, 1, 2]
-    NBMAXPROBED: 5
+    MAXINDEXPROBED: 5
     AngleTolLUT: 0.1
     nlutmax: 4
     MATCHINGRATE_ANGLE_TOL: 0.3

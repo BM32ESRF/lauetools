@@ -1,5 +1,5 @@
 # Al / Al2Cu on Al2O3 substrate (Akamatsu et al, 32-02-812)
-# For the Al2Cu phase: key_material: Al2Cu, central spots indices: 20, NBMAXPROBED: 21, nlutmax: 3,
+# For the Al2Cu phase: key_material: Al2Cu, central spots indices: 20, MAXINDEXPROBED: 21, nlutmax: 3,
 #   stop_Nb_Matches: 140, fit_folder: .../fitfiles_Al2Cu
 # Substrate spots (Al2O3) can be removed from .cor files: see notebook 1, section [OPTION] remove spots
 name: 322812 Al/Al2Cu
@@ -32,7 +32,7 @@ indexing:
   stop_Nb_Matches: 25
   dict_indexrefine:
     central spots indices: '40:150'
-    NBMAXPROBED: 151
+    MAXINDEXPROBED: 151
     AngleTolLUT: 0.2
     nlutmax: 3
     MATCHINGRATE_ANGLE_TOL: 0.2

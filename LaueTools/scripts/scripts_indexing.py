@@ -819,7 +819,7 @@ def test_IAM_real():
     dict_params = {
         "MATCHINGRATE_THRESHOLD_IAL": 60,
         "MATCHINGRATE_ANGLE_TOL": 0.2,
-        "NBMAXPROBED": 10,
+        "MAXINDEXPROBED": 10,
         "central spots indices": 10,
     }
 
@@ -956,7 +956,7 @@ def testtwin(
     dict_params = {
         "MATCHINGRATE_THRESHOLD_IAL": 60,
         "MATCHINGRATE_ANGLE_TOL": 0.2,
-        "NBMAXPROBED": 10,
+        "MAXINDEXPROBED": 10,
         "central spots indices": 10,
         "AngleTolLUT": 0.5,
         "UseIntensityWeights": True,
@@ -994,7 +994,7 @@ def testtwin(
     dict_params = {
         "MATCHINGRATE_THRESHOLD_IAL": 40,
         "MATCHINGRATE_ANGLE_TOL": 0.2,
-        "NBMAXPROBED": 20,
+        "MAXINDEXPROBED": 20,
         "central spots indices": 3,
         "AngleTolLUT": 0.5,
         "UseIntensityWeights": True,
@@ -1110,7 +1110,7 @@ def test_SiCu(nstart=92, nend=1707):
     dict_params = {
         "MATCHINGRATE_THRESHOLD_IAL": 60,
         "MATCHINGRATE_ANGLE_TOL": 0.2,
-        "NBMAXPROBED": 10,
+        "MAXINDEXPROBED": 10,
         "central spots indices": 10,
     }
 
@@ -1146,7 +1146,7 @@ def test_SiCu(nstart=92, nend=1707):
     dict_params = {
         "MATCHINGRATE_THRESHOLD_IAL": 40,
         "MATCHINGRATE_ANGLE_TOL": 0.2,
-        "NBMAXPROBED": 20,
+        "MAXINDEXPROBED": 20,
         "central spots indices": 3,
     }
 
@@ -1247,7 +1247,7 @@ def index_fileseries(
     dict_params = {
         "MATCHINGRATE_THRESHOLD_IAL": 60,
         "MATCHINGRATE_ANGLE_TOL": 0.2,
-        "NBMAXPROBED": 10,
+        "MAXINDEXPROBED": 10,
         "central spots indices": 10,
         "AngleTolLUT": 0.5,
         "UseIntensityWeights": True,
@@ -1281,7 +1281,7 @@ def index_fileseries(
     dict_params = {
         "MATCHINGRATE_THRESHOLD_IAL": 40,
         "MATCHINGRATE_ANGLE_TOL": 0.2,
-        "NBMAXPROBED": 20,
+        "MAXINDEXPROBED": 20,
         "central spots indices": 3,
         "AngleTolLUT": 0.5,
         "UseIntensityWeights": True,
@@ -1629,7 +1629,7 @@ if __name__ == "__main__":
             {
                 "MATCHINGRATE THRESHOLD IAL": 100.0,
                 "MATCHINGRATE ANGLE TOL": 0.5,
-                "NBMAXPROBED": 30,
+                "MAXINDEXPROBED": 30,
                 "central spots indices": 5,
                 "key material": "ZrO2Y2O3",
                 "emin": 5,

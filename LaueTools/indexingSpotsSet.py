@@ -35,7 +35,7 @@ if sys.version_info.major == 3:
     from . import findorient as FO
     from . import indexingImageMatching as IMM
     from . import IOLaueTools as IOLT
-    from . generaltools import printred, printgreen, printcyan
+    from . generaltools import printred, printgreen, printcyan, printyellow
     from . import spottracking as SpTra
     from . import orientations as ORI
 
@@ -52,7 +52,7 @@ else:
     import findorient as FO
     import indexingImageMatching as IMM
     import IOLaueTools as IOLT
-    from generaltools import printred, printgreen, printcyan
+    from generaltools import printred, printgreen, printcyan, printyellow
     import spottracking as SpTra
     import orientations as ORI
 
@@ -64,6 +64,105 @@ DEG = DictLT.DEG
 MINIMUM_NB_MATCHES_FOR_INDEXING = 6
 
 DEFAULT_KF_DIRECTION = "Z>0"
+
+
+# ---  ---------  spots sets A and B for angles recognition (indexing from scratch) -------
+def _parse_spots_item(item: str) -> List[int]:
+    if "to" in item:  # 'to12' -> 0..12, '80to90' -> 80..90 (last index included)
+        start, stop = item.split("to")
+        start, stop = int(start or 0), int(stop)
+        if stop < start:
+            raise ValueError(f"'{item}': last index {stop} is smaller than first index {start}")
+        return list(range(start, stop + 1))
+    if ":" in item:  # python slice '8:20' -> 8..19, ':10' -> 0..9 (last index excluded)
+        start, stop = item.split(":")
+        return list(range(int(start or 0), int(stop)))
+    return [int(item)]
+
+
+def parse_spots_set(spots) -> Union[List[int], None]:
+    """list of experimental spot indices of a spots set: dict_indexrefine['central spots indices'] (set A)
+    or dict_indexrefine['spots set B']
+
+    - None -> None
+    - int n -> [n]
+    - list, tuple, range, array of int -> list (order kept, duplicates removed)
+    - 'to12' -> [0, 1, ..., 12]; '80to90' -> [80, 81, ..., 90] (last index included)
+    - '8:20' -> [8, ..., 19]; ':10' -> [0, ..., 9] (python slice, last index excluded)
+    - '5', '[0, 1, 8]', '0to5, 10, 20to25' -> combination of the above
+
+    Spot indices are positions in the list of the spots not yet indexed, in the order of the .cor file
+    (by decreasing intensity when written by peak search): for the first grain, index = row of the .cor file;
+    for the next grains, the spots already indexed are removed from the list (indices shift). Sets A and B
+    use the same indices.
+    """
+    if spots is None:
+        return None
+    if isinstance(spots, (int, np.integer)):
+        indices = [int(spots)]
+    elif isinstance(spots, str):
+        text = spots.replace(" ", "").strip("[]()")
+        if not text:
+            raise ValueError(f"empty spots set '{spots}'")
+        indices = []
+        for item in text.split(","):
+            if item:
+                try:
+                    indices += _parse_spots_item(item)
+                except ValueError as err:
+                    raise ValueError(f"can not read spots set '{spots}': {err}") from None
+    else:
+        values = np.ravel(np.asarray(list(spots)))
+        if values.size and not np.all(np.mod(values, 1) == 0):
+            raise ValueError(f"spots set {spots} must contain integers")
+        indices = [int(v) for v in values]
+    if not indices:
+        raise ValueError(f"empty spots set {spots!r}")
+    if min(indices) < 0:
+        raise ValueError(f"spots set {spots!r} contains negative indices")
+    return list(dict.fromkeys(indices))   # order kept, duplicates removed
+
+
+def get_maxindexprobed(dict_parameters: dict) -> int:
+    """largest index of the spots of set B: dict_parameters['MAXINDEXPROBED']
+    (or 'NBMAXPROBED', its former name, which had the same meaning: spots 0 to NBMAXPROBED included)"""
+    for key in ("MAXINDEXPROBED", "NBMAXPROBED"):
+        if dict_parameters.get(key) is not None:
+            return int(dict_parameters[key])
+    raise KeyError("'MAXINDEXPROBED' (largest index of spots set B) is missing in the indexing parameters")
+
+
+def spots_sets(dict_parameters: dict, nbspots: Union[int, None] = None, verbose: int = 0):
+    """sets of spots A and B whose mutual angles are recognised in the angles LUT (indexing from scratch)
+
+    dict_parameters: dict_indexrefine with keys
+        'central spots indices': set A (see parse_spots_set()), spots whose angles with spots of set B are tested
+        'MAXINDEXPROBED': used if 'spots set B' is None or missing: set B = all spots of index 0 to MAXINDEXPROBED
+                       (included). MAXINDEXPROBED is increased to max(set A) if it is lower (warning if verbose).
+                       Former name: 'NBMAXPROBED' (same meaning, still accepted)
+        'spots set B': None (default) or a set of spots (see parse_spots_set()): only pairs (spot of A, spot of B)
+                       are tested and MAXINDEXPROBED is not used
+    nbspots: nb of spots available (spots of larger index are removed from A and B)
+
+    Returns (setA, setB, maxindex_probed): setB is None when set B is 0..maxindex_probed;
+    maxindex_probed is the largest spot index used (in A or B)
+    """
+    setA = parse_spots_set(dict_parameters["central spots indices"])
+    setB = parse_spots_set(dict_parameters.get("spots set B"))
+    maxindex_probed = get_maxindexprobed(dict_parameters) if setB is None else max(setB)
+    if setB is None and max(setA) > maxindex_probed:
+        if verbose > 0:
+            printyellow(f"MAXINDEXPROBED ({maxindex_probed}) must be at least the largest index of "
+                        f"'central spots indices' ({max(setA)}): MAXINDEXPROBED = {max(setA)} is used")
+        maxindex_probed = max(setA)
+    if nbspots is not None:
+        setA = [i for i in setA if i < nbspots]
+        if setB is not None:
+            setB = [i for i in setB if i < nbspots]
+        maxindex_probed = min(maxindex_probed, nbspots - 1)
+    if setB is not None and setA and setB:
+        maxindex_probed = max(max(setA), max(setB))
+    return setA, setB, maxindex_probed
 
 
 # ---  ---------  exp. SPOTS indexing management -------
@@ -953,7 +1052,7 @@ class spotsset:
                         AngleTol,
                         verbose=verbose)
 
-    def FindOrientMatrices(self, spot_index_central=(0, 1, 2), nbmax_probed=10,
+    def FindOrientMatrices(self, spot_index_central=(0, 1, 2), maxindex_probed=10, spots_set_B=None,
                                                                 nLUT=3,
                                                                 LUT=None,
                                                                 set_central_spots_hkl=None,
@@ -991,7 +1090,7 @@ class spotsset:
         if verbose>0:
             print(f'********  in FindOrientMatrices()  *************\nverboselevel={verbose}')
             print('spot_index_central',spot_index_central)
-            print('nbmax_probed',nbmax_probed)
+            print('maxindex_probed',maxindex_probed)
 
         emax = self.emax_MR if self.emax_MR is not None else self.emax
 
@@ -1041,10 +1140,19 @@ class spotsset:
         latticeparams = self.dict_Materials[key_material][1]
         B = CP.calc_B_RR(latticeparams)
 
+        if spots_set_B is not None:
+            # only pairs (spot of set A, spot of set B): angles to spots not in set B are set to 0 (ignored)
+            size = max(int(np.max(spot_index_central)), max(spots_set_B)) + 1
+            Tab_angl_dist = np.array(Tabledistance[:size, :size])
+            Tab_angl_dist[:, np.setdiff1d(np.arange(size), spots_set_B)] = 0.
+        else:
+            # set B = spots 0 to maxindex_probed (included)
+            Tab_angl_dist = Tabledistance[:maxindex_probed+1, :maxindex_probed+1]
+
         # indexation procedure
         bestmat, stats_res = INDEX.getOrientMatrices(spot_index_central,
                                                     emax,
-                                                    Tabledistance[:nbmax_probed+1, :nbmax_probed+1],
+                                                    Tab_angl_dist,
                                                     select_theta,
                                                     select_chi,
                                                     n=nLUT,
@@ -1463,30 +1571,29 @@ class spotsset:
                     MATCHINGRATE_THRESHOLD_IAL = dict_parameters["MATCHINGRATE_THRESHOLD_IAL"]  # 60
                     # set the tolerance angle for matching
                     MATCHINGRATE_ANGLE_TOL = dict_parameters["MATCHINGRATE_ANGLE_TOL"]  # 0.2
-                    # set the number of most intense spot candidate to have a recognisable distance
-                    NBMAXPROBED = dict_parameters["NBMAXPROBED"]  # 10
                     self.AngTol_LUTmatching = dict_parameters["AngleTolLUT"]
-                    # set central list spots to compute distance from
-                    spot_index_central_list = dict_parameters["central spots indices"]  # 10
-                    # TODO add key dict_parameters['CENTRAL_SPOTS_LIST']
-                    # or
-                    # CENTRAL_SPOTS_LIST = dict_parameters['CENTRAL_SPOTS_LIST']
-                    NBMAXPROBED = min(nbspots, NBMAXPROBED)
-                    # set mutual angular distance from NBMAXPROBED first spots
+                    # sets of spots A ('central spots indices') and B ('spots set B' or 0..MAXINDEXPROBED) whose
+                    # mutual angles are recognised. Spots indices larger than the nb of spots left are ignored
+                    (spot_index_central_list,
+                     spots_set_B, MAXINDEXPROBED) = spots_sets(dict_parameters, nbspots=nbspots, verbose=verbose)
+                    # set mutual angular distance from spots 0 to MAXINDEXPROBED
                     # TODO: build self.table_angdist but not yet effective
-                    self.setTable_Angdist(nbmax=NBMAXPROBED)
+                    self.setTable_Angdist(nbmax=MAXINDEXPROBED + 1)
                     if verbose>1:
                         print('-- still in IndexSpotsSet()')
                         print('spot_index_central_list', spot_index_central_list)
-                        print("NBMAXPROBED", NBMAXPROBED)
+                        print("MAXINDEXPROBED", MAXINDEXPROBED)
+                        print("spots_set_B", spots_set_B)
                         print("set_central_spots_hkl", set_central_spots_hkl)
                     if set_central_spots_hkl is None and LUT is None:
                         # for angular distance LUT matching
                         self.setAnglesLUTmatchingParameters(LUT=self.LUT, n_LUT=self.n_LUT, verbose=verbose-1)
 
-                    if max(spot_index_central_list) >= len(self.absolute_index):
+                    if not spot_index_central_list or (spots_set_B is not None and (
+                            not spots_set_B or len(set(spots_set_B) | set(spot_index_central_list)) < 2)):
                         if verbose>1:
-                            print("central list of spots contains spots that do not belong the current list of spots to be indexed")
+                            print("no spot of the sets A ('central spots indices') or B belongs to the current "
+                                  "list of spots to be indexed")
                         break
 
                     if self.kf_direction in ('Z>0',):
@@ -1500,7 +1607,8 @@ class spotsset:
                     ) = self.get_bestUB_fromAnglesLUT(spot_index_central=spot_index_central_list,
                                             MatchingRate_Threshold=MATCHINGRATE_THRESHOLD_IAL,
                                             MatchingRate_Angle_Tol=MATCHINGRATE_ANGLE_TOL,
-                                            nbmax_probed=NBMAXPROBED,
+                                            maxindex_probed=MAXINDEXPROBED,
+                                            spots_set_B=spots_set_B,
                                             Minimum_Nb_Matches=self.MinimumNumberMatches,
                                             LUT=self.LUT,
                                             set_central_spots_hkl=set_central_spots_hkl,
@@ -2260,7 +2368,8 @@ class spotsset:
                                 max_nb_of_solutions_per_central_spot:int=5,
                                 MatchingRate_Threshold=None,
                                 MatchingRate_Angle_Tol=0.5,
-                                nbmax_probed=10,
+                                maxindex_probed=10,
+                                spots_set_B=None,
                                 Minimum_Nb_Matches=6,
                                 LUT=None,
                                 set_central_spots_hkl=None,
@@ -2278,7 +2387,8 @@ class spotsset:
         with experimental spot data. Pairwise angular distances are calculated between two sets A, B.
 
         :param spot_index_central: list of spot indices forming a set A
-        :param nbmax_probed: int, nb of spots in set B (range(0,nbmax_probed))
+        :param maxindex_probed: int, largest spot index of set B = spots 0 to maxindex_probed (included)
+        :param spots_set_B: None or list of spot indices forming set B (then maxindex_probed is not used)
 
         :param LUTfraction: fraction of the LUT to use (1/2. for top reflection geometry, 1. for transmission)
 
@@ -2314,7 +2424,8 @@ class spotsset:
             spot_index_central = 0
 
         list_matrices, list_stats = self.FindOrientMatrices(spot_index_central=spot_index_central,
-                                                    nbmax_probed=nbmax_probed,
+                                                    maxindex_probed=maxindex_probed,
+                                                    spots_set_B=spots_set_B,
                                                     nLUT=self.n_LUT,
                                                     LUT=LUT,
                                                     set_central_spots_hkl=set_central_spots_hkl,
@@ -2364,7 +2475,8 @@ class spotsset:
 
     def get_bestUB_fromAnglesLUT(self, spot_index_central=None, MatchingRate_Threshold=None,
                                                                 MatchingRate_Angle_Tol:float=0.5,
-                                                                nbmax_probed:int=10,
+                                                                maxindex_probed:int=10,
+                                                                spots_set_B=None,
                                                                 Minimum_Nb_Matches:int=6,
                                                                 LUT=None,
                                                                 set_central_spots_hkl=None,
@@ -2404,7 +2516,8 @@ class spotsset:
                                                 max_nb_of_solutions_per_central_spot=NBsolutions_per_spot,
                                                 MatchingRate_Threshold=MatchingRate_Threshold,
                                                 MatchingRate_Angle_Tol=MatchingRate_Angle_Tol,
-                                                nbmax_probed=nbmax_probed,
+                                                maxindex_probed=maxindex_probed,
+                                                spots_set_B=spots_set_B,
                                                 Minimum_Nb_Matches=Minimum_Nb_Matches,
                                                 LUT=LUT,
                                                 set_central_spots_hkl=set_central_spots_hkl,
@@ -5662,6 +5775,9 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             key_material = dict_param_SingleGrain["key material"]
             emin = dict_param_SingleGrain["emin"]
             emax = dict_param_SingleGrain["emax"]
+            # max energy for the matching rate during indexing (option 'emax MR' of .irp file, None: emax)
+            emax_MR = dict_param_SingleGrain.get("emax MR")
+            emax_MR = None if str(emax_MR).strip() in ("None", "none", "") else float(emax_MR)
             nbGrainstoFind = dict_param_SingleGrain["nbGrainstoFind"]
 
             try:
@@ -5672,7 +5788,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                 return
 
             try:
-                central_spots_list = GT.read_elems_from_string(dict_param_SingleGrain["central spots indices"])
+                central_spots_list = parse_spots_set(dict_param_SingleGrain["central spots indices"])
             except ValueError:
                 printred(
                     "Can't understand '%s' as a list of spot indices for 'central spots indices' parameter in .irp file"
@@ -5689,12 +5805,20 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
 
             dict_loop = {"MATCHINGRATE_THRESHOLD_IAL": dict_param_SingleGrain["MATCHINGRATE THRESHOLD IAL"],
                         "MATCHINGRATE_ANGLE_TOL": dict_param_SingleGrain["MATCHINGRATE ANGLE TOL"],
-                        "NBMAXPROBED": dict_param_SingleGrain["NBMAXPROBED"],
                         "central spots indices": central_spots_list,
                         "AngleTolLUT": dict_param_SingleGrain["AngleTolLUT"],
                         "UseIntensityWeights": dict_param_SingleGrain["UseIntensityWeights"],
                         "MinimumNumberMatches": dict_param_SingleGrain["MinimumNumberMatches"],
                         "MinimumMatchingRate": MinimumMatchingRate}
+
+            # spots set B: MAXINDEXPROBED (spots 0 to MAXINDEXPROBED) or an explicit set (e.g. [0, 3, 8] in .irp file)
+            try:
+                dict_loop["MAXINDEXPROBED"], dict_loop["spots set B"] = maxindexprobed_from_irp(
+                                                                        dict_param_SingleGrain["MAXINDEXPROBED"])
+            except (KeyError, ValueError):
+                printred("Can't understand '%s' as the largest index of spots set B ('MAXINDEXPROBED') in .irp file"
+                    % dict_param_SingleGrain.get("MAXINDEXPROBED"))
+                return
 
             if "nbSpotsToIndex" not in dict_param_SingleGrain:
                 dict_param_SingleGrain["nbSpotsToIndex"] = 1000
@@ -5878,7 +6002,8 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                                                 corfilename=corfilename,
                                                 dirnameout_fitfile=fitfile_folder,
                                                 previousResults=previousResults,
-                                                CheckOrientations=CheckOrientationParams)
+                                                CheckOrientations=CheckOrientationParams,
+                                                emax_matchringrate=emax_MR)
 
             dict_LUT_material[key_material] = DataSet.LUT
 
@@ -5970,7 +6095,7 @@ LIST_OPTIONS_INDEXREFINE = ["nb materials",
                             "MATCHINGRATE THRESHOLD IAL",
                             "AngleTolLUT",
                             "MATCHINGRATE ANGLE TOL",
-                            "NBMAXPROBED",
+                            "MAXINDEXPROBED",
                             "MinimumNumberMatches",
                             "central spots indices",
                             "ResolutionAngstrom",
@@ -5978,7 +6103,8 @@ LIST_OPTIONS_INDEXREFINE = ["nb materials",
                             "setCentralSpotsHKL",
                             "UseIntensityWeights",
                             "nbSpotsToIndex",
-                            "List Matching Tol Angles"]
+                            "List Matching Tol Angles",
+                            "emax MR"]   # max energy (keV) for the matching rate during indexing (None: emax)
 
 CONVERTKEY_dict = {"nb materials": "nb materials",
                     "key material": "key material",
@@ -5988,7 +6114,7 @@ CONVERTKEY_dict = {"nb materials": "nb materials",
                     "matchingrate threshold ial": "MATCHINGRATE THRESHOLD IAL",
                     "angletollut": "AngleTolLUT",
                     "matchingrate angle tol": "MATCHINGRATE ANGLE TOL",
-                    "nbmaxprobed": "NBMAXPROBED",
+                    "maxindexprobed": "MAXINDEXPROBED",
                     "minimumnumbermatches": "MinimumNumberMatches",
                     "central spots indices": "central spots indices",
                     "resolutionangstrom": "ResolutionAngstrom",
@@ -5996,15 +6122,33 @@ CONVERTKEY_dict = {"nb materials": "nb materials",
                     "setcentralspotshkl": "setCentralSpotsHKL",
                     "useintensityweights": "UseIntensityWeights",
                     "nbspotstoindex": "nbSpotsToIndex",
-                    "list matching tol angles": "List Matching Tol Angles"}
+                    "list matching tol angles": "List Matching Tol Angles",
+                    "emax mr": "emax MR"}
 
 LIST_OPTIONS_TYPE_INDEXREFINE = ["int", "string", "int", "float", "float", "float", "float",
-                                "float", "int", "int", "string", "string", "integer", "string",
-                                "string", "int", "string"]
+                                "float", "string", "int", "string", "string", "integer", "string",
+                                "string", "int", "string", "string"]
 
 # WARNING when adding parameters above:
 # check in index_refine.py if field position is correct in def hascorrectvalue(self, kk, val):
 # and name MUST NOT CONTAIN "_"
+
+# former names of options in .irp files (still read)
+IRP_OPTIONS_ALIASES = {"nbmaxprobed": "maxindexprobed"}
+
+
+def maxindexprobed_from_irp(value):
+    """(MAXINDEXPROBED, spots set B) from the value of option 'MAXINDEXPROBED' of a .irp file
+
+    - 10 or 'to10': set B = spots 0 to 10 (included) -> (10, None)
+    - other sets, e.g. '[0, 3, 8]', '5to20' (see parse_spots_set()) -> (largest index, list of spots)
+    """
+    spots = parse_spots_set(value)
+    if isinstance(value, (int, np.integer)) or str(value).strip().isdigit():   # bare integer (not '[7]')
+        return spots[0], None
+    if spots == list(range(len(spots))):
+        return spots[-1], None
+    return max(spots), spots
 
 
 def saveIndexRefineConfigFile(dict_param, outputfilename=None):
@@ -6064,12 +6208,14 @@ def readIndexRefineConfigFile(filename):
     # list_options = config.options(section)
     list_options_gen = []
     list_material = []
+    list_options_file = []
     for opt in config.options(section):
         splt_opt = opt.split("_")
         if len(splt_opt) == 2:
             optgen, mat_index = splt_opt
-            list_options_gen.append(optgen)
+            list_options_gen.append(IRP_OPTIONS_ALIASES.get(optgen.lower(), optgen))
             list_material.append(int(mat_index))
+            list_options_file.append(opt)
         elif len(splt_opt) > 2:
             raise ValueError("WARNING name of fields in GUI must not contain '_'!!")
 
@@ -6080,7 +6226,7 @@ def readIndexRefineConfigFile(filename):
     #     print "list_options_gen, list_material"
     #     print list_options_gen, list_material
 
-    for option, matindex in zip(list_options_gen, list_material):
+    for option, matindex, option_file in zip(list_options_gen, list_material, list_options_file):
 
         if matindex >= nb_materials:
             continue
@@ -6097,7 +6243,7 @@ def readIndexRefineConfigFile(filename):
                 except KeyError:
                     optionkey = option_ref
 
-                option_lower = option_ref.lower() + "_%d" % matindex
+                option_lower = option_file   # name in the file (may be a former name, see IRP_OPTIONS_ALIASES)
                 try:
                     if option_type == "int":
                         val = int(config.getint(section, option_lower))

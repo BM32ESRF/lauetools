@@ -293,16 +293,22 @@ def give_bestclique(filename, nb_of_spots, ang_tol, nodes=0, col_Int=-1,
 
     print("nodes selected", nodes)
     print("Searching cliques ...")
-    C0 = NX.cliques_containing_node(GGraw, nodes=nodes, cliques=None)
+    # NX.cliques_containing_node() has been removed from networkx (>= 3.0)
+    allcliques = list(NX.find_cliques(GGraw))
+    singlenode = isinstance(nodes, (int, np.integer))
+    if singlenode:
+        C0 = [cliq for cliq in allcliques if nodes in cliq]
+    else:
+        C0 = {int(node): [cliq for cliq in allcliques if node in cliq] for node in nodes}
     print('\nC0', C0)
     print("\n... Done !\n")
-    if not isinstance(nodes, int):
+    if not singlenode:
         best_list = []
         print("nb of nodes", len(C0))
-        for k in range(len(C0)):
+        for k, node in enumerate(C0):
             if verbose:
-                print("finding best cliques for # ", k, " entered nodes")
-            bc = bestclique_oneNode(C0[k], displaybest=verbose)
+                print("finding best cliques for # ", k, " entered nodes (spot index %d)" % node)
+            bc = bestclique_oneNode(C0[node], displaybest=verbose)
             if verbose:
                 print("----------------")
             best_list.append(np.sort(bc))

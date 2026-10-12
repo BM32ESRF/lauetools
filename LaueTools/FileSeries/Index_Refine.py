@@ -43,6 +43,8 @@ if sys.version_info.major == 3:
     import LaueTools.IOLaueTools as IOLT
     import LaueTools.indexingSpotsSet as ISS
     import LaueTools.dict_LaueTools as dictLT
+    import LaueTools.indexing_batch as IB
+    import LaueTools.LaueGeometry as LaueGeo
 else:
     import IOLaueTools as IOLT
     import indexingSpotsSet as ISS
@@ -57,7 +59,7 @@ print("LaueToolProjectFolder", LaueToolsProjectFolder)
 LIST_TXTPARAMS = ISS.LIST_OPTIONS_INDEXREFINE[1:]
 
 LIST_VALUESPARAMS = ["Ge", 1, 5, 22, 100.0, 0.5, 0.5, 10, 6, [0],
-                    False, 3, None, True, 1000, [1, 1]]
+                    False, 3, None, True, 1000, [1, 1], None]
 
 # WARNING when adding parameters above:
 # check if field position is correct in def hascorrectvalue(self, kk, val):
@@ -101,6 +103,11 @@ for key, tip in zip(LIST_TXTPARAM_FILE_INDEXREFINE, TIP_IR):
     DICT_TOOLTIP[key] = "%s : %s" % (key, tip)
 
 DEFAULT_KF_DIRECTION = "Z>0"
+
+# indexing engines of the board
+ENGINE_YAML = "indexing_batch (YAML config)"
+ENGINE_LEGACY = "FileSeries (legacy)"
+NONE_VALUES = ("None", "none", "NONE", "")
 
 
 class IndexRefineParameters(wx.Frame):
@@ -367,12 +374,15 @@ class PageMaterialPanel(wx.Panel):
         "in the reference distances database (LUT)"
         self.tips_dict[6] += "Maximum angle separating two spots forming a pair "
         "(1 exp. and 1 theo.) to compute the number of spots matches (or matching rate)."
-        self.tips_dict[7] += "Number of the most intense spots from which angular distances "
-        "with central spots will be tested for recognition."
+        self.tips_dict[7] += ("Largest index of spots set B: angles between the central spots (set A) and the "
+                              "spots of index 0 to MAXINDEXPROBED (included, 0: most intense spot) are tested for "
+                              "recognition. Must be at least the largest central spot index. "
+                              "Or set B itself, e.g. [0,3,5,12] or 5to20 (only these spots). "
+                              "Former name: NBMAXPROBED")
         self.tips_dict[8] += "Minimum number of spots matches for a indexation solution to be stored"
 
-        self.tips_dict[9] += "Central spot or list of spot indices: "
-        "e.g.\n[1,2,3,5]\n[0]\n5\n8:20\n:10"
+        self.tips_dict[9] += ("Spots set A: central spot or list of spot indices, e.g.\n[1,2,3,5]\n5 (-> [5])\n"
+                              "to12 (0 to 12 included)\n80to90 (80 to 90 included)\n8:20 (8 to 19)")
         self.tips_dict[10] += "if not False, minimum lattice spacing (for cubic structure) "
         "of spot to be simulated for matching with experimental spots data."
         self.tips_dict[11] += "highest miller indices order to calculate "
@@ -382,6 +392,8 @@ class PageMaterialPanel(wx.Panel):
         self.tips_dict[13] += "maximum number of spots to be used for refined (first ones in the list)"
         self.tips_dict[14] += "True/False to use or not the experimental spot intensities "
         "as a weight in the refinement (minimization of distances between matched spots)"
+        self.tips_dict[16] += ("Maximum energy (keV) of the simulated spots for the matching rate computed during "
+                               "indexing (fast). None: emax. Refinement uses emax (e.g. emax MR 19, emax 27)")
         self.tips_dict[15] += "list of angular tolerance used at each step "
         "after the refinement procedure to link exp. and modeled spots"
 
@@ -395,6 +407,16 @@ class PageMaterialPanel(wx.Panel):
             except ValueError:
                 wx.MessageBox("Error in Index_Refine.py hascorrectvalue().\nWrong type %s! Must be integer"
                     % self.list_txtparamIR[kk], "Error")
+                flag = False
+
+        if kk == 16:   # emax MR: None or a number
+            if str(val).strip() in ("None", "none", ""):
+                return True
+            try:
+                _ = float(val)
+            except ValueError:
+                wx.MessageBox("Error in Index_Refine.py hascorrectvalue().\nWrong value %s! Must be None or a "
+                              "number (keV)" % self.list_txtparamIR[kk], "Error")
                 flag = False
 
         if kk == 12:
@@ -570,6 +592,14 @@ class MainFrame_indexrefine(wx.Frame):
 
         txt_verbose = wx.StaticText(self.panel, -1, "verbose level")
         self.verbosemode = wx.SpinCtrl(self.panel, -1, value='0', min=0, max=10)
+
+        # indexing engine: indexing_batch (YAML configuration file written from this board) or legacy FileSeries
+        txt_engine = wx.StaticText(self.panel, -1, "Indexing engine")
+        self.engine = wx.ComboBox(self.panel, -1, ENGINE_YAML, choices=[ENGINE_YAML, ENGINE_LEGACY],
+                                  style=wx.CB_READONLY)
+        self.engine.Bind(wx.EVT_COMBOBOX, self.OnChangeEngine)
+        writeyamlbtn = wx.Button(self.panel, -1, "Write .yaml config")
+        writeyamlbtn.Bind(wx.EVT_BUTTON, self.OnWriteYAML)
         
 
         #          bouton STARTdfd
@@ -587,6 +617,11 @@ class MainFrame_indexrefine(wx.Frame):
         hmap.Add(self.txtctrl_mapshape, 0)
         hmap.Add(self.trackingmode, 0)
 
+        hengine = wx.BoxSizer(wx.HORIZONTAL)
+        hengine.Add(txt_engine, 0, wx.ALIGN_CENTRE_VERTICAL)
+        hengine.Add(self.engine, 0, wx.ALL, 5)
+        hengine.Add(writeyamlbtn, 0, wx.ALL, 5)
+
         hfinal = wx.BoxSizer(wx.HORIZONTAL)
         hfinal.Add(txt_cpus, 0, wx.EXPAND)
         hfinal.Add(self.txtctrl_cpus, 0, wx.EXPAND)
@@ -600,6 +635,7 @@ class MainFrame_indexrefine(wx.Frame):
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(grid, 0, wx.EXPAND)
         vbox.Add(hmap, 0)
+        vbox.Add(hengine, 0)
         vbox.Add(hfinal, 0, wx.EXPAND)
         vbox.Add(btnStart, 0, wx.EXPAND)
 
@@ -633,6 +669,216 @@ class MainFrame_indexrefine(wx.Frame):
         btnStart.SetToolTipString("Start indexing & refining all the peaks list files")
 
         self.trackingmode.SetToolTipString("Track spots positions defined in 'Selected Peaks from file' over the raster scan if spots move from one image to an other.")
+
+        tipengine = (f"{ENGINE_YAML}: the parameters of this board and of the .irp file are written in a YAML "
+                     "configuration file (indexing_config.yaml in the .fit files folder) and the images are indexed by "
+                     "LaueTools.indexing_batch (the engine of the notebooks): same results as the legacy engine, "
+                     "with the options of the YAML file (blacklist of spots, spots set B, SLURM jobs ...).\n"
+                     "Not available with it: several materials, 'Index n using n-1 results', tracking mode, "
+                     "'Selected Peaks from File', 'Update preexisting results', .ubs file, list of image indices, "
+                     "ResolutionAngstrom and setCentralSpotsHKL of the .irp file.\n"
+                     f"{ENGINE_LEGACY}: former engine (indexFilesSeries), with all these options.")
+        txt_engine.SetToolTipString(tipengine)
+        self.engine.SetToolTipString(tipengine)
+        writeyamlbtn.SetToolTipString("Write the YAML configuration file (for indexing_batch, the notebooks or a "
+                                      "SLURM job) from this board and the .irp file, without indexing")
+        self.OnChangeEngine(None)
+
+    # ------ indexing_batch engine (YAML configuration) ---------------------------------
+    def useIndexingBatch(self):
+        """True if the indexing engine is indexing_batch (YAML configuration)"""
+        return self.engine.GetValue() == ENGINE_YAML
+
+    def OnChangeEngine(self, _):
+        """options only available with the legacy engine are disabled (and unchecked) with indexing_batch;
+        their values are restored when the legacy engine is chosen again"""
+        yaml_engine = self.useIndexingBatch()
+        checkboxes = (self.previousreschk, self.trackingmode, self.updatefitfiles)
+        if not hasattr(self, "legacy_options"):
+            self.legacy_options = [chk.GetValue() for chk in checkboxes]
+        for chk, legacy_value in zip(checkboxes, self.legacy_options):
+            if yaml_engine:
+                if chk.IsEnabled():   # values set with the legacy engine
+                    self.legacy_options[checkboxes.index(chk)] = chk.GetValue()
+                chk.SetValue(False)
+            else:
+                chk.SetValue(legacy_value)
+            chk.Enable(not yaml_engine)
+
+    def yaml_settings(self):
+        """settings of the board for indexing_batch
+
+        :return: dict, or None if indexing_batch can not be used (a message is shown)
+        """
+        fileirp = str(self.list_txtctrl[12].GetValue())
+        if not os.path.exists(fileirp):
+            wx.MessageBox("Index_refine config file %s does not exist!\n" % fileirp, "Error")
+            return None
+        dict_param_list = ISS.readIndexRefineConfigFile(fileirp)
+        if not dict_param_list:
+            wx.MessageBox("Can't read properly index_refine config file %s\n" % fileirp, "Error")
+            return None
+
+        problems = []
+        if len(dict_param_list) > 1:
+            problems.append("%d materials in the .irp file" % len(dict_param_list))
+        for key in ("ResolutionAngstrom", "setCentralSpotsHKL"):
+            if IB._irp_value(dict_param_list[0].get(key)) not in (None, False, "False", 0, "0"):
+                problems.append("%s = %s in the .irp file" % (key, dict_param_list[0][key]))
+        startstr = str(self.list_txtctrl[6].GetValue()).strip()
+        if not startstr.isdigit():
+            problems.append("'Start Image index' is a list or a file of image indices")
+        if str(self.list_txtctrl[13].GetValue()).strip() not in NONE_VALUES:
+            problems.append("'Selected Peaks from File' is set")
+        guessed = str(self.list_txtctrl[10].GetValue()).strip()
+        if guessed.endswith(".ubs"):
+            problems.append("'Guessed Matrix(ces)' is a .ubs file")
+        if problems:
+            wx.MessageBox("Not available with the %s engine:\n- %s\n\nPlease choose the '%s' engine."
+                          % (ENGINE_YAML, "\n- ".join(problems), ENGINE_LEGACY), "Info")
+            return None
+
+        try:
+            startindex = int(startstr)
+            finalindex = int(self.list_txtctrl[7].GetValue())
+            stepindex = int(self.list_txtctrl[8].GetValue())
+            nbdigits = int(self.list_txtctrl[5].GetValue())
+            nb_cpus = int(self.txtctrl_cpus.GetValue())
+            MinimumMatchingRate = float(self.list_txtctrl[11].GetValue())
+        except ValueError:
+            wx.MessageBox("Start, Final image index, step, Nbdigits and nb of cpu(s) must be integers, "
+                          "Minimum Matching Rate a number", "Error")
+            return None
+        if stepindex < 1 or finalindex < startindex or nb_cpus < 1:
+            wx.MessageBox("Check image indices (final >= start, step >= 1) and nb of cpu(s) (>= 1)", "Error")
+            return None
+
+        filesuffix = str(self.list_txtctrl[4].GetValue()).strip()
+        if filesuffix not in (".cor", ".dat"):
+            wx.MessageBox("PeakList Filename Suffix must be .cor or .dat", "Error")
+            return None
+        filedet = str(self.list_txtctrl[9].GetValue()).strip()
+        if filesuffix == ".dat" and not os.path.isfile(filedet):
+            wx.MessageBox("A detector calibration .det file is needed to convert .dat files into .cor files", "Error")
+            return None
+        if not self.fitFolderExists() or not self.corFolderExists():
+            return None
+
+        mapdims = None   # 1D map containing all image indices (see IB.config_from_irp())
+        mapshape = self.readmapshape()
+        if mapshape is not None and mapshape[0] * mapshape[1] > finalindex:
+            mapdims = [int(mapshape[0]), int(mapshape[1])]
+
+        return {"fileirp": fileirp,
+                "filepathdat": str(self.list_txtctrl[0].GetValue()),
+                "filepathcor": str(self.list_txtctrl[1].GetValue()),
+                "filepathout": str(self.list_txtctrl[2].GetValue()),
+                "fileprefix": str(self.list_txtctrl[3].GetValue()),
+                "filesuffix": filesuffix,
+                "nbdigits": nbdigits,
+                "indices": list(range(startindex, finalindex + 1, stepindex)),
+                "image_range": [startindex, finalindex],
+                "filedet": filedet if os.path.isfile(filedet) else None,
+                "guessed": None if guessed in NONE_VALUES else guessed,
+                "MinimumMatchingRate": MinimumMatchingRate,
+                "nb_cpus": nb_cpus,
+                "reanalyse": self.chck_renanalyse.GetValue(),
+                "verbose": int(self.verbosemode.GetValue()),
+                "mapdims": mapdims}
+
+    def write_yaml_config(self, settings):
+        """write <.fit folder>/indexing_config.yaml from the board settings and the .irp file
+
+        :return: configuration (dict) of indexing_batch
+        """
+        configfile = os.path.join(settings["filepathout"], "indexing_config.yaml")
+        changes = {"ignorefitfileresults": settings["reanalyse"], "nb_cpus": settings["nb_cpus"]}
+        if settings["filedet"] is not None:
+            changes["detfile"] = settings["filedet"]
+        if settings["filesuffix"] == ".dat":
+            changes["image_folder"] = settings["filepathdat"]
+        cfg = IB.config_from_irp(settings["fileirp"], configfile, settings["filepathcor"], settings["filepathout"],
+                                 settings["fileprefix"], settings["nbdigits"], image_range=settings["image_range"],
+                                 mapdims=settings["mapdims"], guessed_matrices=settings["guessed"],
+                                 minimum_matching_rate=(settings["MinimumMatchingRate"] if settings["guessed"]
+                                                        else None),
+                                 overwrite=True, check=False, **changes)
+        return cfg
+
+    def OnWriteYAML(self, _):
+        """write the YAML configuration file of indexing_batch (no indexing)"""
+        settings = self.yaml_settings()
+        if settings is None:
+            return
+        try:
+            cfg = self.write_yaml_config(settings)
+        except (ValueError, OSError, KeyError) as err:
+            wx.MessageBox("Can not write the YAML configuration file:\n%s" % err, "Error")
+            return
+        wx.MessageBox("Configuration file written:\n%s\n\nUse it in the notebooks "
+                      "(notebooks/indexation/1_index_refine.ipynb) or with\n"
+                      "python -m LaueTools.indexing_batch --config %s" % (cfg["configfile"], cfg["configfile"]),
+                      "INFO")
+
+    def convert_datfiles(self, settings):
+        """write the .cor files of the .dat files (with the .det calibration file), as the legacy engine"""
+        CCDCalibdict = IOLT.readCalib_det_file(settings["filedet"])
+        nbconverted = 0
+        for imageindex in settings["indices"]:
+            datfilename = settings["fileprefix"] + str(imageindex).zfill(settings["nbdigits"]) + ".dat"
+            if not os.path.isfile(os.path.join(settings["filepathdat"], datfilename)):
+                continue
+            LaueGeo.convert2corfile(datfilename, CCDCalibdict["CCDCalibParameters"],
+                                    dirname_in=settings["filepathdat"], dirname_out=settings["filepathcor"],
+                                    CCDCalibdict=CCDCalibdict, add_props=True)
+            nbconverted += 1
+        print("%d .dat files converted into .cor files in %s" % (nbconverted, settings["filepathcor"]))
+
+    def run_indexing_batch(self):
+        """index & refine with indexing_batch, from a YAML configuration written from the board and the .irp file.
+        Also write for each image the .fit file of all grains (read by Build Summary)"""
+        settings = self.yaml_settings()
+        if settings is None:
+            return
+        if settings["filesuffix"] == ".dat":
+            self.convert_datfiles(settings)
+        try:
+            cfg = self.write_yaml_config(settings)
+        except (ValueError, OSError, KeyError) as err:
+            wx.MessageBox("Can not write the YAML configuration file:\n%s" % err, "Error")
+            return
+        print("indexing_batch configuration file:", cfg["configfile"])
+        if not IB.check_config(cfg):
+            wx.MessageBox("Errors in the configuration %s (see the terminal)" % cfg["configfile"], "Error")
+            return
+        listfiles = [str(IB.corfile_path(cfg, i)) for i in settings["indices"]]
+        listfiles = [f for f in listfiles if os.path.isfile(f)]
+        if not listfiles:
+            wx.MessageBox("No .cor file %s####.cor for these image indices in\n%s"
+                          % (settings["fileprefix"], settings["filepathcor"]), "Error")
+            return
+
+        params = IB.params_from_config(cfg, verboselevel=settings["verbose"])
+        print("start indexing %d files with indexing_batch on %d cpu(s)" % (len(listfiles), settings["nb_cpus"]))
+        busy = wx.BusyInfo("Indexing %d files on %d cpu(s)... (progress in the terminal)"
+                           % (len(listfiles), settings["nb_cpus"]))
+        try:
+            allresults = IB.run_multiprocessing(listfiles, params, nb_cpus=settings["nb_cpus"])
+        finally:
+            del busy
+        summary = IB.summarize_results(allresults, cfg["scan"]["mapdims"])
+        resultsfile = IB.save_allresults(cfg, params, allresults, summary, overwrite=True,
+                                         nb_cpus=settings["nb_cpus"])
+
+        # .fit file of all the grains of each image (as the legacy engine), read by Build Summary
+        for res in allresults:
+            imageindex = res[0]
+            stem = settings["fileprefix"] + str(imageindex).zfill(settings["nbdigits"])
+            IB.merge_grain_fitfiles(params.fitfile_folder(imageindex), stem)
+
+        wx.MessageBox("%d files treated, %d indexed (grain 0)\n\n.fit files in:\n%s\n\nconfiguration:\n%s\n"
+                      "results:\n%s" % (len(summary["treatedimages"]), len(summary["indexedimages"]),
+                                        settings["filepathout"], cfg["configfile"], resultsfile), "INFO")
 
     def OnbtnBrowse_filepathdat(self, _):
         """ select file
@@ -891,6 +1137,10 @@ class MainFrame_indexrefine(wx.Frame):
 
         if not os.path.exists(fileirp):
             wx.MessageBox("Index_refine config file %s does not exist!\n" % fileirp, "Error")
+            return
+
+        if self.useIndexingBatch():
+            self.run_indexing_batch()
             return
 
         try:

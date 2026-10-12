@@ -1,5 +1,5 @@
 # Al polycrystal (practical course utr20, march 2026)
-# NB: in the former notebook, 'central spots indices' (20) was larger than NBMAXPROBED (12): NBMAXPROBED set to 20
+# NB: in the former notebook, 'central spots indices' (20) was larger than MAXINDEXPROBED (12): MAXINDEXPROBED set to 20
 name: utr20 Al
 description: Al afternoon map 2D, EIGER 4M (practical course)
 
@@ -28,7 +28,7 @@ indexing:
   nbGrainstoFind: 1
   dict_indexrefine:
     central spots indices: 20
-    NBMAXPROBED: 20
+    MAXINDEXPROBED: 20
     AngleTolLUT: 0.2
     nlutmax: 5
     MATCHINGRATE_ANGLE_TOL: 0.2

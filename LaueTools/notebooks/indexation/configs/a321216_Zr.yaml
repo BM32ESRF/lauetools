@@ -1,5 +1,5 @@
 # Zr polycrystal (with Cr grains) (Ribart et al, a321216, oct 2025)
-# For Cr grains: key_material: Cr, central spots indices: 4, NBMAXPROBED: 30, nlutmax: 3
+# For Cr grains: key_material: Cr, central spots indices: 4, MAXINDEXPROBED: 30, nlutmax: 3
 name: a321216 Zr
 description: ech15_R1 Z1 2D map 50x60 um, 1 um step, sCMOS 4M
 
@@ -29,7 +29,7 @@ indexing:
   stop_Nb_Matches: 60
   dict_indexrefine:
     central spots indices: [0, 1, 2, 3]
-    NBMAXPROBED: 12
+    MAXINDEXPROBED: 12
     AngleTolLUT: 0.2
     nlutmax: 3
     MATCHINGRATE_ANGLE_TOL: 0.2

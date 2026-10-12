@@ -5,10 +5,14 @@ Three notebooks, one YAML configuration file per experiment:
 | notebook | input | output |
 |---|---|---|
 | `1_index_refine.ipynb` | `.cor` files (peak search results) | `.fit` files (hkl, UB matrix, strain per grain) |
+| `1b_index_refine_substrate.ipynb` | `.cor` files with spots of a substrate | `.fit` files of the substrate and of the material (one folder each) |
+| `1c_index_refine_multimaterials.ipynb` | `.cor` files with several materials | `.fit` files of each material (one folder each), phase map |
 | `2_postprocess_maps.ipynb` | `.fit` files | maps and statistics: indexing quality, strain, lattice parameters, orientation |
 | `3_segmentation_grains.ipynb` | `.fit` files | grains (orientation clusters), KAM, GROD, boundaries |
 
-The code is in the LaueTools modules `indexing_batch.py` (configuration, indexing, multiprocessing) and `orientationclustering.py` (segmentation).
+The code is in the LaueTools modules `indexing_batch.py` (configuration, indexing, multiprocessing), `indexing_sequence.py` (sequences of indexing steps: substrate, several materials; section `sequence` of the configuration) and `orientationclustering.py` (segmentation).
+
+Notebooks 1b and 1c write one configuration per folder of .fit files (`<config>_<folder>.yaml`): use it as `CONFIG` in notebooks 2 and 3.
 
 ## Quick start
 
