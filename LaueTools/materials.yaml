@@ -28,16 +28,6 @@ Austenite:
   - 90
   - 120
   extinction: wurtzite
-AAA_mystere:
-  label: AAA_mystere
-  lattice:
-  - 7.89
-  - 7.89
-  - 7.89
-  - 93.5
-  - 93.5
-  - 86.5
-  extinction: fcc
 Ag:
   label: Ag
   lattice:
@@ -711,9 +701,9 @@ InN:
 martensite_Verdier_21Apr26b:
   label: martensite_Verdier_21Apr26b
   lattice:
-  - 4.225*1.04
-  - 5.119*1.04
-  - 12.234*1.04
+  - 4.394
+  - 5.32376
+  - 12.72336
   - 90
   - 95.132
   - 90
@@ -771,13 +761,13 @@ Muscovite:
 Nb14W3O44:
   label: Nb14W3O44
   lattice:
-  - 21.002
-  - 21.002
-  - 3.82
+  - 21.03
+  - 21.03
+  - 3.93
   - 90
   - 90
   - 90
-  extinction: 'no'
+  extinction: h+k+l=2n
 Nd45:
   label: Nd45
   lattice:
@@ -1378,26 +1368,6 @@ test_solution:
   - 92.125478
   - 122.364
   extinction: wurtzite
-testindex:
-  label: testindex
-  lattice:
-  - 2.0
-  - 1.0
-  - 4.0
-  - 90
-  - 90
-  - 90
-  extinction: 'no'
-testindex2:
-  label: testindex2
-  lattice:
-  - 2.0
-  - 1.0
-  - 4.0
-  - 75
-  - 90
-  - 120
-  extinction: 'no'
 tourmaline:
   label: tourmaline
   lattice:
@@ -1408,26 +1378,6 @@ tourmaline:
   - 90
   - 120
   extinction: R3m_sg160
-myele:
-  label: myele
-  lattice:
-  - 0
-  - 0
-  - 0
-  - 0
-  - 0
-  - 0
-  extinction: myextinction
-strained_Ge:
-  label: strained_Ge
-  lattice:
-  - 5.6575
-  - 5.357500000000001
-  - 5.6575
-  - 90
-  - 90
-  - 90
-  extinction: dia
 strained_VO2M1:
   label: strained_VO2M1
   lattice:
@@ -1448,3 +1398,283 @@ strained_martensite_Verdier_21Apr26b:
   - 95.58199999999998
   - 90
   extinction: martensite_verdier1
+NiMnGa_base110:
+  label: NiMnGa_base110
+  lattice:
+  - 4.26
+  - 5.51
+  - 20.69
+  - 90
+  - 90.3
+  - 90
+  extinction: 'no'
+NiMnGa_base110_exp:
+  label: NiMnGa_base110_exp
+  lattice:
+  - 4.26
+  - 5.62
+  - 21.15
+  - 90
+  - 89.76
+  - 90
+  extinction: 'no'
+NiMnGa_theo:
+  label: NiMnGa_theo
+  lattice:
+  - 5.982
+  - 5.945
+  - 5.5577
+  - 90
+  - 90
+  - 90.3
+  extinction: h+k=2n
+NiMnGa_exp:
+  label: NiMnGa_exp
+  lattice:
+  - 5.982
+  - 6.04182
+  - 6.005928
+  - 89.6
+  - 89.9
+  - 90.1
+  extinction: h+k=2n
+NiMnGa_fcc_110:
+  label: NiMnGa_fcc_110
+  lattice:
+  - 4.26
+  - 5.62
+  - 5.62
+  - 90
+  - 89.7
+  - 90
+  extinction: 'no'
+Al3Ni:
+  label: Al3Ni
+  lattice:
+  - 6.615
+  - 7.3911
+  - 4.8116
+  - 90
+  - 90
+  - 90
+  extinction: 'no'
+aragonite:
+  label: aragonite
+  lattice:
+  - 4.9606
+  - 7.9701
+  - 5.7418
+  - 90
+  - 90
+  - 90
+  extinction: 'no'
+calcite:
+  label: calcite
+  lattice:
+  - 4.98
+  - 4.98
+  - 17.192
+  - 90
+  - 90
+  - 120
+  extinction: 'no'
+ZrUO2_corium:
+  label: ZrUO2_corium
+  lattice:
+  - 5.47
+  - 5.47
+  - 5.47
+  - 90
+  - 90
+  - 90
+  extinction: fcc
+Magnetite_fcc:
+  label: Magnetite_fcc
+  lattice:
+  - 8.391
+  - 8.391
+  - 8.391
+  - 90
+  - 90
+  - 90
+  extinction: fcc
+Magnetite:
+  label: Magnetite
+  lattice:
+  - 8.391
+  - 8.391
+  - 8.391
+  - 90
+  - 90
+  - 90
+  extinction: dia
+Magnetite_sc:
+  label: Magnetite_sc
+  lattice:
+  - 8.391
+  - 8.391
+  - 8.391
+  - 90
+  - 90
+  - 90
+  extinction: 'no'
+MgFe2O4:
+  label: MgFe2O4
+  lattice:
+  - 8.35
+  - 8.35
+  - 8.35
+  - 90
+  - 90
+  - 90
+  extinction: SG227
+MgO_double:
+  label: MgO_double
+  lattice:
+  - 8.422
+  - 8.422
+  - 8.422
+  - 90
+  - 90
+  - 90
+  extinction: fcc
+SimpleCubic1Ang:
+  label: SimpleCubic1Ang
+  lattice:
+  - 1.0
+  - 1.0
+  - 1.0
+  - 90
+  - 90
+  - 90
+  extinction: 'no'
+SimpleCubic5Ang:
+  label: SimpleCubic5Ang
+  lattice:
+  - 5.0
+  - 5.0
+  - 5.0
+  - 90
+  - 90
+  - 90
+  extinction: 'no'
+SimpleCubic7Ang:
+  label: SimpleCubic7Ang
+  lattice:
+  - 7.0
+  - 7.0
+  - 7.0
+  - 90
+  - 90
+  - 90
+  extinction: 'no'
+bigpro:
+  label: bigpro
+  lattice:
+  - 112.0
+  - 112.0
+  - 136.0
+  - 90
+  - 90
+  - 90
+  extinction: 'no'
+Zr_ref_s3DXRD:
+  label: Zr_ref_s3DXRD
+  lattice:
+  - 3.231
+  - 3.231
+  - 5.169
+  - 90
+  - 90
+  - 120
+  extinction: 'no'
+LTO_a321204:
+  label: LTO_a321204
+  lattice:
+  - 5.13
+  - 5.45
+  - 6.35
+  - 87.2
+  - 89.38
+  - 118.09
+  extinction: R3m_sg160
+LTO_1:
+  label: LTO_1
+  lattice:
+  - 5.13
+  - 5.13
+  - 13.82
+  - 90
+  - 90
+  - 120
+  extinction: R3m_sg160
+LTO_half:
+  label: LTO_half
+  lattice:
+  - 5.13
+  - 5.13
+  - 6.91
+  - 90
+  - 90
+  - 120
+  extinction: R3m_sg160
+LTO_all:
+  label: LTO_all
+  lattice:
+  - 5.13
+  - 5.13
+  - 13.82
+  - 90
+  - 90
+  - 120
+  extinction: 'no'
+LTO_distor:
+  label: LTO_distor
+  lattice:
+  - 10.869
+  - 13.655
+  - 8.459
+  - 92.653
+  - 63.159
+  - 86.865
+  extinction: fcc
+LTO_distor_all:
+  label: LTO_distor_all
+  lattice:
+  - 10.869
+  - 13.655
+  - 8.459
+  - 92.653
+  - 63.159
+  - 86.865
+  extinction: 'no'
+LTO_distor_al2o3_ext:
+  label: LTO_distor_al2o3_ext
+  lattice:
+  - 10.869
+  - 13.655
+  - 8.459
+  - 92.653
+  - 63.159
+  - 86.865
+  extinction: Al2O3
+LTO_distor_bulk:
+  label: LTO_distor_bulk
+  lattice:
+  - 5.13
+  - 4.83
+  - 11.958
+  - 90.0
+  - 92.8
+  - 118.08
+  extinction: R3m_sg160
+LTO_distor_bulk_fit:
+  label: LTO_distor_bulk_fit
+  lattice:
+  - 5.13
+  - 4.8301684
+  - 5.9791912
+  - 89.9987506
+  - 92.8008151
+  - 118.0844543
+  extinction: R3m_sg160

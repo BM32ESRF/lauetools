@@ -7,7 +7,8 @@ except ImportError:
 
 LAUETOOLSFOLDER = os.path.split(__file__)[0]
 
-CONFIG_DIR = LAUETOOLSFOLDER
+# configuration saved in the user's folder (LaueTools folder is not writable when pip installed in a system folder)
+CONFIG_DIR = os.environ.get("LAUETOOLS_USER_DIR", os.path.join(os.path.expanduser("~"), ".lauetools"))
 CONFIG_FILE = os.path.join(CONFIG_DIR, "lauetools_config.json")
 
 def save_config(data):
@@ -250,22 +251,26 @@ def copy_materials():
     )
     parser.add_argument(
         "-d", "--destination",
-        default=os.path.join(os.path.expanduser("~"), ".lauetools"),
+        default=CONFIG_DIR,
         help="Destination folder (default: ~/.lauetools)",
     )
+    parser.add_argument("-f", "--force", action="store_true",
+                        help="Overwrite a materials.yaml already in the destination folder")
     args = parser.parse_args()
 
     dest = os.path.abspath(args.destination)
     os.makedirs(dest, exist_ok=True)
 
-    with resources.path("LaueTools", "materials.yaml") as src:
-        dst_file = os.path.join(dest, "materials.yaml")
-        shutil.copy2(src, dst_file)
+    dst_file = os.path.join(dest, "materials.yaml")
+    if os.path.exists(dst_file) and not args.force:
+        print(f"{dst_file} already exists and is kept (use --force to overwrite it).")
+    else:
+        shutil.copy2(os.path.join(LAUETOOLSFOLDER, "materials.yaml"), dst_file)
+        print(f"Great materials.yaml copied to: {dst_file}")
 
     # Save chosen folder in persistent config
     cfg = load_config()
     cfg["materials_dir"] = dest
     save_config(cfg)
 
-    print(f"Great materials.yaml copied to: {dst_file}")
-    print("You can now edit this file freely.")
+    print("You can now edit this file freely (e.g. with lauetools-materials or lauetools-add-material).")

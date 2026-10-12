@@ -47,6 +47,7 @@ if sys.version_info.major == 3:
     from .. import IOLaueTools as IOLT
     from .. import generaltools as GT
     from .. import dict_LaueTools as DictLT
+    from . MaterialsEditor import MaterialComboBox, MaterialsRefreshButton
     from .. import lauecore as LAUE
     from .. import FitOrient as FitO
     from . import LaueSpotsEditor as LSEditor
@@ -485,9 +486,12 @@ class Plot_RefineFrame(wx.Frame):
 
         self.list_Materials = sorted(self.dict_Materials.keys())
         self.txtelem = wx.StaticText(self.panel, -1, "Material Element Structure:       ")
-        self.comboElem = wx.ComboBox(self.panel, -1, self.key_material,
-                                                choices=self.list_Materials, style=wx.CB_READONLY)
+        self.comboElem = MaterialComboBox(self.panel, -1, self.key_material,
+                                                choices=self.list_Materials)
         self.comboElem.Bind(wx.EVT_COMBOBOX, self.EnterComboElem)
+        self.refreshmaterialsbtn = MaterialsRefreshButton(self.panel, self.comboElem,
+                                    lambda: self.dict_Materials,
+                                    onrefresh=lambda labels: setattr(self, 'list_Materials', labels))
 
         self.txtmatrix = wx.StaticText(self.panel, -1, "Orientation Matrix (UB)")
 
@@ -790,6 +794,7 @@ class Plot_RefineFrame(wx.Frame):
 
         hbox4 = wx.BoxSizer(wx.HORIZONTAL)
         hbox4.Add(self.comboElem, 0, wx.ALL)
+        hbox4.Add(self.refreshmaterialsbtn, 0, wx.LEFT | wx.RIGHT, 5)
         hbox4.Add(self.comboUBmatrix, 0, wx.ALL)
 
         hbox5 = wx.BoxSizer(wx.HORIZONTAL)
@@ -2953,8 +2958,7 @@ class Plot_RefineFrame(wx.Frame):
         """
         if self.verbose>0:
             print("EnterComboElem in RefineFrame")
-        item = event.GetSelection()
-        self.key_material = self.list_Materials[item]
+        self.key_material = str(self.comboElem.GetValue())
 
         if self.verbose>0:
             print("self.key_material", self.key_material)

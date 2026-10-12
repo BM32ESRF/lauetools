@@ -44,6 +44,7 @@ if sys.version_info.major == 3:
     from .. import CrystalParameters as CP
     from .. import generaltools as GT
     from .. import dict_LaueTools as DictLT
+    from . MaterialsEditor import MaterialComboBox, MaterialsRefreshButton
     from .. import dragpoints as DGP
     from . import threadGUI2 as TG
     from . ResultsIndexationGUI import RecognitionResultCheckBox
@@ -371,9 +372,12 @@ class ManualIndexFrame(wx.Frame):
 
         self.txtelem = wx.StaticText(self.panel, -1, "Elem: ")
         self.list_materials = sorted(self.parent.dict_Materials.keys())
-        self.combokeymaterial = wx.ComboBox(self.panel, -1, self.key_material,
-                                    choices=self.list_materials, style=wx.CB_READONLY)
+        self.combokeymaterial = MaterialComboBox(self.panel, -1, self.key_material,
+                                    choices=self.list_materials)
         self.combokeymaterial.Bind(wx.EVT_COMBOBOX, self.EnterCombokeymaterial)
+        self.refreshmaterialsbtn = MaterialsRefreshButton(self.panel, self.combokeymaterial,
+                                    lambda: self.parent.dict_Materials,
+                                    onrefresh=lambda labels: setattr(self, 'list_materials', labels))
 
         self.sethklchck = wx.CheckBox(self.panel, -1, "set spot1 hkl")
         self.sethklcentral = wx.TextCtrl(self.panel, -1, "[1,0,0]", size=(100, -1))
@@ -492,7 +496,10 @@ class ManualIndexFrame(wx.Frame):
         sizerparam.AddSpacer(5)
         sizerparam.Add(henergiesbox, 0, wx.ALL)
         sizerparam.Add(self.txtelem, 0, wx.ALL)
-        sizerparam.Add(self.combokeymaterial, 0, wx.ALL)
+        helembox = wx.BoxSizer(wx.HORIZONTAL)
+        helembox.Add(self.combokeymaterial, 0, wx.ALL)
+        helembox.Add(self.refreshmaterialsbtn, 0, wx.LEFT, 5)
+        sizerparam.Add(helembox, 0, wx.ALL)
 
         btnSizer0 = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer0.Add(self.pointButton6, 0, wx.ALL)
@@ -1215,8 +1222,7 @@ class ManualIndexFrame(wx.Frame):
         """
         in ManualIndexFrame
         """
-        item = evt.GetSelection()
-        self.key_material = self.list_materials[item]
+        self.key_material = str(self.combokeymaterial.GetValue())
 
         self.sb.SetStatusText("Selected material: %s" % str(self.parent.dict_Materials[self.key_material]))
         evt.Skip()

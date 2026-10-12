@@ -38,6 +38,7 @@ else:
 
 if sys.version_info.major == 3:
     from .. import dict_LaueTools as DictLT
+    from . MaterialsEditor import MaterialComboBox
     from . SimulFrame import SimulationPlotFrame #, getindices_StreakingData
     from .. import CrystalParameters as CP
     from .. import multigrainsSimulator as MGS
@@ -888,8 +889,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         self.RefreshCombosChoices()
 
-        self.comboElem = wx.ComboBox(self.panel, -1, "Cu",
-                                choices=self.list_of_Elem, style=wx.CB_READONLY)
+        self.comboElem = MaterialComboBox(self.panel, -1, "Cu", choices=self.list_of_Elem)
         self.comboExtinc = wx.ComboBox(self.panel, -1, "FaceCenteredCubic",
                                 choices=self.list_of_Extinc, style=wx.CB_READONLY)
         self.comboStrain_a = wx.ComboBox(self.panel, -1, "Identity",
@@ -1141,8 +1141,7 @@ class parametric_Grain_Dialog3(wx.Frame):
 
         self.RefreshCombosChoices()
 
-        self.comboElem.Clear()
-        self.comboElem.AppendItems(self.list_of_Elem)
+        self.comboElem.SetItems(self.list_of_Elem)  # the selected material is kept
         self.comboExtinc.Clear()
         self.comboExtinc.AppendItems(self.list_of_Extinc)
         self.comboStrain_a.Clear()
@@ -1155,6 +1154,8 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.comboStrain_c.AppendItems(self.list_of_Strain_c)
 
     def RefreshCombosChoices(self):
+        # materials added in the file by an other program (e.g. lauetools-materials editor)
+        DictLT.reload_materials(self.dict_Materials)
         # order list element for clarity
         List_Extinc_name = list(DictLT.dict_Extinc.keys())
         List_Extinc_name.remove("NoExtinction")
@@ -1186,8 +1187,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         self.list_of_Strain_c = ["Identity"] + List_Transform_name
 
     def EnterComboElem(self, event):
-        item = event.GetSelection()
-        key_material = self.list_of_Elem[item]
+        key_material = str(self.comboElem.GetValue())
         # print "item",item
         # print "self.list_of_Elem[item]",self.list_of_Elem[item]
         self.CurrentGrain[0] = key_material

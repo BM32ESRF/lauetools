@@ -13,6 +13,7 @@ import copy
 import os, json
 import re
 import ast
+import operator
 try:
     from importlib import resources
 except ImportError:
@@ -20,45 +21,125 @@ except ImportError:
 
 import numpy as np
 
-USE_MATERIALS_LIBRARY = False
-USE_USER_MATERIALS_YAML_FILE = False
+USE_MATERIALS_LIBRARY = True
+# when no yaml file is given, read the user's materials.yaml (if any) rather than the one installed with LaueTools
+USE_USER_MATERIALS_YAML_FILE = True
 
 LAUETOOLSFOLDER = os.path.split(__file__)[0]
 DEFAULT_MATERIALS_FILE = os.path.join(LAUETOOLSFOLDER, "materials.yaml")
 # print("LaueToolsProjectFolder", LAUETOOLSFOLDER)
 # WRITEFOLDER = os.path.join(LAUETOOLSFOLDER, "laueanalysis")
 
+# user's folder (always writable, kept when LaueTools is upgraded): configuration and editable materials.yaml
+USER_LAUETOOLS_DIR = os.environ.get("LAUETOOLS_USER_DIR",
+                                    os.path.join(os.path.expanduser("~"), ".lauetools"))
+CONFIG_FILE = os.path.join(USER_LAUETOOLS_DIR, "lauetools_config.json")
+USER_MATERIALS_FILE = os.path.join(USER_LAUETOOLS_DIR, "materials.yaml")
+# former location of the configuration file (not writable when LaueTools is pip installed in a system folder)
+LEGACY_CONFIG_FILE = os.path.join(LAUETOOLSFOLDER, "lauetools_config.json")
+
 def _load_config():
-    print('loading lauetools_config.json in ', LAUETOOLSFOLDER)
-    cfg_file = os.path.join(LAUETOOLSFOLDER, "lauetools_config.json")
-    if os.path.exists(cfg_file):
-        with open(cfg_file) as f:
-            return json.load(f)
+    """read lauetools_config.json in the user's folder (or else the former one in LaueTools folder)"""
+    for cfg_file in (CONFIG_FILE, LEGACY_CONFIG_FILE):
+        if os.path.exists(cfg_file):
+            try:
+                with open(cfg_file) as f:
+                    return json.load(f)
+            except (OSError, ValueError):
+                continue
     return {}
+
+def _save_config(cfg):
+    """write lauetools_config.json in the user's folder"""
+    os.makedirs(USER_LAUETOOLS_DIR, exist_ok=True)
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(cfg, f, indent=2)
 
 #####   materials.yaml    #####
 import yaml
 
 def get_materials_file():
-    """Return path to active materials.yaml, considering saved user choice."""
+    """Return path to active materials.yaml, considering saved user choice.
+
+    By order of priority: materials.yaml in the folder 'materials_dir' of lauetools_config.json
+    (see lauetools-copy-materials), materials.yaml in the user's folder (~/.lauetools),
+    materials.yaml installed with LaueTools.
+    """
     cfg = _load_config()
-    if "materials_dir" in cfg:
-        user_path = os.path.join(cfg["materials_dir"], "materials.yaml")
+    candidates = []
+    if cfg.get("materials_dir"):
+        candidates.append(os.path.join(cfg["materials_dir"], "materials.yaml"))
+    candidates.append(USER_MATERIALS_FILE)
+    for user_path in candidates:
         if os.path.exists(user_path):
-            print('-> Using user materials.yaml: ', user_path)
             return user_path
-        else:
-            print('No user materials.yaml found. Using default materials.yaml')
-            return DEFAULT_MATERIALS_FILE
+    return DEFAULT_MATERIALS_FILE
+
+def _is_installed_file(path):
+    """True if path belongs to a pip installed package (its content is lost at the next upgrade)"""
+    parts = os.path.abspath(path).split(os.sep)
+    return "site-packages" in parts or "dist-packages" in parts
+
+def is_editable_materials_file(path):
+    """True if materials file path can be modified: writable and not in a pip installed package
+    (a materials.yaml in a git clone or in an editable install 'pip install -e' is editable)"""
+    path = os.path.abspath(path)
+    if _is_installed_file(path):
+        return False
+    if os.path.exists(path):
+        return os.access(path, os.W_OK)
+    folder = os.path.dirname(path)
+    return os.path.isdir(folder) and os.access(folder, os.W_OK)
+
+def get_writable_materials_file(yaml_file_path=None):
+    """Return the path of the materials.yaml where modifications of yaml_file_path must be written:
+    yaml_file_path itself if it is editable, else materials.yaml in the user's folder (~/.lauetools)
+    which then becomes the active one (see get_materials_file()).
+
+    :raises PermissionError: if the user's folder already contains an other materials library
+    """
+    if yaml_file_path is None:
+        yaml_file_path = get_materials_file()
+    if is_editable_materials_file(yaml_file_path):
+        return yaml_file_path
+    if os.path.exists(USER_MATERIALS_FILE) and not os.path.samefile(USER_MATERIALS_FILE, yaml_file_path):
+        raise PermissionError(f"{yaml_file_path} cannot be modified and {USER_MATERIALS_FILE} already "
+                              "exists: load this last one to modify it.")
+    os.makedirs(USER_LAUETOOLS_DIR, exist_ok=True)
+    return USER_MATERIALS_FILE
+
+_ARITHMETIC_OPERATORS = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+                         ast.Div: operator.truediv, ast.Pow: operator.pow,
+                         ast.USub: operator.neg, ast.UAdd: operator.pos}
+
+def evaluate_arithmetic(expression):
+    """Return the value of a string with numbers and + - * / ** ( ) only, e.g. '3.2095*1.04' -> 3.33788
+
+    :raises ValueError: if expression is something else
+    """
+    def _eval(node):
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) \
+                                                            and not isinstance(node.value, bool):
+            return node.value
+        if isinstance(node, ast.BinOp) and type(node.op) in _ARITHMETIC_OPERATORS:
+            return _ARITHMETIC_OPERATORS[type(node.op)](_eval(node.left), _eval(node.right))
+        if isinstance(node, ast.UnaryOp) and type(node.op) in _ARITHMETIC_OPERATORS:
+            return _ARITHMETIC_OPERATORS[type(node.op)](_eval(node.operand))
+        raise ValueError(f"'{expression}' is not a number or an arithmetical expression")
+    try:
+        return _eval(ast.parse(str(expression).strip(), mode="eval").body)
+    except (SyntaxError, ZeroDivisionError, OverflowError) as err:
+        raise ValueError(f"'{expression}' is not a number or an arithmetical expression") from err
 
 
 class Materials:
-    def __init__(self, key_material=None, yaml_file_path=DEFAULT_MATERIALS_FILE, use_user_yaml_file=USE_USER_MATERIALS_YAML_FILE):
+    def __init__(self, key_material=None, yaml_file_path=None, use_user_yaml_file=USE_USER_MATERIALS_YAML_FILE):
         """
         Initialize the Materials with the YAML file.
 
-        :param yaml_file_path: Path to the YAML file.
-        :param use_user_yaml_file: If True, try to read the user's materials.yaml file.
+        :param yaml_file_path: Path to the YAML file. If None, the active materials.yaml (see use_user_yaml_file)
+        :param use_user_yaml_file: when yaml_file_path is None: if True, read the user's materials.yaml file
+            if any (see get_materials_file()), if False read the materials.yaml installed with LaueTools.
         :param key_material: Optional key to check and preload material data for.
 
         Example usage:
@@ -69,15 +150,10 @@ class Materials:
         self.use_user_yaml_file = use_user_yaml_file
         self.key_material = key_material
         self.materials = None  # Explicitly initialize as None
-
-        # Resolve the YAML file path
-        if use_user_yaml_file:
-            try:
-                yaml_file_path = get_materials_file()
-            except:
-                print('No user copy version of materials.yaml found. Using default materials.yaml')
-                yaml_file_path = DEFAULT_MATERIALS_FILE
-            self.yaml_file_path = yaml_file_path
+        # labels of the materials set like in a dictionary (materials[label] = ...): they are not written in the file
+        self.session_labels = set()
+        # materials of the file hidden by a material set like in a dictionary: they are kept as they are in the file
+        self.file_versions = {}
 
         # Load the YAML file and populate self.materials
         self.read_yaml(yaml_file_path, use_user_yaml_file)
@@ -93,13 +169,13 @@ class Materials:
         """
         Return the materials data if a key_material was provided.
         """
-        if self.data is not None:
-            if not isinstance(self.data, str):
-                return str(self.data)
-            else:
-                return str(self.data)+self.yaml_file_path
-        else:
-            return None
+        return str(self.data)
+
+    def __len__(self):
+        return len(self.materials)
+
+    def __iter__(self):
+        return iter(self.materials)
 
     def __call__(self, key_material):
         return self.get_material_as_list(key_material)
@@ -109,8 +185,35 @@ class Materials:
 
         :param key_material: String label of the material to retrieve.
         :return: List of [string label, list of floats, string extinction].
+        :raises KeyError: if key_material is unknown (as a dictionary)
         """
+        if key_material not in self.materials:
+            raise KeyError(key_material)
         return self.get_material_as_list(key_material)
+
+    def __setitem__(self, key_material, material):
+        """
+        Set a material like in a dictionary, for the current session only: it is NOT written
+        in the YAML file (use add_or_update_material() to save a material).
+
+        :param material: [label, lattice, extinction] or dict with keys 'lattice' and 'extinction'.
+            lattice may be [a, b, c, alpha, beta, gamma] or the 4 matrices [Da, U, Dc, B]
+        """
+        if isinstance(material, dict):
+            lattice, extinction = material['lattice'], material['extinction']
+        else:
+            _, lattice, extinction = material
+        if key_material in self.materials and key_material not in self.session_labels:
+            self.file_versions[key_material] = self.materials[key_material]
+        self.materials[key_material] = {'label': key_material, 'lattice': lattice, 'extinction': extinction}
+        self.session_labels.add(key_material)
+
+    def __delitem__(self, key_material):
+        """Remove a material for the current session only (see remove_material() to update the YAML file)."""
+        material = self.materials.pop(key_material)
+        if key_material not in self.session_labels:
+            self.file_versions[key_material] = material
+        self.session_labels.discard(key_material)
     
     def contains(self, key_material):
         """
@@ -135,19 +238,19 @@ class Materials:
 
     def values(self):
         """
-        Return the values of the materials dictionary.
+        Return the materials as in a dictionary of LaueTools materials.
 
-        :return: List of values.
+        :return: List of [string label, list of floats, string extinction].
         """
-        return self.materials.values()
+        return [self.get_material_as_list(key) for key in self.materials]
 
     def items(self):
         """
-        Return the items of the materials dictionary.
+        Return the items as in a dictionary of LaueTools materials.
 
-        :return: List of (key, value) pairs.
+        :return: List of (key, [string label, list of floats, string extinction]) pairs.
         """
-        return self.materials.items()
+        return [(key, self.get_material_as_list(key)) for key in self.materials]
 
     def get(self, key_material, default=None):
         """
@@ -155,66 +258,121 @@ class Materials:
 
         :param key_material: String label of the material.
         :param default: Default value to return if the key is not found.
-        :return: Material data or default value.
+        :return: [string label, list of floats, string extinction] or default value.
         """
-        return self.materials.get(key_material, default)
-
-    def get_material_dict(self):
-        """
-        Return the entire dictionary of materials.
-
-        :return: Dictionary of materials.
-        """
-        return self.materials
+        if key_material not in self.materials:
+            return default
+        return self.get_material_as_list(key_material)
 
     def read_yaml(self, yaml_file_path=None, use_user_yaml_file=USE_USER_MATERIALS_YAML_FILE):
         """
         Read a YAML file containing materials data.
-        Evaluates mathematical expressions (e.g., "3.2095*1.04") in the YAML values.
+        Evaluates mathematical expressions (e.g., "3.2095*1.04") in the lattice parameters.
 
-        If yaml_file_path is None, read the YAML file specified by self.yaml_file_path.
-        If use_user_yaml_file is True, try to read the user's materials.yaml file copy and editable version whose location is saved in lauetools_config.json file.
-        If no user materials.yaml file is found, read the default materials.yaml file.
+        If yaml_file_path is None, read the active materials.yaml file:
+        if use_user_yaml_file is True, the user's materials.yaml (editable copy, see get_materials_file())
+        if any, else the default materials.yaml file installed with LaueTools.
 
         :param yaml_file_path: Path to the YAML file to read.
         :param use_user_yaml_file: If True, try to read the user's materials.yaml file.
         """
+        # True if the file is the active materials.yaml (see reload())
+        self.use_active_file = yaml_file_path is None and use_user_yaml_file
         if yaml_file_path is None:
-            yaml_file_path = self.yaml_file_path
-        if not use_user_yaml_file:
-            try:
-                yaml_file_path = get_materials_file()
-            except:
-                print('No user materials.yaml found. Using default materials.yaml')
-                yaml_file_path = DEFAULT_MATERIALS_FILE
+            yaml_file_path = get_materials_file() if use_user_yaml_file else DEFAULT_MATERIALS_FILE
 
         def evaluate_yaml_value(value):
-            """Recursively evaluate strings containing mathematical expressions in YAML values."""
+            """evaluate a lattice parameter given as a string (mathematical expression)"""
             if isinstance(value, str):
                 try:
-                    # Try to evaluate as a literal (e.g., "3.2095*1.04" -> 3.33788)
-                    return ast.literal_eval(value)
-                except (ValueError, SyntaxError):
-                    # If not a literal expression, return as-is (e.g., "martensite_verdier1")
+                    return evaluate_arithmetic(value)
+                except ValueError:
                     return value
-            elif isinstance(value, list):
-                return [evaluate_yaml_value(item) for item in value]
-            elif isinstance(value, dict):
-                return {k: evaluate_yaml_value(v) for k, v in value.items()}
-            else:
-                return value
+            return value
 
         with open(yaml_file_path, 'r') as file:
-            loaded_data = yaml.safe_load(file)
-            # Recursively evaluate all values in the loaded YAML
-            self.materials = evaluate_yaml_value(loaded_data)
-            self.yaml_file_path = yaml_file_path
+            loaded_data = yaml.safe_load(file) or {}
+        if not isinstance(loaded_data, dict):
+            raise ValueError(f"{yaml_file_path} is not a materials library: expected a dictionary at top level")
+        for label, material in loaded_data.items():
+            if not isinstance(material, dict) or 'lattice' not in material or 'extinction' not in material:
+                raise ValueError(f"material '{label}' in {yaml_file_path} must have 'lattice' and 'extinction'")
+            material['lattice'] = [evaluate_yaml_value(item) for item in material['lattice']]
+        self.materials = loaded_data
+        self.session_labels = set()
+        self.file_versions = {}
+        self.yaml_file_path = yaml_file_path
+        self.file_stamp = self._stamp(yaml_file_path)
+
+    @staticmethod
+    def _stamp(yaml_file_path):
+        """modification time and size of the file, to detect its modification by an other program"""
+        try:
+            status = os.stat(yaml_file_path)
+            return status.st_mtime_ns, status.st_size
+        except OSError:
+            return None
+
+    def reload(self, force=False):
+        """
+        Read again the YAML file if it has been modified since it was read or written,
+        e.g. by the materials editor (lauetools-materials) running at the same time.
+        Materials set for the current session only (materials[label] = ...) are kept.
+
+        :param force: True to read the file even if it does not seem modified
+        :return: True if the file has been read again
+        """
+        yaml_file_path = get_materials_file() if self.use_active_file else self.yaml_file_path
+        samefile = os.path.abspath(yaml_file_path) == os.path.abspath(self.yaml_file_path)
+        if not force and samefile and self._stamp(yaml_file_path) == self.file_stamp:
+            return False
+        use_active_file = self.use_active_file
+        sessionmaterials = {label: self.materials[label] for label in self.session_labels
+                            if label in self.materials}
+        self.read_yaml(yaml_file_path)
+        self.use_active_file = use_active_file
+        for label, material in sessionmaterials.items():
+            self[label] = material
+        return True
+
+    def write_yaml(self, yaml_file_path=None):
+        """
+        Write the materials in a YAML file: yaml_file_path, or the file read if it is editable,
+        else materials.yaml in the user's folder (see get_writable_materials_file()).
+
+        :return: path of the written file (set also in self.yaml_file_path)
+        """
+        if yaml_file_path is None:
+            yaml_file_path = get_writable_materials_file(self.yaml_file_path)
+        yaml_file_path = os.path.abspath(yaml_file_path)
+        # written first in a temporary file not to lose the library if writing fails
+        tmpfile = yaml_file_path + ".tmp"
+        with open(tmpfile, 'w') as file:
+            yaml.safe_dump(self._file_materials(), file, sort_keys=False, default_flow_style=False)
+        os.replace(tmpfile, yaml_file_path)
+        if os.path.abspath(self.yaml_file_path) != yaml_file_path:
+            print('Materials library written in: ', yaml_file_path)
+        self.yaml_file_path = yaml_file_path
+        self.file_stamp = self._stamp(yaml_file_path)
+        return yaml_file_path
+
+    def _file_materials(self):
+        """materials to write in the file: without those set for the current session only"""
+        filematerials = {}
+        for label, material in self.materials.items():
+            if label in self.file_versions:
+                filematerials[label] = self.file_versions[label]
+            elif label not in self.session_labels:
+                filematerials[label] = material
+        for label, material in self.file_versions.items():
+            filematerials.setdefault(label, material)
+        return filematerials
 
     def check_material(self, key_material):
         if key_material in self.materials.keys():
             return
         else:
-            raise KeyError(f"{self.key_material} is not in Materials Library yaml file: {self.yaml_file_path}......Available materials are:", [km for km in self.materials.keys()])
+            raise KeyError(f"{key_material} is not in Materials Library yaml file: {self.yaml_file_path}......Available materials are:", [km for km in self.materials.keys()])
 
     def get_material_dict(self):
         """
@@ -273,36 +431,85 @@ class Materials:
         """
         Add or update a material in the dictionary and update the YAML file.
 
-        resets yaml_file_path if yaml_file_path is not None
+        The file written is yaml_file_path if not None, or the file read if it is editable,
+        else materials.yaml in the user's folder (see write_yaml()).
 
         :param label: String label of the material.
         :param lattice: List of lattice parameters.
         :param extinction: String extinction rule.
+        :return: path of the written file
         """
+        # plain python numbers (numpy ones cannot be written in the YAML file)
+        lattice = [int(x) if float(x).is_integer() and not isinstance(x, (float, np.floating))
+                   else float(x) for x in lattice]
+        if len(lattice) != 6:
+            raise ValueError("lattice must have 6 values: a, b, c, alpha, beta, gamma")
+        if yaml_file_path is None:
+            self.reload()  # not to lose the materials saved meanwhile by an other program
+        previous = self.materials.get(label)
+        wassession = label in self.session_labels
+        fileversion = self.file_versions.pop(label, None)
+        self.session_labels.discard(label)
         self.materials[label] = {
-            'label': label,
+            'label': str(label),
             'lattice': lattice,
-            'extinction': extinction
+            'extinction': str(extinction)
         }
-        if yaml_file_path is not None:
-            self.yaml_file_path = yaml_file_path
-        with open(self.yaml_file_path, 'w') as file:
-            yaml.dump(self.materials, file, sort_keys=False, default_flow_style=False)
+        try:
+            return self.write_yaml(yaml_file_path)
+        except Exception:
+            # keep the library as in the file
+            if previous is None:
+                del self.materials[label]
+            else:
+                self.materials[label] = previous
+            if wassession:
+                self.session_labels.add(label)
+            if fileversion is not None:
+                self.file_versions[label] = fileversion
+            raise
 
     def remove_material(self, label):
         """
         Remove a material from the dictionary and update the YAML file.
 
         :param label: String label of the material to remove.
+        :return: path of the written file (None if label is unknown)
         """
-        if label in self.materials:
-            del self.materials[label]
+        self.reload()  # not to lose the materials saved meanwhile by an other program
+        if label not in self.materials and label not in self.file_versions:
+            return None
+        previous = self.materials.pop(label, None)
+        wassession = label in self.session_labels
+        fileversion = self.file_versions.pop(label, None)
+        self.session_labels.discard(label)
+        if wassession and fileversion is None:
+            return None  # was not in the file
+        try:
+            return self.write_yaml()
+        except Exception:
+            if previous is not None:
+                self.materials[label] = previous
+            if wassession:
+                self.session_labels.add(label)
+            if fileversion is not None:
+                self.file_versions[label] = fileversion
+            raise
 
-            with open(self.yaml_file_path, 'w') as file:
-                yaml.dump(self.materials, file, sort_keys=False, default_flow_style=False)
+def reload_materials(dict_materials=None):
+    """Read again the materials file of dict_materials (default: dict_Materials) if it has been modified
+    by an other program. Nothing is done with a plain dictionary of materials.
 
-import os
-
+    :return: True if the materials have been read again
+    """
+    if dict_materials is None:
+        dict_materials = dict_Materials
+    if isinstance(dict_materials, Materials):
+        try:
+            return dict_materials.reload()
+        except (OSError, ValueError, yaml.YAMLError) as error:
+            print('Materials file cannot be read again:', error)
+    return False
 
 yaml_file_path = get_materials_file()
 
@@ -388,6 +595,7 @@ elif not(USE_MATERIALS_LIBRARY):
         "NiMnGa_theo": ["NiMnGa_theo", [5.982, 5.945, 5.5577, 90, 90, 90.3], "h+k=2n"],
         "NiMnGa_exp": ["NiMnGa_exp", [5.982, 5.982*5.05/5., 5.982*5.02/5., 89.6, 89.9, 90.1], "h+k=2n"],
         "NiMnGa_base110": ["NiMnGa_base110", [4.26, 5.51, 20.69, 90,90.3,90], "no"],
+        "NiMnGa_base110_exp": ["NiMnGa_base110_exp", [4.26, 5.62, 21.15, 90,89.76,90], "no"],
         "NiMnIn_2ac": ["NiMnIn_2ac", [2*4.3919, 5.6202, 2*4.3315, 90, 93.044, 90], "2h+k=2n"],  # I2/m SG 12 
         "Nb14W3O44": ["Nb14W3O44", [21.002, 21.002, 3.82, 90, 90, 90], "no"],  #space group 82 to be checked
         "Olivine_forsterite": ["Olivine_forsterite", [4.754,10.1971,5.9806, 90, 90, 90], "no"],

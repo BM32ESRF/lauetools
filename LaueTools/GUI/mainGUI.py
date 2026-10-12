@@ -79,6 +79,7 @@ from LaueTools.dict_LaueTools import (dict_CCD, dict_calib, dict_Materials, dict
                                 dict_Eul, list_CCD_file_extensions,
                                 readDict, getwildcardstring, LAUETOOLSFOLDER)
 import LaueTools.dict_LaueTools as DictLT
+from LaueTools.GUI.MaterialsEditor import MaterialComboBox, MaterialsEditorFrame, MaterialsRefreshButton
 import LaueTools.IOimagefile as IOimage
 from LaueTools.GUI.PeakSearchGUI import MainPeakSearchFrame
 from LaueTools.GUI.DetectorParameters import autoDetectDetectorType
@@ -313,6 +314,8 @@ class LaueToolsGUImainframe(wx.Frame):
             (wx.ID_ANY, "&Open Peak List", "Open a file with a peak list: .dat or .cor", self.OnOpenPeakList),
             (wx.ID_ANY, "&Reload Materials", "Update or Load Materials (dict_Materials.dat)",
                                                                             self.OnLoadMaterials),
+            (wx.ID_ANY, "&Materials Editor", "Display the materials (sorted by name or lattice parameters) and add a material",
+                                                                            self.OnMaterialsEditor),
             (None, None, None, None),
             (wx.ID_ANY, "&Check Orientation",
                 "Enter Orientation matrix, Material and check Matching with the current experimental Laue Pattern spots list",
@@ -537,6 +540,10 @@ class LaueToolsGUImainframe(wx.Frame):
 
         open_dlg.Destroy()
 
+
+    def OnMaterialsEditor(self, _):
+        """Open the editor of the materials (table sortable by column, form to add a material)."""
+        MaterialsEditorFrame(self, -1, dict_materials=self.dict_Materials).Show(True)
 
     def recomputeScatteringAngles(self, _):
         """ update scattering angles 2theta chi from user entered value from Launch_DetectorParamBoard"""
@@ -2122,9 +2129,9 @@ class CliquesFindingBoard(wx.Frame):
     """
     def __init__(self, parent, _id, title, indexation_parameters):
 
-        wx.Frame.__init__(self, parent, _id, title, size=(400, 330))
+        wx.Frame.__init__(self, parent, _id, title, size=(400, 470))
 
-        self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(590, 390), pos=(5, 5))
+        self.panel = wx.Panel(self, -1, style=wx.SIMPLE_BORDER, size=(590, 460), pos=(5, 5))
 
         self.indexation_parameters = indexation_parameters
         self.parent = parent
@@ -2156,19 +2163,40 @@ class CliquesFindingBoard(wx.Frame):
         lsic=self.spotlist = wx.TextCtrl(self.panel, -1, "to5", (150, 125), (200, -1))
         lsit = wx.StaticText(self.panel, -1, "(from 0 to set size-1)", (15, 145))
 
-        compsavebtn = wx.Button(self.panel, -1, "Compute && Save", (260, 170), (110, 30))
+        # reference angles LUT: material is any key of parent.dict_Materials (dict or DictLT.Materials object)
+        title2 = wx.StaticText(self.panel, -1, "Reference angles LUT", (15, 180))
+        title2.SetFont(font3)
+
+        self.dict_Materials = self.parent.dict_Materials
+        list_materials = sorted(self.dict_Materials.keys(), key=str.lower)
+        default_material = getattr(self.parent, 'key_material', None)
+        if default_material not in list_materials:
+            default_material = 'Mg' if 'Mg' in list_materials else list_materials[0]
+
+        mat = wx.StaticText(self.panel, -1, "Material: ", (15, 210))
+        self.combomaterial = MaterialComboBox(self.panel, -1, default_material, (150, 205), (145, -1),
+                                                    choices=list_materials)
+        MaterialsRefreshButton(self.panel, self.combomaterial, lambda: self.dict_Materials,
+                                                    sortkey=str.lower, pos=(300, 203), size=(75, 30))
+
+        nlt = wx.StaticText(self.panel, -1, "LUT max. index: ", (15, 245))
+        self.nlutctrl = wx.SpinCtrl(self.panel, -1, "4", (150, 240), (60, -1), min=1, max=8)
+
+        compsavebtn = wx.Button(self.panel, -1, "Compute && Save", (240, 238), (130, 30))
         compsavebtn.Bind(wx.EVT_BUTTON, self.OnComputeSaveAnglesFile)
 
-        wx.StaticText(self.panel, -1, "Load AnglesLUT file ", (15, 175))
-        loadanglesbtn = wx.Button(self.panel, -1, "...", (180, 170), (60, 30))
+        wx.StaticText(self.panel, -1, "or load AnglesLUT file ", (15, 280))
+        loadanglesbtn = wx.Button(self.panel, -1, "...", (240, 273), (60, 30))
         loadanglesbtn.Bind(wx.EVT_BUTTON, self.OnLoadAnglesFile)
 
-        self.indexchkbox = wx.CheckBox(self.panel, -1, "Use cliques for indexation", (15, 215))
+        self.luttxt = wx.StaticText(self.panel, -1, "LUT in use: default (cubic)", (15, 312))
+
+        self.indexchkbox = wx.CheckBox(self.panel, -1, "Use cliques for indexation", (15, 345))
         self.indexchkbox.SetValue(False)
 
-        wx.Button(self.panel, 1, "Search", (40, 245), (110, 40))
+        wx.Button(self.panel, 1, "Search", (40, 375), (110, 40))
         self.Bind(wx.EVT_BUTTON, self.OnSearch, id=1)
-        wx.Button(self.panel, 2, "Quit", (230, 245), (110, 40))
+        wx.Button(self.panel, 2, "Quit", (230, 375), (110, 40))
         self.Bind(wx.EVT_BUTTON, self.OnQuit, id=2)
 
         self.Show(True)
@@ -2184,31 +2212,67 @@ class CliquesFindingBoard(wx.Frame):
         lsic.SetToolTipString(txtlsi)
         lsit.SetToolTipString(txtlsi)
 
+        txtmat = 'material or structure whose unit cell is used to compute the reference angles LUT'
+        mat.SetToolTipString(txtmat)
+        self.combomaterial.SetToolTipString(txtmat)
+
+        txtnlt = ('highest Miller index of the reflections used to compute the reference angles.\n'
+                'For a large or low symmetry unit cell, keep it small: otherwise nearly every angle is recognised')
+        nlt.SetToolTipString(txtnlt)
+        self.nlutctrl.SetToolTipString(txtnlt)
 
     def OnComputeSaveAnglesFile(self, _):
-        # open dialog  for structure
-        key_material = 'Mg'
-        nLUT = 4
+        """ compute reference angles LUT of the selected material and save it in a .angles file """
+        key_material = str(self.combomaterial.GetValue())
+        nLUT = self.nlutctrl.GetValue()
 
         latticeparameters = self.dict_Materials[key_material][1]
         print('computing angles in material: %s.\n-- Wait a bit --'%key_material)
 
-        if self.parent.kf_direction =='Z>0':
-            anglerangle = (19,90)
+        if self.parent.kf_direction == 'Z>0':
+            anglerangle = (19, 90)
             geom = 'topreflection'
-        elif self.parent.kf_direction =='X>0':
+        elif self.parent.kf_direction == 'X>0':
             anglerangle = (7, 179.999)
             geom = 'transmission'
+        else:
+            anglerangle = (7, 179.999)
+            geom = 'kf_%s' % self.parent.kf_direction.replace('>', 'pos').replace('<', 'neg')
 
-        sortedangles = computesortedangles(latticeparameters, nLUT, anglerangle=anglerangle)
+        wx.BeginBusyCursor()
+        try:
+            sortedangles = computesortedangles(latticeparameters, nLUT, anglerangle=anglerangle)
+        finally:
+            wx.EndBusyCursor()
 
         import pickle
 
-        self.LUTfilename = '%s_nlut%d_%s.angles'%(key_material,nLUT, geom)
+        folder = self.parent.writefolder
+        if folder is None or not os.access(folder, os.W_OK):
+            folder = os.getcwd()
+        self.LUTfilename = os.path.join(folder, '%s_nlut%d_%s.angles'%(key_material, nLUT, geom))
         with open(self.LUTfilename, "wb") as f:
             pickle.dump(sortedangles, f)
 
         print('Sorted angles written in %s'%self.LUTfilename)
+
+        angles = sortedangles[0]
+        nbangles = len(angles)
+        self.luttxt.SetLabel("LUT in use: %s, max index %d (%d angles)" % (key_material, nLUT, nbangles))
+
+        # fraction of the angular range lying within the tolerance of a reference angle
+        if nbangles > 1:
+            ang_tol = float(self.AT.GetValue())
+            probes = np.arange(anglerangle[0], anglerangle[1], 0.01)
+            pos = np.clip(np.searchsorted(angles, probes), 1, nbangles - 1)
+            dist = np.minimum(np.abs(probes - angles[pos - 1]), np.abs(angles[pos] - probes))
+            coverage = 100. * np.mean(dist <= ang_tol)
+            print('%.0f %% of the angular range is within %.2f deg of a reference angle' % (coverage, ang_tol))
+            if coverage > 80.:
+                wx.MessageBox('%d reference angles for %s: %.0f %% of the angles between %.0f and %.0f deg lie '
+                        'within %.2f deg of a reference angle.\nNearly any pair of spots will be recognised: '
+                        'cliques will not be selective.\nDecrease LUT max. index or the angular tolerance.'
+                        % (nbangles, key_material, coverage, anglerangle[0], anglerangle[1], ang_tol), 'Warning')
 
     def OnLoadAnglesFile(self, _):
         """ load specific lut angles """
@@ -2222,9 +2286,10 @@ class CliquesFindingBoard(wx.Frame):
         open_dlg = wx.FileDialog(self, message="Choose a file", defaultDir=defaultFolderAnglesFile,
                                                                 defaultFile="",
                                                                 wildcard=wcd,
-                                                                style=wx.OPEN | wx.CHANGE_DIR)
+                                                                style=wx.FD_OPEN | wx.FD_CHANGE_DIR)
         if open_dlg.ShowModal() == wx.ID_OK:
             self.LUTfilename = open_dlg.GetPath()
+            self.luttxt.SetLabel("LUT in use: %s" % os.path.basename(self.LUTfilename))
         open_dlg.Destroy()
 
 

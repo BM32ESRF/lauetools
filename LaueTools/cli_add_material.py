@@ -1,7 +1,7 @@
 import argparse
 import yaml
 import os
-from LaueTools.dict_LaueTools import get_materials_file
+from LaueTools.dict_LaueTools import Materials
 
 def add_or_update_material(material_file, label, lattice, extinction):
     """
@@ -25,12 +25,13 @@ def add_or_update_material(material_file, label, lattice, extinction):
         raise ValueError("Lattice must have 6 values in a string: 'a b c alpha beta gamma', without arithmetical expressions")
 
     data[label] = {
+        "label": label,
         "lattice": [float(x) for x in lattice_parts],
         "extinction": extinction,
     }
 
     with open(material_file, "w") as f:
-        yaml.safe_dump(data, f, sort_keys=True)
+        yaml.safe_dump(data, f, sort_keys=False)
 
     print(f"Great! Material '{label}' added/updated in {material_file}")
 
@@ -57,6 +58,15 @@ def main():
 
     args = parser.parse_args()
 
-    # Determine which materials.yaml to use
-    yaml_file = args.file or get_materials_file()
-    add_or_update_material(yaml_file, args.material, args.lattice, args.extinction)
+    if args.file:
+        add_or_update_material(args.file, args.material, args.lattice, args.extinction)
+        return
+
+    # active materials.yaml (written in the user's folder if the active one cannot be modified)
+    lattice_parts = args.lattice.split()
+    if len(lattice_parts) != 6:
+        parser.error("Lattice must have 6 values in a string: 'a b c alpha beta gamma'")
+    library = Materials()
+    yaml_file = library.add_or_update_material(args.material, [float(x) for x in lattice_parts],
+                                               args.extinction)
+    print(f"Great! Material '{args.material}' added/updated in {yaml_file}")

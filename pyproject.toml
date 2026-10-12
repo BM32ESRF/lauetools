@@ -60,6 +60,7 @@ lauetools-add-material = "LaueTools.cli_add_material:main"
 # commands without terminal (on Windows: .exe without console window)
 [project.gui-scripts]
 lauetools-copy-gui = "LaueTools.cli:copy_resources_gui"
+lauetools-materials = "LaueTools.GUI.MaterialsEditor:start"
 
 [project.urls]
 Homepage = "https://github.com/BM32ESRF/lauetools"
@@ -67,6 +68,7 @@ Homepage = "https://github.com/BM32ESRF/lauetools"
 # Explicitly include only necessary files
 [tool.setuptools.package-data]
 LaueTools = [
+    "materials.yaml",  # materials library (see dict_LaueTools.Materials)
     "scripts/*",  # Include scripts
     "icons/*",     # Include icons (assuming they are small)
     # Include only small example images (e.g., < 1 MB each)
