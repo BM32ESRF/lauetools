@@ -127,9 +127,11 @@ def calc_uflab(xcam, ycam, detectorplaneparameters, offset:mm=0, returnAngles=1,
     :type ycam: list of floats
     :param detectorplaneparameters: list of 5 calibration parameters
 
-    :param offset: float, source of scattering offset in position along incoming beam
-                if positive: offset in sample depth
-                units: mm
+    :param offset: float (mm), position along the incoming beam of the source of scattering with respect to
+                the point I used for the detector calibration. Positive: downstream, in the direction of
+                the incoming beam ki, i.e. deeper in the sample (for a depth normal to the surface of a
+                sample tilted by 40 deg: offset = depth / sin(40 deg)).
+                At a given pixel, 2theta is larger for a positive offset. Only for kf_direction 'Z>0', 'Y>0', 'Y<0'
 
     :returns:
         * if returnAngles=1   : twicetheta, chi   *(default)*
@@ -219,9 +221,9 @@ def calc_uflab(xcam, ycam, detectorplaneparameters, offset:mm=0, returnAngles=1,
     #     print "uflab w/o source offset",uflab
 
     if offset not in (None, 0, 0.0):
-        # with source offset along y (>0 if along the beam and in sample depth)
-        # ufprimelab = unit(IpMlab) = unit(IpIlab+IMlab)
-        IpMlab = np.array([0, offset, 0]) + IMlab
+        # source Iprime shifted along y // ki: IIprime = [0, offset, 0] (offset > 0: downstream, in sample depth)
+        # ufprimelab = unit(IpMlab) = unit(IMlab - IIprime)
+        IpMlab = IMlab - np.array([0, offset, 0])
         normedIpM = np.sqrt(np.sum(IpMlab ** 2, axis=1)).reshape((len(IpMlab), 1))
 
         ufprime = 1.0 * IpMlab / normedIpM
@@ -539,7 +541,8 @@ def IprimeM_from_uf(uflab, posI, calib, verbose=0):
     r"""
     from:
     uflab
-    posI= IIprime = position (3elemts vector) of source with respect to I (calibrated emission source) in millimeter
+    posI: float, position (mm) along the incoming beam of the source Iprime with respect to I (calibrated emission
+        source), positive downstream (see offset of calc_xycam()). Scalar only, not a 3 elements vector
 
     returns:
     IprimeM vector joining shifted source emission to point M lying on CCD
@@ -549,8 +552,8 @@ def IprimeM_from_uf(uflab, posI, calib, verbose=0):
 
 
 def calc_xycam(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
-                                                                        pixelsize=165.0 / 2048.,
-                                                                        rectpix=RECTPIX):
+                pixelsize=165.0 / 2048.,
+                rectpix=RECTPIX):
     r"""
     Computes Laue spots position x and y in pixels units in CCD frame
     from unit scattered vector uf expressed in Lab. frame
@@ -570,12 +573,16 @@ def calc_xycam(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
     :param calib: list 5 detector calibration parameters
     :type calib: list of floats
 
-    :param offset: offset (in mm) in the scattering source (origin of Laue spots)
-            position with respect to the position which has been used
-            for the calibration of  the CCD detector plane. Offset is positive when in the same
-            direction as incident beam (i.e. in sample depth)
-            (incident beam direction remains constant)
-    :type offset: list of floats ([x,y,z])
+    :param offset: float (mm), position along the incoming beam of the source of scattering Iprime
+            (origin of Laue spots) with respect to the point I used for the calibration of the detector
+            plane. Positive: downstream, in the direction of the incoming beam ki (y axis of the frame
+            of this function), i.e. deeper in the sample. For a depth normal to the surface of a sample
+            tilted by 40 deg: offset = depth / sin(40 deg).
+            A positive offset increases the Y pixel of the spots by about offset / pixelsize
+            (see pixelshift_from_sourceoffset()).
+            Scalar only: scattering sources lie on the incoming beam, so only their position along the
+            beam is relevant.
+    :type offset: float
 
     :param energy: boolean to output energy of spots
 
@@ -603,7 +610,7 @@ def calc_xycam(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
     IOlab = detect * np.array([0.0, cosbeta, sinbeta])
 
     # unitary normal vector of CCD plane
-    # joining O nearest point of CCD plane and I (origin of lab frame and emission source)
+    # joining O nearest point of CCD plane (the PONI for PyFAI !) and I (origin of lab frame and emission source)
     unlab = IOlab / np.sqrt(np.dot(IOlab, IOlab))
 
     # normalization of all input uflab
@@ -626,10 +633,13 @@ def calc_xycam(uflab, calib, energy=0, offset=None, verbose=0, returnIpM=False,
         # I'O'= dd' un # 1 vectorin
         # O'M=I'M - I'O' # n vector
         # OM = OO' + O'M # n vector
-        IIprime = offset * np.array([1, 0, 0])
+        # in the frame of this function y // ki (see twicetheta below): source shifted along the beam
+        # offset is a scalar: a displacement of the source perpendicular to the beam would mean another beam
+        # position on the sample, not a parallax of the same illuminated line
+        IIprime = float(offset) * np.array([0, 1, 0])
         IIprime_un = np.dot(IIprime, unlab)
         OOprime = IIprime - IIprime_un * unlab
-        ddprime = detect + IIprime_un
+        ddprime = detect - IIprime_un
         IprimeM_norm = ddprime / scal
         IprimeM = uflab * np.reshape(IprimeM_norm, (len(uflab), 1))
         IprimeOprime = ddprime * unlab
@@ -690,6 +700,11 @@ def calc_xycam_backreflection(uflab, calib, energy=0, offset=None, verbose=0, re
 
     :param uflab:  array of 3D vectors of scattered beam direction (not normalized) in OR's frame  y//ki coming from right to left, Z to the top x horizontal (towards the door)
 
+    :param offset: float (mm), position along the incoming beam of the source of scattering with respect to the
+        point I used for the detector calibration, positive downstream (in the direction of ki).
+        WARNING: corrected as in calc_xycam() (source shifted along ki, dd' = dd - II'.un) but
+        TO BE CHECKED in this geometry: not validated on experimental data
+
     returns:
     if energy:
         return xcam, ycam, th0, Energy
@@ -736,10 +751,13 @@ def calc_xycam_backreflection(uflab, calib, energy=0, offset=None, verbose=0, re
         # I'O'= dd' un # 1 vector
         # O'M=I'M - I'O' # n vector
         # OM = OO' + O'M # n vector
-        IIprime = offset
+        # TO BE CHECKED on experimental data in this geometry (corrected as in calc_xycam(), not validated):
+        # source shifted along the incoming beam (y // ki in the frame of this function, see twicetheta below),
+        # positive offset downstream, and dd' = dd - II'.un as written above (was dd + II'.un)
+        IIprime = float(offset) * np.array([0.0, 1.0, 0.0])
         IIprime_un = np.dot(IIprime, unlab)
         OOprime = IIprime - IIprime_un * unlab
-        ddprime = distance_IO + IIprime_un
+        ddprime = distance_IO - IIprime_un
         IprimeM_norm = ddprime / scal
         IprimeM = uflab * np.reshape(IprimeM_norm, (len(uflab), 1))
         IprimeOprime = ddprime * unlab
@@ -799,6 +817,11 @@ def calc_xycam_transmission(uflab, calib, energy=0, offset=None, verbose=0, retu
     r"""
     Computes Laue spots position x and y in pixels units (in CCD frame) from scattered vector uf or kf
     As calc_xycam() but in TRANSMISSION geometry
+
+    :param offset: float (mm), position along the incoming beam of the source of scattering with respect to the
+        point I used for the detector calibration, positive downstream (in the direction of ki).
+        WARNING: corrected as in calc_xycam() (source shifted along ki, dd' = dd - II'.un) but
+        TO BE CHECKED in this geometry: not validated on experimental data
     """
 
     distance_IO, xcen, ycen, xbet, xgam = np.array(calib) * 1.0
@@ -853,10 +876,13 @@ def calc_xycam_transmission(uflab, calib, energy=0, offset=None, verbose=0, retu
         # I'O'= dd' un # 1 vector
         # O'M=I'M - I'O' # n vector
         # OM = OO' + O'M # n vector
-        IIprime = offset
+        # TO BE CHECKED on experimental data in this geometry (corrected as in calc_xycam(), not validated):
+        # source shifted along the incoming beam (y // ki in the frame of this function, see twicetheta below),
+        # positive offset downstream, and dd' = dd - II'.un as written above (was dd + II'.un)
+        IIprime = float(offset) * np.array([0.0, 1.0, 0.0])
         IIprime_un = np.dot(IIprime, unlab)
         OOprime = IIprime - IIprime_un * unlab
-        ddprime = distance_IO + IIprime_un
+        ddprime = distance_IO - IIprime_un
         IprimeM_norm = ddprime / scal
         IprimeM = uflab * np.reshape(IprimeM_norm, (len(uflab), 1))
         IprimeOprime = ddprime * unlab
@@ -1031,19 +1057,49 @@ def calc_xycam_transmission_2(uflabframe0, calib, energy=0, offset=None, verbose
 
 
 
+def pixelshift_from_sourceoffset(xcam, ycam, calib, offset: mm, pixelsize: float = 165.0 / 2048,
+                                                                        rectpix=RECTPIX):
+    r"""
+    Accurate shift (in pixels) of Laue spots on the detector when the source of scattering is displaced
+    along the incoming beam, the direction of each scattered beam (2theta, chi) being unchanged
+    (parallax, e.g. grain below the sample surface). Reflection geometry (kf_direction 'Z>0'),
+    any detector tilts xbet and xgam.
+
+    The spot of pixel position (xcam, ycam) for a source at the point I used for the detector
+    calibration is at (xcam + dX, ycam + dY) for a source at offset along the beam.
+
+    For xbet = xgam = 0, dX = 0 and dY = offset / pixelsize exactly, which is the crude model used in
+    the strain refinement (FitOrient.error_function_on_demand_strain, argument depth).
+    Example: offset = 0.75 mm, pixelsize = 0.075 mm: dY = +10 pixels
+
+    :param xcam, ycam: pixel positions X, Y of spots (floats or arrays)
+    :param calib: list of the 5 detector calibration parameters (dd, xcen, ycen, xbet, xgam)
+    :param offset: float (mm), position of the source along the incoming beam. Positive: downstream, in the
+        direction of the incoming beam, i.e. deeper in the sample. For a depth (microns) normal to the
+        surface of a sample tilted by 40 deg: offset = depth / 1000. / sin(40 deg)
+    :param pixelsize: pixel size (mm)
+
+    :return: dX, dY arrays of pixel shifts
+    """
+    xcam = np.atleast_1d(np.array(xcam, dtype=float))
+    ycam = np.atleast_1d(np.array(ycam, dtype=float))
+    uflab, _ = calc_uflab(xcam, ycam, calib, returnAngles=0, pixelsize=pixelsize, rectpix=rectpix,
+                                                                                kf_direction="Z>0")
+    xnew, ynew, _ = calc_xycam(uflab, calib, offset=offset, pixelsize=pixelsize, rectpix=rectpix)
+    return xnew - xcam, ynew - ycam
+
+
 def calc_xycam_from2thetachi(twicetheta, chi, calib, offset=0, outputenergy=0, verbose=0,
-                                                        pixelsize=165.0 / 2048,
-                                                        kf_direction="Z>0", version=1):
+                            pixelsize=165.0 / 2048,
+                            kf_direction="Z>0", version=1):
     r"""
     calculate spots coordinates in pixel units in detector plane
     from 2theta, chi angles (kf)
 
-    :param offset: offset (in mm) in the scattering source (origin of Laue spots)
-        position with respect to the position which has been used
-        for the calibration of  the CCD detector plane. Offset is positive when in the same
-        direction as incident beam (i.e. in sample depth)
-        (incident beam direction remains constant)
-    :type offset: list of floats ([x,y,z])
+    :param offset: float (mm), position along the incoming beam of the source of scattering with respect to
+        the point used for the calibration of the detector plane. Positive: downstream, in the direction
+        of the incoming beam (i.e. deeper in the sample). See calc_xycam() (kf_direction 'Z>0')
+    :type offset: float
     :param outputenergy: 1  to return energy (0 else)
     :param pixelsize: pixel size of X-ray detector in mm
     :param kf_direction: main direction off X-ray detector in lauetools frame with respect to sample ('Z>0'  top reflection (90 deg), 'X>0' (transmission), 'X<0' (back reflection), 'Y>0' side reflection, 'Y<0' other side reflection)
@@ -2175,6 +2231,35 @@ def convert2corfile(filename_dat:str, list5paramscalib:list, dirname_in:str=None
         print('in folder', path_out)
 
     return finalcorfilename
+
+
+def peaklist_to_corfile(peaklist, output_filename: str, outputfolder: str, CCDCalibdict: dict,
+                        initialfilename: str = None, write_dat: bool = False, comments: str = None,
+                        verbose: int = 0):
+    """write the .cor file (2theta, chi, X, Y, I and all the peak properties) of a peak list (array returned by
+    readmccd.PeakSearch()), as readmccd.writepeaklist() + convert2corfile(), without keeping the .dat file
+    (written in a temporary folder) unless write_dat (then written in outputfolder too)
+
+    :param output_filename: file name without extension, e.g. 'img_0023'
+    :param CCDCalibdict: calibration (e.g. IOLaueTools.readCalib_det_file(detfile)), not modified
+    :return: (full path of the .cor file, full path of the .dat file or None)
+    """
+    import copy
+    import tempfile
+    folder = outputfolder if outputfolder else os.getcwd()
+    if write_dat:
+        datfile = IOLT.writefile_Peaklist(output_filename, peaklist, True, initialfilename, comments, folder,
+                                          verbose=verbose)
+        corfile = convert2corfile(os.path.basename(datfile), [], dirname_in=os.path.dirname(datfile),
+                                  dirname_out=folder, CCDCalibdict=copy.deepcopy(CCDCalibdict), add_props=True,
+                                  verbose=verbose)
+        return corfile, datfile
+    with tempfile.TemporaryDirectory(prefix='laue_peaklist_') as tmp:
+        datfile = IOLT.writefile_Peaklist(output_filename, peaklist, True, initialfilename, comments, tmp,
+                                          verbose=verbose)
+        corfile = convert2corfile(os.path.basename(datfile), [], dirname_in=tmp, dirname_out=folder,
+                                  CCDCalibdict=copy.deepcopy(CCDCalibdict), add_props=True, verbose=verbose)
+    return corfile, None
 
 
 def convert2corfile_fileseries(fileindexrange:list, filenameprefix:str, calibparam:list, suffix="",

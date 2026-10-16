@@ -169,6 +169,7 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots,
     # only for semi infinite single crystal now (= not finite size crystal)
     # only crystal at the surface
     # only for Ge
+        # crude model of depth correction, only for kf_direction='Z>0' and considering that detector tiltangles (xbet, xgam) are zero. So only pixel Y position is shifted by this location of scattering emission depth (expressed in pixel).
         if depthcorrection:
             from . import attenuation as attn
             
@@ -180,14 +181,14 @@ def xy_from_Quat(varying_parameter_values, DATA_Q, nspots,
 
 
 def calc_XY_pixelpositions(calibration_parameters, DATA_Q, nspots, UBmatrix=None,
-                                                            B0matrix=IDENTITYMATRIX,
-                                                            offset=0,
-                                                            pureRotation=0,
-                                                            labXMAS=0,
-                                                            verbose=0,
-                                                            pixelsize=0.079,
-                                                            dim=(2048, 2048),
-                                                            kf_direction="Z>0"):
+                                    B0matrix=IDENTITYMATRIX,
+                                    offset=0,
+                                    pureRotation=0,
+                                    labXMAS=0,
+                                    verbose=0,
+                                    pixelsize=0.079,
+                                    dim=(2048, 2048),
+                                    kf_direction="Z>0"):
     """
 
     must: len(varying_parameter_values)=len(varying_parameter_indices)
@@ -662,8 +663,9 @@ def error_function_on_demand_strain(param_strain,
 
     :param nspots: indices of selected spots of DATA_Q
 
-    :param depth: normal to surface depth in microns (under sample surface, not along incoming beam direction).positive if grain is below surface. It s a crude model, only working for kf_direction='Z>0' and considering that detector tiltangles (xbet, xgam) are zero. So only pixel Y position is shifted by this location of scattering emission depth (expressed in pixel).
-    Be careful that  ycen in allparameters is not shifted already to take into account sample depth...
+    :param depth: depth in microns of the scattering grain, normal to the sample surface (not along the incoming beam), positive below the surface.
+        Crude parallax model: reflection geometry only (detector on top of the sample, kf_direction='Z>0', sample surface tilted by 40 deg from the beam) and detector tilts xbet and xgam neglected: the spots are shifted along pixel Y only, by depth / sin(40 deg) / pixelsize (= position along the beam / pixelsize). For tilts of 0.5 deg the neglected shifts are about 0.02 pixel per 100 microns along the beam. Accurate X, Y shifts: LaueGeometry.pixelshift_from_sourceoffset().
+        Be careful that ycen in allparameters is not already shifted to take into account the sample depth given by argument depth.
 
     :param verbose: print on stdout messages but also act on the nb of elements in return tuple !!!
     """
@@ -750,6 +752,9 @@ def error_function_on_demand_strain(param_strain,
                                 kf_direction=kf_direction,
                                 depthcorrection=False)
 
+    # crude model of depth (parallax) correction: reflection geometry only (kf_direction='Z>0', sample tilted by 40 deg),
+    # detector tilts (xbet, xgam) neglected. Only the pixel Y position is shifted, by the position of the source along
+    # the beam (depth / sin(40 deg)) expressed in pixel. Accurate X, Y shifts: F2TC.pixelshift_from_sourceoffset()
     distanceterm = np.sqrt((X - pixX) ** 2 + (Y + depth/1000./pixelsize/np.sin(40.*DEG)- pixY) ** 2)
 
     if weights is not None:
@@ -965,7 +970,8 @@ def fit_on_demand_strain(starting_param, miller, allparameters,
     starting_param = [fivestrainparameter + 3deltaangles of orientations] = [1,1,0,0,0,0,0,0]  typically
     arr_indexvaryingparameters = range(5,13)
 
-    :param depth: normal to surface depth in microns
+    :param depth: depth in microns of the scattering grain, normal to the sample surface, positive below the surface
+        (crude model for reflection geometry 'Z>0' neglecting xbet and xgam, see error_function_on_demand_strain())
     """
 
     # All miller indices must be entered in miller, selection is done in xy_from_Quat with nspots (array of indices)
@@ -1840,7 +1846,8 @@ def fit_function_general(varying_parameters_values_array,
                                 kf_direction="Z>0",
                                 **kwd):
     """
-    
+    may be outdated function to fit orientation and lattice parameters (in refinedB0) with error function to return array of pair (exp. - model) distances
+    Sum_i [weights_i((Xmodel_i-Xexp_i)**2+(Ymodel_i-Yexp_i)**2) ]
     """
 
     if verbose>0:

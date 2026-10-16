@@ -709,7 +709,10 @@ class Plot_RefineFrame(wx.Frame):
 
         self.enterUBbtn.SetToolTipString("Enter Orientation Matrix UB")
 
-        self.sampledepthctrl.SetToolTipString('normal to surface sample depth in micrometre (= 10-3 mm). If two values are provided (eg. [5, 50], two extreme results of strain (crystal + sample frame) and lattice parameters will be returned')
+        self.sampledepthctrl.SetToolTipString('Depth of the scattering grain normal to the sample surface, in micrometre (= 10-3 mm), positive below the surface. '
+                'Crude parallax model: only for a detector in reflection geometry on top of the sample (Z>0) and a sample tilted by 40 deg; '
+                'detector tilts xbet and xgam are neglected, so the spots are shifted along pixel Y only, by depth / sin(40 deg) / pixelsize. '
+                'If two values are provided (eg. [5, 50]), two extreme results of strain (crystal + sample frame) and lattice parameters will be returned')
 
     def _layout(self):
         """ layout
@@ -1851,8 +1854,10 @@ class Plot_RefineFrame(wx.Frame):
             # initial distorsion is  1 1 0 0 0  = refined_22,refined_33, 0,0,0
             allparameters = np.array(self.CCDcalib + [1, 1, 0, 0, 0] + [0, 0, 0])
 
-            # change ycen if grain is below the surface (NOT ALONG beam direction (ybeam)):
-            # depth is counted positively below surface in microns
+            # change ycen if grain is below the surface: depth is normal to the surface (NOT along the beam direction),
+            # counted positively below the surface, in microns.
+            # crude parallax model: reflection geometry (Z>0), sample tilted by 40 deg, detector tilts xbet and xgam
+            # neglected (spots shifted along pixel Y only). Accurate shifts: LaueGeometry.pixelshift_from_sourceoffset()
             depth = depthvalue
             depth_along_beam = depth / np.sin(40 * np.pi / 180.)
             delta_ycen = depth_along_beam/1000./self.pixelsize
@@ -2068,7 +2073,7 @@ class Plot_RefineFrame(wx.Frame):
         :param residues_non_weighted: array or list,  to estimate the mean pixel deviation
         :param nb_pairs: int, nb of pairs used in the refinement
         :param constantlength: str, "a", "b", or "c" to set the length having been kept during refinement
-        :param depth: int, float, normal to surface sample depth in microns (10-3 mm)
+        :param depth: int, float, depth of the scattering grain normal to the sample surface in microns (10-3 mm), positive below the surface
         """
         # compute new lattice parameters  -----
         latticeparams = self.dict_Materials[key_material][1]
