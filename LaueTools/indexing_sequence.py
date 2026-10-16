@@ -60,7 +60,8 @@ NEXT_RULES = ('always', 'if_found', 'if_not_found')
 BEST_OF_CRITERIA = ('nb_indexed', 'matching_rate')
 ACCEPT_KEYS = ('min_nb_indexed', 'min_matching_rate', 'max_pixdev')
 STEP_KEYS = ('name', 'key_material', 'folder', 'nbGrainstoFind', 'e_min', 'e_max', 'e_max_MR', 'dict_indexrefine',
-             'MatchingRate_List', 'usepreviousUB', 'skipindexing', 'accept', 'remove_spots', 'write_fitfile', 'next')
+             'MatchingRate_List', 'refinement_steps', 'usepreviousUB', 'skipindexing', 'accept', 'remove_spots',
+             'write_fitfile', 'next')
 SEQUENCE_KEYS = ('strategy', 'max_grains', 'max_grains_per_material', 'min_gain_indexed_spots', 'best_of_criterion',
                  'folders_root', 'steps')
 
@@ -158,7 +159,9 @@ def normalize_sequence(cfg: dict) -> dict:
                       'usepreviousUB': _ub_list(cfg, st.get('usepreviousUB', False)),
                       'skipindexing': bool(st.get('skipindexing', False)),
                       'accept': accept, 'remove_spots': bool(st.get('remove_spots', True)),
-                      'write_fitfile': bool(st.get('write_fitfile', True)), 'next': st.get('next', 'always')})
+                      'write_fitfile': bool(st.get('write_fitfile', True)), 'next': st.get('next', 'always'),
+                      # None or [[e_max, tol angle, min nb matches], ...] (replaces e_max and the tolerance list)
+                      'refinement_steps': st.get('refinement_steps', ind.get('refinement_steps'))})
     return {'strategy': seq.get('strategy', 'ordered'), 'max_grains': seq.get('max_grains'),
             'max_grains_per_material': seq.get('max_grains_per_material'),
             'min_gain_indexed_spots': int(seq.get('min_gain_indexed_spots') or 0),
@@ -227,7 +230,8 @@ def _trial(dataset, step: dict, grain_index: int, params, filecor: str):
                             previousResults=previousResults, dirnameout_fitfile=tmpdir, corfilename=filecor,
                             verbose=params.verboselevel, MatchingRate_List=step['MatchingRate_List'],
                             depth=params.depth, dictmaterials=params.mymaterials, writefitfile=False,
-                            emax_matchringrate=step['e_max_MR'])
+                            emax_matchringrate=step['e_max_MR'],
+                            refinement_steps=step.get('refinement_steps'))
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
     if grain_index not in trial.indexedgrains or trial.dict_grain_matrix.get(grain_index) is None:
@@ -237,7 +241,9 @@ def _trial(dataset, step: dict, grain_index: int, params, filecor: str):
     pixdev = float(np.mean(trial.pixelresidues)) if trial.pixelresidues is not None else float('nan')
     return trial, {'grain_index': grain_index, 'nb_indexed': len(spots), 'matching_rate': float(score[1]),
                    'pixdev': pixdev, 'spot_indices': spots,
-                   'UB': np.asarray(trial.dict_grain_matrix[grain_index], dtype=float)}
+                   'UB': np.asarray(trial.dict_grain_matrix[grain_index], dtype=float),
+                   'refinement': list(trial.dict_grain_refinementsteps.get(grain_index, [])),
+                   'indexing_pair': trial.dict_grain_indexingpair.get(grain_index)}
 
 
 def _rejection(step: dict, cand: dict) -> str:
@@ -348,6 +354,8 @@ def run_sequence(dataset, params, filecor: str, image_index: int):
                                  'grain': local, 'nb_indexed': cand['nb_indexed'],
                                  'matching_rate': cand['matching_rate'], 'pixdev': cand['pixdev'],
                                  'UB': cand['UB'], 'spot_indices': cand['spot_indices'],
+                                 'refinement': cand.get('refinement', []),
+                                 'indexing_pair': cand.get('indexing_pair'),
                                  'fitfile': None if fitfile is None else str(fitfile)})
         state['next_grain'] += 1
         if st['remove_spots']:

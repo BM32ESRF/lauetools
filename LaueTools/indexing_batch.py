@@ -34,6 +34,7 @@ import pickle
 import time
 import datetime
 import dataclasses
+import shutil
 import multiprocessing
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -52,6 +53,7 @@ from LaueTools import indexingAnglesLUT as IAL
 from LaueTools import IOLaueTools as IOLT
 from LaueTools import generaltools as GT
 from LaueTools import dict_LaueTools as DictLT
+from LaueTools import indexing_neighbours as IN
 
 os.environ["OMP_NUM_THREADS"] = "1"   # 1 or 2 or 4
 
@@ -96,9 +98,9 @@ DEFAULT_CONFIG = {
     'indexing': {
         'e_min': 5,               # keV
         'e_max': 22,              # keV, for strain refinement
-        'e_max_MR': 19,           # keV, for matching rate during indexing step
+        'e_max_MR': 19,           # keV, matching rate of candidate UB matrices and first refinement step (then e_max)
         'nbGrainstoFind': 1,
-        'depth': 0,               # microns (normal to surface sample)
+        'depth': 0,               # microns (normal to sample surface, >0 below it). Reflection geometry Z>0; xbet, xgam neglected
         'MatchingRate_List': None,  # default: [2] * len(list matching tol angles)
         'MIN_NUMBERSPOTS_FOR_INDEXING': 6,
         'MAX_NUMBERSPOTS_FOR_INDEXING': 10000,
@@ -106,6 +108,23 @@ DEFAULT_CONFIG = {
         'crudeMReval': True,
         'maxnbspots_MReval': 10000,
         'stop_Nb_Matches': 40,
+        # null: refinement steps given by dict_indexrefine: 'list matching tol angles' and MatchingRate_List, all
+        # with e_max. Or list of steps [e_max (keV), matching tolerance angle (deg), min nb of matches]
+        # (see refinement_ramp()), e.g. [[19, 0.3, 10], [23, 0.2, 12], [27, 0.1, 15]]: e_max increases from the
+        # energy of indexing (e_max_MR) to the full range, for low symmetry or large unit cells.
+        # Then e_max, 'list matching tol angles' and MatchingRate_List are not used
+        'refinement_steps': None,
+        # null, or criteria of a correct solution, checked for each grain found (result info, seeds validation of
+        # the indexing guided by neighbours): steps [e_max (keV), tolerance angle (deg), min nb of matches]; from
+        # the UB matrix found, at each step the spots up to e_max closer than the tolerance angle are linked, UB
+        # and strain are refined, and at least min nb of matches indexed spots are needed, e.g. (NiMnGa)
+        # [[18, 0.2, 100], [21, 0.2, 100], [24, 0.2, 100], [27, 0.2, 100], [27, 0.1, 100]]
+        'solution_criteria': None,
+        # max mean pixel deviation (pixel) of the last step of solution_criteria (null: not checked)
+        'solution_max_pixdev': 1.0,
+        # true: grains failing solution_criteria are rejected (.fit file removed; if the UB matrix came from
+        # usepreviousUB and skipindexing is false, the image is then indexed from scratch). false: only reported
+        'solution_reject': False,
         # spots removed from each .cor file before indexing (e.g. spots of the substrate):
         # null, a .cor, .dat or .fit file, a list of [X, Y] pixel positions, or a list of files
         # (the .cor files without these spots are written in <fit folder>/purged_corfiles)
@@ -113,7 +132,13 @@ DEFAULT_CONFIG = {
         'blacklist_tolerance': 2.,  # pixel, max distance of a spot to a blacklisted spot to be removed
         'dict_indexrefine': {
             # spots set A (int n means range(n)). CAUTION max(A) <= MAXINDEXPROBED
+            # or 'zones', 'triplets', 'zones+triplets': set A proposed for each image (spots likely to have low
+            # Miller indices, see ISS.propose_spots_setA()); then set B = set A if 'spots set B' is None
             'central spots indices': 10,
+            'proposal nb spots': 10,       # nb of spots proposed by each method
+            'proposal zones tol': 0.05,    # deg, max distance of a spot to a zone axis (0.03 - 0.08)
+            'proposal triplets tol': 0.03,  # deg, tolerance on the angles of a triplet (accurate lattice parameters)
+            'proposal nb probed': 200,     # proposal among the first (most intense) spots
             'AngleTolLUT': 0.2,   # tolerance angle [deg] to recognise angles in the angular LUT
             'nlutmax': 4,         # max miller index in the angular LUT
             'MAXINDEXPROBED': 25,  # spots set B = [0, ..., MAXINDEXPROBED] (included). Former name: NBMAXPROBED
@@ -137,8 +162,19 @@ DEFAULT_CONFIG = {
         # False: indexing from scratch
         # 'fromfitfile': refine UB matrix of existing _g0.fit file
         # list of UB matrices (3x3 lists) or names of `ub_matrices`: refine these matrices
+        # 'neighbours': check first the UB matrices found in the neighbouring map points (see `neighbours`)
         'usepreviousUB': False,
         'skipindexing': False,     # True: only refine usepreviousUB matrices (no indexing from scratch)
+        # .fit files of a previous indexation read by ignorefitfileresults: false and usepreviousUB: fromfitfile.
+        # null: fit_folder (MW.run_step(): the previous results folder, archived as <fit_folder>_previous_<date>)
+        'previous_fit_folder': None,
+        # with ignorefitfileresults: false, previous .fit files kept only if their best grain has at least min_nb_spots
+        # indexed spots and a mean pixel deviation at most max_pixdev (null: not checked); the others indexed again
+        'fit_acceptance': {'min_nb_spots': None, 'max_pixdev': None},
+        # usepreviousUB 'neighbours' (see LaueTools/indexing_neighbours.py): seed pass (points every seed_step indexed
+        # from scratch), then each image checks the UB matrices of indexed points within radius, then the library
+        # of the orientations found from scratch; accepted with min_nb_matches indexed spots, else from scratch
+        'neighbours': dict(IN.DEFAULT_NEIGHBOURS),
         'writefitfile': True,
         'starting_grainindex': 0,
         'verboselevel': 0,
@@ -149,6 +185,8 @@ DEFAULT_CONFIG = {
         'image_range': None,
         # rectangle region of interest in the map: [center image index, [half size fast, half size slow]]
         'roi': None,
+        # list of image indices (e.g. seeds of the indexing guided by neighbours); None: no selection by list
+        'image_indices': None,
     },
     'postprocess': {
         'grainindex': 0,               # read files ####_g<grainindex>.fit
@@ -208,13 +246,15 @@ def _parse_indices(value) -> Optional[List[int]]:
     'start:stop' -> [start, ..., stop-1], list, None"""
     if isinstance(value, (int, np.integer)) and not isinstance(value, bool):
         return list(range(int(value)))
+    if ISS.is_spots_proposal(value):   # 'zones', 'triplets', 'zones+triplets': set A proposed for each image
+        return value.replace(' ', '').lower()
     return ISS.parse_spots_set(value)
 
 
 def _spots_set_change(name: str, value):
     """value of a spots set given in python (int n -> [n], 'to12', list ... see ISS.parse_spots_set()),
     as written in a configuration file (never a bare int, whose meaning differs in YAML files)"""
-    if name.replace('_', ' ') not in _SPOTS_SET_KEYS or value is None:
+    if name.replace('_', ' ') not in _SPOTS_SET_KEYS or value is None or ISS.is_spots_proposal(value):
         return value
     return _compact_indices(ISS.parse_spots_set(value))
 
@@ -315,18 +355,57 @@ def check_config(cfg: dict, verbose: bool = True) -> bool:
                       "Add it in mymaterials: {key: [key, [a, b, c, alpha, beta, gamma], extinction]}")
 
     dir_ = cfg['indexing']['dict_indexrefine']
-    if dir_.get('spots set B') is None and max(dir_['central spots indices']) > int(dir_['MAXINDEXPROBED']):
+    if ISS.is_spots_proposal(dir_['central spots indices']):
+        if verbose:
+            print(f"spots set A proposed for each image by '{dir_['central spots indices']}' "
+                  f"({dir_.get('proposal nb spots', 10)} spots per method among the "
+                  f"{dir_.get('proposal nb probed', 200)} first spots)"
+                  + ('; set B = set A' if dir_.get('spots set B') is None else ''))
+    elif dir_.get('spots set B') is None and max(dir_['central spots indices']) > int(dir_['MAXINDEXPROBED']):
         warnings.append(f"indexing: MAXINDEXPROBED ({dir_['MAXINDEXPROBED']}) must be at least the largest central "
                         f"spots index ({max(dir_['central spots indices'])}): {max(dir_['central spots indices'])} "
                         "will be used (or set 'spots set B')")
     elif dir_.get('spots set B') is not None and len(set(dir_['spots set B']) | set(dir_['central spots indices'])) < 2:
         errors.append("indexing: 'spots set B' and 'central spots indices' must contain at least 2 different spots")
+    if cfg['indexing'].get('refinement_steps') is not None:
+        try:
+            steps = ISS.parse_refinement_steps(cfg['indexing']['refinement_steps'])
+            if verbose:
+                print('refinement steps [e_max, tol angle, min nb matches]: '
+                      + ', '.join(f'[{e:g}, {t:g}, {n}]' for e, t, n, _ in steps)
+                      + " (e_max, 'list matching tol angles' and MatchingRate_List are not used)")
+                if steps and cfg['indexing']['e_max_MR'] is not None and steps[0][0] != cfg['indexing']['e_max_MR']:
+                    GT.printyellow(f"NB: first refinement step up to {steps[0][0]:g} keV, whereas candidate UB matrices "
+                                   f"are evaluated up to e_max_MR = {cfg['indexing']['e_max_MR']:g} keV")
+        except (ValueError, TypeError) as err:
+            errors.append(f'indexing: refinement_steps: {err}')
+    if cfg['indexing'].get('solution_criteria') is not None:
+        try:
+            ISS.parse_refinement_steps(cfg['indexing']['solution_criteria'])
+        except (ValueError, TypeError) as err:
+            errors.append(f'indexing: solution_criteria: {err}')
+    acc = cfg['run'].get('fit_acceptance') or {}
+    unknown = set(acc) - {'min_nb_spots', 'max_pixdev'}
+    if unknown:
+        errors.append(f'run: fit_acceptance: unknown key(s) {sorted(unknown)} (min_nb_spots, max_pixdev)')
+    for key in ('min_nb_spots', 'max_pixdev'):
+        if acc.get(key) is not None and (not isinstance(acc[key], (int, float)) or acc[key] <= 0):
+            errors.append(f'run: fit_acceptance: {key} must be null or a positive number, not {acc[key]}')
+    if cfg['run'].get('previous_fit_folder') and not Path(cfg['run']['previous_fit_folder']).is_dir():
+        errors.append(f"run: previous_fit_folder {cfg['run']['previous_fit_folder']} not found")
+    maxpd = cfg['indexing'].get('solution_max_pixdev')
+    if maxpd is not None and (not isinstance(maxpd, (int, float)) or maxpd <= 0):
+        errors.append(f'indexing: solution_max_pixdev must be null or a positive number, not {maxpd}')
     if len(cfg['indexing']['MatchingRate_List']) < len(dir_['list matching tol angles']):
         errors.append("indexing: MatchingRate_List must be at least as long as 'list matching tol angles'")
     try:
         get_previousUB(cfg)
     except (KeyError, ValueError) as err:
         errors.append(f'run: usepreviousUB: {err}')
+    if cfg['run']['usepreviousUB'] == 'neighbours':
+        errors.extend(IN.check_settings(cfg['run']['neighbours'], cfg['ub_matrices']))
+        if cfg.get('sequence') is not None:
+            errors.append("run: usepreviousUB 'neighbours' is not available with a sequence of indexing steps")
     if cfg.get('sequence') is not None:
         from LaueTools import indexing_sequence as IS
         errors.extend(IS.check_sequence(cfg))
@@ -538,12 +617,47 @@ def new_config(newfile: Union[str, Path], template: Optional[Union[str, Path]] =
 _PARAMS_TO_CONFIG = {name: ('indexing', name) for name in
                      ('e_min', 'e_max', 'e_max_MR', 'nbGrainstoFind', 'depth', 'MIN_NUMBERSPOTS_FOR_INDEXING',
                       'MAX_NUMBERSPOTS_FOR_INDEXING', 'MAXNBSPOTS', 'crudeMReval', 'maxnbspots_MReval',
-                      'stop_Nb_Matches', 'MatchingRate_List', 'blacklist', 'blacklist_tolerance')}
+                      'stop_Nb_Matches', 'MatchingRate_List', 'blacklist', 'blacklist_tolerance',
+                      'refinement_steps')}
 _PARAMS_TO_CONFIG.update({'key_material': ('material', 'key_material'),
                           'mymaterials': ('material', 'mymaterials'),
                           'fit_folder': ('output', 'fit_folder'),
                           'skipindexing': ('run', 'skipindexing'),
                           'CCDLabel': ('scan', 'CCDLabel')})
+
+
+def _memory_changes(cfg: dict, tree: dict, loader, with_old: bool = False) -> Dict[tuple, Any]:
+    """{path: value} of the parameters of cfg changed in memory (e.g. icfg['indexing']['e_max'] = 27 in a notebook)
+    with respect to its configuration file cfg['configfile'] (read again with loader, e.g. load_config), for
+    save_config(): parameters of the default configuration tree, all the keys of dict_indexrefine and ub_matrices.
+    with_old: {path: (value, value in the file)}"""
+    if not cfg.get('configfile') or not Path(cfg['configfile']).exists():
+        return {}
+    ondisk = loader(cfg['configfile'])
+
+    def get(node, path):
+        for key in path:
+            node = node.get(key) if isinstance(node, dict) else None
+        return node
+
+    paths = list(_leaf_keys(tree).values())
+    dir_ = get(cfg, ('indexing', 'dict_indexrefine'))
+    if isinstance(dir_, dict):   # keys of dict_indexrefine not in the default tree
+        paths += [('indexing', 'dict_indexrefine', k) for k in dir_ if ('indexing', 'dict_indexrefine', k) not in paths]
+    if 'ub_matrices' in cfg:
+        paths.append(('ub_matrices',))
+    changes = {}
+    for path in paths:
+        if path[0] == 'ub_matrices' and len(path) > 1:
+            continue
+        value, old = get(cfg, path), get(ondisk, path)
+        if isinstance(value, Path) or isinstance(old, Path):   # paths compared resolved
+            same = (value is None) == (old is None) and (value is None or Path(value).resolve() == Path(old).resolve())
+        else:
+            same = _same(value, old)
+        if not same:
+            changes[path] = (value, old) if with_old else value
+    return changes
 
 
 def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['IndexRefineParams'] = None,
@@ -558,10 +672,16 @@ def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['IndexRef
     Example, after a successful test on 1 image:
         cfg = IB.save_config(cfg, 'configs/a321220_MgO_2grains.yaml', params=params_test)
 
+    Parameters of cfg changed in memory (e.g. icfg['indexing']['e_max'] = 27 in a notebook) are written too.
+
     Returns the configuration loaded from the new file: use it for the batch (and its path as CONFIG
     in the postprocessing notebooks).
     """
-    pathchanges = {}
+    memory = _memory_changes(cfg, DEFAULT_CONFIG, load_config, with_old=True)
+    pathchanges = {path: (_spots_set_change(path[-1], value) if path[-1] in _SPOTS_SET_KEYS else value)
+                   for path, (value, _) in memory.items()}
+    if pathchanges:
+        print(f'{len(pathchanges)} parameter(s) changed in memory (cfg) written too')
     if params is not None:
         for field, path in _PARAMS_TO_CONFIG.items():
             value = getattr(params, field)
@@ -574,7 +694,7 @@ def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['IndexRef
 
         cfg_dir = cfg['indexing']['dict_indexrefine']
         for key, value in params.dict_indexrefine.items():
-            if key in _SPOTS_SET_KEYS:
+            if key in _SPOTS_SET_KEYS and not ISS.is_spots_proposal(value):
                 value = ISS.parse_spots_set(value)
             if not _same(value, cfg_dir.get(key)):
                 pathchanges[('indexing', 'dict_indexrefine', key)] = (_spots_set_change(key, value)
@@ -609,6 +729,8 @@ def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['IndexRef
         old = cfg
         for key in path:
             old = old.get(key) if isinstance(old, dict) else None
+        if path in memory:   # value in the file (cfg holds the new value)
+            old = memory[path][1]
         print(f"  {': '.join(path)}: {_to_plain(old)} -> {_to_plain(value)}")
 
     header = (f"# saved {datetime.datetime.now():%Y-%m-%d %H:%M} from {Path(cfg['configfile']).name} "
@@ -745,13 +867,13 @@ def merge_grain_fitfiles(fit_folder: Union[str, Path], stem: str) -> Optional[Pa
 def get_previousUB(cfg: dict):
     """return `usepreviousUB` of cfg['run'] with named matrices replaced by numpy arrays
 
-    Returns False, 'fromfitfile' or a list of 3x3 arrays
+    Returns False, 'fromfitfile', 'neighbours' or a list of 3x3 arrays
     """
     usepreviousUB = cfg['run']['usepreviousUB']
     if usepreviousUB in (False, None):
         return False
-    if usepreviousUB == 'fromfitfile':
-        return 'fromfitfile'
+    if usepreviousUB in ('fromfitfile', 'neighbours'):
+        return usepreviousUB
     if isinstance(usepreviousUB, str):
         usepreviousUB = [usepreviousUB]
     matrices = []
@@ -799,6 +921,16 @@ class IndexRefineParams:
     verbosefilename: bool = False
     useinternalmultiprocessing: bool = False
     outputlistindices: bool = False
+    # None, or steps [e_max, matching tolerance angle, min nb of matches] (see ISS.parse_refinement_steps())
+    refinement_steps: Optional[list] = None
+    outputrefinementsteps: bool = False   # True: history of the refinement steps appended to the result
+    # None, or steps [e_max, tolerance angle, min nb of matches] that each grain found must pass (see
+    # verify_solution()): result reported in the info of the result (' g0 criteria pass [...]')
+    solution_criteria: Optional[list] = None
+    solution_max_pixdev: Optional[float] = 1.0    # max mean pixel deviation of the last step of solution_criteria
+    solution_reject: bool = False                  # True: grains failing solution_criteria rejected
+    previous_fit_folder: Optional[str] = None      # .fit files of a previous indexation (None: fit_folder)
+    fit_acceptance: Optional[dict] = None          # {'min_nb_spots', 'max_pixdev'} of previous .fit files kept
     blacklistfile: Optional[str] = None     # former name of blacklist (used if blacklist is None)
     # spots removed before indexing: .cor/.dat/.fit file, array [[X, Y], ...] of pixel positions, or a list of them
     blacklist: Any = None
@@ -809,6 +941,11 @@ class IndexRefineParams:
     LUT: Any = None
     # None: single material. Or sequence of indexing steps (see indexing_sequence.normalize_sequence())
     sequence: Optional[dict] = None
+    # usepreviousUB 'neighbours': parameters (see indexing_neighbours.DEFAULT_NEIGHBOURS), map dims [fast, slow] and
+    # map step sizes [fast, slow] (micron, real distances between map points)
+    neighbours: Optional[dict] = None
+    mapdims: Optional[tuple] = None
+    stepsizes: Optional[tuple] = None
 
     def fitfile_folder(self, image_index: int) -> Path:
         """folder of the .fit files of an image: fit_folder, or its subfolder <subfolder_prefix><start>_<end>"""
@@ -855,6 +992,13 @@ def params_from_config(cfg: dict, build_LUT: bool = True, **kwargs) -> IndexRefi
                                crudeMReval=ind['crudeMReval'],
                                maxnbspots_MReval=ind['maxnbspots_MReval'],
                                stop_Nb_Matches=ind['stop_Nb_Matches'],
+                               refinement_steps=ind.get('refinement_steps'),
+                               solution_criteria=ind.get('solution_criteria'),
+                               solution_max_pixdev=ind.get('solution_max_pixdev'),
+                               solution_reject=bool(ind.get('solution_reject')),
+                               previous_fit_folder=(str(run['previous_fit_folder']) if run.get('previous_fit_folder')
+                                                    else None),
+                               fit_acceptance=run.get('fit_acceptance'),
                                blacklist=ind['blacklist'],
                                blacklist_tolerance=ind['blacklist_tolerance'],
                                ignorefitfileresults=run['ignorefitfileresults'],
@@ -865,6 +1009,12 @@ def params_from_config(cfg: dict, build_LUT: bool = True, **kwargs) -> IndexRefi
                                verboselevel=run['verboselevel'],
                                CCDLabel=cfg['scan']['CCDLabel'],
                                sequence=_sequence_of(cfg),
+                               neighbours=({**IN.settings(run['neighbours']), 'reference_UBs':
+                                            IN.reference_matrices(run['neighbours'], cfg['ub_matrices'])}
+                                           if run['usepreviousUB'] == 'neighbours' else None),
+                               mapdims=tuple(cfg['scan']['mapdims']) if cfg['scan'].get('mapdims') else None,
+                               stepsizes=(tuple(cfg['scan']['stepsizes']) if cfg['scan'].get('stepsizes') is not None
+                                          else None),
                                **fitfiles_layout(cfg))
     params = dataclasses.replace(params, **kwargs)
     if isinstance(params.usepreviousUB, list):
@@ -948,30 +1098,43 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
 
     previousResults = None
     fitfolder = params.fitfile_folder(image_index)
-    relatedfitfile = fitfolder / (filecor[:-4] + '_g0.fit')
+    prevfolder = previous_fitfile_folder(params, image_index)
     info = blacklist_info
-    if not params.ignorefitfileresults:
-        if relatedfitfile.exists():
-            return [image_index, [], [], 'not reanalyzed']
-        info += '.fit file was missing. '
+    nbgrains = params.nbGrainstoFind
+    if not params.ignorefitfileresults:   # previous .fit files kept if accepted, else indexed again
+        previous = fitfile_grains(prevfolder, filecor[:-4])
+        status = fit_accepted(previous, params.fit_acceptance)
+        if status == 'accepted':
+            if prevfolder.resolve() != fitfolder.resolve():
+                fitfolder.mkdir(parents=True, exist_ok=True)
+                for g in previous:
+                    shutil.copy2(g['path'], fitfolder / Path(g['path']).name)
+            return [image_index, [(g['grain'], g['UB']) for g in previous],
+                    [(g['grain'], [g['nb'], np.nan]) for g in previous],
+                    f"previous .fit file kept ({max(g['nb'] for g in previous)} spots, "
+                    f"{min(g['pixdev'] for g in previous):.2f} pixel)."]
+        info += f'previous .fit file {status}: indexed again. '
 
     usepreviousUB = params.usepreviousUB
     if usepreviousUB == 'fromfitfile':
-        if relatedfitfile.exists():
-            # read matrix from .fit file to skip indexing and go directly to refinement step
-            UB_g0 = IOLT.readfitfile_multigrains(str(relatedfitfile))[3].reshape((3, 3))
-            previousResults = (1, [np.array(UB_g0)], 0, 0)
-            info += 'Tried UB matrix from .fit file. '
+        previous = fitfile_grains(prevfolder, filecor[:-4])
+        if previous:
+            # UB matrices of the grains of the previous .fit files: refinement (and indexing from scratch if needed)
+            previousResults = (len(previous), [g['UB'] for g in previous], 0, 0)
+            nbgrains = max(len(previous), nbgrains) if isinstance(nbgrains, int) else nbgrains
+            info += f'Tried the UB matrices of {len(previous)} previous .fit file(s). '
         else:
             info += 'Could not try UB matrix because .fit file was missing. '
     elif usepreviousUB in (False, None):
         pass
+    elif usepreviousUB == 'neighbours':   # 1 image (test): from scratch. Map: see run_multiprocessing()
+        info += 'usepreviousUB neighbours: single image indexed from scratch. '
     elif isinstance(usepreviousUB, (list, tuple)):
         previousResults = (len(usepreviousUB), list(usepreviousUB), 0, 0)
     else:
         raise ValueError(f"usepreviousUB={usepreviousUB} should be False, 'fromfitfile' or a list of UB matrices")
 
-    if params.skipindexing and usepreviousUB:
+    if params.skipindexing and usepreviousUB and usepreviousUB != 'neighbours':
         dataset.inhibitindexing = True
         info += ' Check orientation and refine only (no indexing from scratch).'
 
@@ -989,7 +1152,7 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
                           n_LUT=params.dict_indexrefine['nlutmax'],
                           LUT=params.LUT,
                           angletol_list=params.dict_indexrefine['list matching tol angles'],
-                          nbGrainstoFind=params.nbGrainstoFind,
+                          nbGrainstoFind=nbgrains,
                           previousResults=previousResults,
                           dirnameout_fitfile=fitfolder,
                           corfilename=filecor,
@@ -998,7 +1161,8 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
                           depth=params.depth,
                           dictmaterials=params.mymaterials,
                           writefitfile=params.writefitfile,
-                          emax_matchringrate=params.e_max_MR)   # matching rate up to e_max_MR (keV)
+                          emax_matchringrate=params.e_max_MR,   # matching rate up to e_max_MR (keV)
+                          refinement_steps=params.refinement_steps)
 
     listspotindices = dataset.getSpotsFamily(params.starting_grainindex)
     if original_corfile is not None:
@@ -1011,7 +1175,27 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
                     restore_spot_indices(fitfile, original_corfile, purged_corfile=filename)
     if params.verbosefilename:
         print(f'For {filecor}: grain #{params.starting_grainindex}, nb indexed spots: {len(listspotindices)}')
-    info += ' Treated by IndexSpotsSet().'
+    info += ' Treated by IndexSpotsSet().' + indexing_pairs_info(dataset)
+    rejected = []
+    if params.solution_criteria:   # check of each grain found with the criteria of a correct solution
+        for grain, ub in sorted(dataset.dict_grain_matrix.items()):
+            if ub is not None:
+                verification = verify_solution(original_corfile or filename, ub, params)
+                info += ' ' + criteria_info(grain, verification)
+                if params.solution_reject and not verification['passed']:
+                    rejected.append(grain)
+    if rejected:   # grains failing the criteria: .fit files removed, results dropped
+        for grain in rejected:
+            (fitfolder / f'{filecor[:-4]}_g{grain}.fit').unlink(missing_ok=True)
+            dataset.dict_grain_matrix[grain] = None
+            dataset.dict_grain_matching_rate[grain] = [0, 0.]
+        info += f' grain(s) {rejected} rejected (criteria).'
+        kept = [g for g, ub in dataset.dict_grain_matrix.items() if ub is not None]
+        if not kept and previousResults is not None and not params.skipindexing:
+            # UB matrices tried first (usepreviousUB) rejected: indexing from scratch
+            res = index_refine(original_corfile or filename, dataclasses.replace(params, usepreviousUB=False))
+            res[3] = f'{info} Indexed again from scratch: {res[3]}'
+            return res
 
     toreturn = [image_index,
                 [(key, value) for key, value in dataset.dict_grain_matrix.items()],  # UB matrices
@@ -1019,7 +1203,228 @@ def index_refine(filename: Union[str, Path], params: IndexRefineParams) -> list:
                 info]
     if params.outputlistindices:
         toreturn.append(listspotindices)
+    if params.outputrefinementsteps:
+        toreturn.append({'refinement_steps': dict(dataset.dict_grain_refinementsteps),
+                         'indexing': {g: v for g, v in dataset.dict_grain_indexingpair.items() if v is not None}})
     return toreturn
+
+
+def previous_fitfile_folder(params: 'IndexRefineParams', image_index: int) -> Path:
+    """folder of the .fit files of a previous indexation of an image: params.previous_fit_folder (same layout as
+    fit_folder), else the .fit files folder of params"""
+    if not params.previous_fit_folder:
+        return params.fitfile_folder(image_index)
+    return dataclasses.replace(params, fit_folder=params.previous_fit_folder).fitfile_folder(image_index)
+
+
+def fitfile_grains(folder: Union[str, Path], stem: str) -> List[dict]:
+    """grains of the .fit files <stem>_g#.fit of a folder: [{'grain', 'UB', 'nb', 'pixdev', 'path'}] (sorted)"""
+    import re
+    grains = []
+    for path in sorted(Path(folder).glob(f'{stem}_g*.fit')):
+        m = re.match(rf'{re.escape(stem)}_g(\d+)\.fit$', path.name)
+        if not m:
+            continue
+        nb, pixdev = None, None
+        lines = path.read_text(errors='replace').splitlines()
+        for k, line in enumerate(lines):
+            if line.startswith('#Number of indexed spots'):
+                nb = int(line.split(':')[1])
+            elif line.startswith('#Mean Deviation(pixel)'):
+                value = line.split(':')[1].strip() if ':' in line and line.split(':')[1].strip() else lines[k + 1]
+                pixdev = float(value.lstrip('#'))
+        try:
+            UB = np.array(IOLT.readfitfile_multigrains(str(path))[3], dtype=float).reshape(3, 3)
+        except Exception:   # unreadable file: ignored
+            continue
+        grains.append({'grain': int(m.group(1)), 'UB': UB, 'nb': nb or 0,
+                       'pixdev': np.inf if pixdev is None else pixdev, 'path': str(path)})
+    return sorted(grains, key=lambda g: g['grain'])
+
+
+def fit_accepted(grains: List[dict], acceptance: Optional[dict]) -> str:
+    """'accepted', 'missing' or 'rejected (...)': best grain (most indexed spots) of previous .fit files with at
+    least acceptance['min_nb_spots'] spots and a mean pixel deviation at most acceptance['max_pixdev'] (None: any)"""
+    if not grains:
+        return 'missing'
+    acceptance = acceptance or {}
+    best = max(grains, key=lambda g: g['nb'])
+    minnb, maxpd = acceptance.get('min_nb_spots'), acceptance.get('max_pixdev')
+    if minnb is not None and best['nb'] < minnb:
+        return f"rejected ({best['nb']} < {minnb} spots)"
+    if maxpd is not None and best['pixdev'] > maxpd:
+        return f"rejected (pixel deviation {best['pixdev']:.2f} > {maxpd})"
+    return 'accepted'
+
+
+def verify_solution(filename: Union[str, Path], UB, params: 'IndexRefineParams', criteria=None,
+                    max_pixdev: Optional[float] = None) -> dict:
+    """check a UB matrix with the criteria of a correct solution (params.solution_criteria, or criteria): steps
+    [e_max, tolerance angle, min nb of matches] done in sequence from UB: at each step the spots (up to e_max) closer
+    than the tolerance angle are linked, UB and strain are refined with these links, and the nb of indexed spots
+    (links after refinement) must be at least min nb of matches; and the mean pixel deviation of the last step at
+    most max_pixdev (or params.solution_max_pixdev; None: not checked). No .fit file written.
+
+    Returns {'passed': bool, 'steps': [(e_max, tol, min nb, nb of indexed spots or None), ...],
+             'pixdev': [mean pixel deviation of the steps (None: not done)],
+             'failed_step': index of the first step failed or None, 'UB': refined UB matrix or None}"""
+    criteria = ISS.parse_refinement_steps(criteria if criteria is not None else params.solution_criteria)
+    max_pixdev = max_pixdev if max_pixdev is not None else params.solution_max_pixdev
+    dir_ = copy.deepcopy(params.dict_indexrefine)
+    dir_['MATCHINGRATE_ANGLE_TOL'] = criteria[0][1]   # raw UB: matching of the first step
+    dir_['MinimumMatchingRate'] = 1e-3                 # (the decision is made by the nb of matches of the steps)
+    check = dataclasses.replace(params, usepreviousUB=[np.asarray(UB, dtype=float)], skipindexing=True,
+                                nbGrainstoFind=1, refinement_steps=[list(c) for c in criteria],
+                                e_max_MR=criteria[0][0], dict_indexrefine=dir_, solution_criteria=None,
+                                solution_max_pixdev=None,
+                                writefitfile=False, outputrefinementsteps=True, outputlistindices=False,
+                                useinternalmultiprocessing=False, verbosefilename=False, neighbours=None)
+    res = index_refine(filename, check)
+    history = res[-1]['refinement_steps'].get(check.starting_grainindex, []) if isinstance(res[-1], dict) else []
+    steps, failed = [], None
+    for k, (emax, tol, minnb, _) in enumerate(criteria):
+        nb = history[k]['nb_matches'] if k < len(history) else None
+        steps.append((emax, tol, minnb, nb))
+        if failed is None and (nb is None or nb < minnb):
+            failed = k
+    ubs = dict(res[1])
+    pixdev = [history[k].get('pixdev') if k < len(history) else None for k in range(len(criteria))]
+    if failed is None and max_pixdev is not None and (pixdev[-1] is None or pixdev[-1] > max_pixdev):
+        failed = len(criteria) - 1   # last step: too large mean pixel deviation
+    return {'passed': failed is None, 'steps': steps, 'pixdev': pixdev, 'failed_step': failed,
+            'UB': ubs.get(check.starting_grainindex) if failed is None else None}
+
+
+def criteria_info(grain: int, verification: dict) -> str:
+    """text of a verification in the info of a result, e.g. ' g0 criteria pass [18keV/0.2deg:123, ...].'
+    (read by parse_criteria_info())"""
+    pds = verification.get('pixdev') or [None] * len(verification['steps'])
+    steps = ', '.join(f"{e:g}keV/{t:g}deg:{'-' if nb is None else nb}" + ('' if pd is None else f'/{pd:.2f}px')
+                      for (e, t, _, nb), pd in zip(verification['steps'], pds))
+    status = 'pass' if verification['passed'] else f"fail@{verification['failed_step']}"
+    return f'g{grain} criteria {status} [{steps}].'
+
+
+def parse_criteria_info(info: str) -> dict:
+    """{grain: {'passed': bool, 'nb': [nb of indexed spots of the steps (None: not done)],
+    'pixdev': [mean pixel deviations of the steps (None: not done)]}} from the info of a result (criteria_info())"""
+    import re
+    out = {}
+    for grain, status, steps in re.findall(r'g(\d+) criteria (pass|fail@\d+) \[([^\]]*)\]', str(info)):
+        vals = [v.split(':')[-1].split('/') for v in steps.split(', ') if v]
+        nbs = [None if v[0] == '-' else int(v[0]) for v in vals]
+        pds = [float(v[1][:-2]) if len(v) > 1 else None for v in vals]
+        out[int(grain)] = {'passed': status == 'pass', 'nb': nbs, 'pixdev': pds}
+    return out
+
+
+def indexing_pairs_info(dataset) -> str:
+    """text for the info of a result: spots pair (set A, set B) of the best solution of the indexing from scratch
+    of each indexed grain, e.g. ' g0 from spots pair A=0 B=7.' (read by central_spots_statistics())"""
+    text = ''
+    for grain in sorted(dataset.indexedgrains):
+        entry = dataset.dict_grain_indexingpair.get(grain)
+        if entry and entry['solutions'] and dataset.dict_grain_matrix.get(grain) is not None:
+            best = entry['solutions'][0]
+            text += f" g{grain} from spots pair A={best['spot_A']} B={best['spot_B']}."
+    return text
+
+
+def central_spots_statistics(allresults: list, verbose: bool = True) -> dict:
+    """statistics over the results of a batch of the central spot (set A) and partner spot (set B) of the pair of
+    spots that gave each indexed grain (indexing from scratch), to choose the size of the spots sets
+
+    Spot indices are positions in the list of spots not yet indexed (as in 'central spots indices')
+    Returns {'A': {spot index: nb of grains}, 'B': {spot index: nb of grains}, 'nb_grains': n}
+    """
+    import re
+    import collections
+    countA, countB, nb = collections.Counter(), collections.Counter(), 0
+    for res in allresults:
+        for _, a, b in re.findall(r'g(\d+) from spots pair A=(\d+) B=(\d+)', str(res[3]) if len(res) > 3 else ''):
+            countA[int(a)] += 1
+            countB[int(b)] += 1
+            nb += 1
+    if verbose and nb:
+        print(f'{nb} grains indexed from scratch')
+        for name, count in (('A (central spot)', countA), ('B (partner spot)', countB)):
+            cumul, lines = 0, []
+            for spot in sorted(count):
+                cumul += count[spot]
+                lines.append(f'{spot}: {count[spot]} ({100. * cumul / nb:.0f} %)')
+            print(f'spot of set {name}: nb of grains (cumulated %)\n   ' + ', '.join(lines))
+        print(f"largest index used: set A {max(countA)}, set B {max(countB)}")
+    return {'A': dict(sorted(countA.items())), 'B': dict(sorted(countB.items())), 'nb_grains': nb}
+
+
+def refinement_ramp(e_start: float, e_end: float, nb_steps: int = 4, tol_angles=(0.5, 0.1),
+                    min_nb_matches=(8, 15)) -> list:
+    """refinement steps [e_max, matching tolerance angle, min nb of matches] with e_max increasing linearly from
+    e_start (e.g. e_max_MR, energy used for indexing) to e_end (full energy range), tolerance angle from
+    tol_angles[0] to tol_angles[1] (a single value: constant) and min nb of matches from min_nb_matches[0] to [1]
+
+    e.g. IB.refinement_ramp(18, 27, 4, (0.3, 0.1), (10, 20))
+         -> [[18.0, 0.3, 10], [21.0, 0.233, 13], [24.0, 0.167, 17], [27.0, 0.1, 20]]
+    Use: indexing: refinement_steps of the configuration, or params.refinement_steps
+    """
+    tols = np.atleast_1d(np.asarray(tol_angles, dtype=float))
+    mins = np.atleast_1d(np.asarray(min_nb_matches, dtype=float))
+    energies = np.linspace(e_start, e_end, nb_steps)
+    tolerances = np.linspace(tols[0], tols[-1], nb_steps)
+    minima = np.linspace(mins[0], mins[-1], nb_steps)
+    return [[round(float(e), 2), round(float(t), 3), int(round(m))] for e, t, m in zip(energies, tolerances, minima)]
+
+
+def print_refinement(history, grains=None):
+    """print how each grain was indexed and refined: spots pair of the best solution of the indexing from scratch
+    (and best solution of each central spot probed, proposed spots set A), then the refinement steps
+
+    history: result of index_refine() with params.outputrefinementsteps=True (or its last element), or a result
+    of index_refine() with a sequence (kept grains)
+    """
+    indexing = {}
+    if isinstance(history, list):   # result of index_refine()
+        last = history[-1] if history else None
+        if isinstance(last, dict) and 'refinement_steps' in last:
+            history, indexing = last['refinement_steps'], last.get('indexing', {})
+        else:   # sequence: records of the kept grains
+            records = history[4] if len(history) > 4 and isinstance(history[4], list) else []
+            records = [r for r in records if isinstance(r, dict)]
+            label = lambda r: f"{r['step']} {r['key_material']} g{r['grain']}"
+            history = {label(r): r.get('refinement', []) for r in records}
+            indexing = {label(r): r['indexing_pair'] for r in records if r.get('indexing_pair')}
+    elif isinstance(history, dict) and 'refinement_steps' in history:
+        history, indexing = history['refinement_steps'], history.get('indexing', {})
+    for grain, steps in history.items():
+        if grains is not None and grain not in grains:
+            continue
+        entry = indexing.get(grain)
+        if entry:
+            prop = entry.get('spots_proposal')
+            if prop:
+                print(f"grain {grain}: spots set A proposed by '{prop['method']}': {prop['spots']}"
+                      + (' (no proposal: most intense spots used)' if prop['fallback'] else ''))
+                for method, scores in prop['scores'].items():
+                    print(f'   {method}: spot (score) ' + ', '.join(f'{sp} ({sc})' for sp, sc in scores))
+            print(f"grain {grain}: indexing from scratch, best solution of each central spot probed "
+                  f"(set A {_compact_indices(entry['set_A'])}, set B "
+                  + (f"0 to {entry['maxindex_probed']}" if entry['set_B'] is None
+                     else str(_compact_indices(entry['set_B']))) + ')')
+            print('   spot A  spot B  (.cor rows)     hkl A        hkl B      nb matches  matching rate(%)')
+            for k, sol in enumerate(entry['solutions']):
+                line = (f"   {sol['spot_A']:6d}  {sol['spot_B']:6d}  ({sol['row_A']:4d},{sol['row_B']:4d})  "
+                        f"{str(sol['hkl_A']):>11s}  {str(sol['hkl_B']):>11s}  {sol['nb_matches']:10d}  "
+                        f"{sol['matching_rate']:16.1f}")
+                (GT.printgreen if k == 0 else print)(line + ('   <- used' if k == 0 else ''))
+        print(f'grain {grain}: refinement steps')
+        print('   step  e_max(keV)  tol(deg)  nb matches (min)  matching rate(%)  pixdev')
+        for st in steps:
+            nb = '-' if st['nb_matches'] is None else str(st['nb_matches'])
+            mr = '-' if st['matching_rate'] is None else f"{st['matching_rate']:.1f}"
+            pix = '-' if st['pixdev'] is None else f"{st['pixdev']:.3f}"
+            line = (f"   {st['step']:4d}  {st['emax']:10.2f}  {st['tol_angle']:8.3f}  {nb:>10s} ({st['min_nb_matches']:3d})"
+                    f"  {mr:>16s}  {pix:>6s}")
+            (GT.printgreen if st['accepted'] else GT.printred)(line + ('' if st['accepted'] else '   rejected'))
 
 
 def print_result(res: list, minnbindexed: int = 20, minMR: float = 33):
@@ -1111,6 +1516,9 @@ def select_corfiles(cfg: dict, image_range=None, roi=None) -> List[str]:
                                     np.arange(scan['mapdims'][0] * scan['mapdims'][1]).reshape(scan['invmapdims']))
         indices = set(np.ravel(indices).tolist())
         files = [ff for ff in files if GT.getfileindex(ff) in indices]
+    if cfg['selection'].get('image_indices') is not None:
+        wanted = {int(i) for i in cfg['selection']['image_indices']}
+        files = [ff for ff in files if GT.getfileindex(ff) in wanted]
     return [str(ff) for ff in files]
 
 
@@ -1146,6 +1554,9 @@ def run_multiprocessing(listfiles: List[str], params: IndexRefineParams, nb_cpus
     nb_cpus: None: all cpus available for this process (see available_cpus())
     progress_interval: min time (s) between progress bar updates (large value for log files of batch jobs)
 
+    params.usepreviousUB 'neighbours': indexing guided by the UB matrices of the neighbouring map points
+    (listfiles: images of the map), see indexing_neighbours.run_neighbours()
+
     Returns the list of results of index_refine() (unordered)
     """
     if nb_cpus is None:
@@ -1153,6 +1564,8 @@ def run_multiprocessing(listfiles: List[str], params: IndexRefineParams, nb_cpus
     if nb_cpus > available_cpus():
         GT.printyellow(f'{nb_cpus} processes for {available_cpus()} available cpus: '
                        'processes share cpus (no speed gain)')
+    if params.usepreviousUB == 'neighbours':
+        return IN.run_neighbours(listfiles, params, nb_cpus=nb_cpus, progress_interval=progress_interval)
     params = dataclasses.replace(params, useinternalmultiprocessing=False, outputlistindices=False)
     if params.LUT is None:
         params.build_LUT()
@@ -2172,6 +2585,8 @@ def prepare_slurm_job(cfg: dict, params: IndexRefineParams, listfiles: List[str]
                                      verbosefilename=False)
     if params_job.LUT is None:
         params_job.build_LUT()
+    if params_job.usepreviousUB == 'neighbours':   # UB store shared by the jobs: UB matrices of a previous run removed
+        IN.UBStore(params_job.fit_folder).clear()
     with open(jobdir / 'job_params.pickle', 'wb') as f:
         pickle.dump({'cfg': cfg, 'params': params_job, 'listfiles': [str(ff) for ff in listfiles]}, f)
     readable = {k: v for k, v in dataclasses.asdict(params_job).items() if k != 'LUT'}
@@ -2343,13 +2758,18 @@ def main(argv=None):
             raise SystemExit(1)
         params = params_from_config(cfg)
         listfiles = select_corfiles(cfg, image_range=args.image_range)
-    if args.nchunks > 1:
-        listfiles = [str(ff) for ff in np.array_split(np.array(listfiles, dtype=object), args.nchunks)[args.chunk]]
     nb_cpus = args.ncpus or available_cpus()
-    print(f'{socket.gethostname()}: {len(listfiles)} .cor files (part {args.chunk + 1}/{args.nchunks}), '
-          f'{nb_cpus} processes, material {params.key_material}\n.fit files -> {params.fit_folder}', flush=True)
-
-    allresults = run_multiprocessing(listfiles, params, nb_cpus=nb_cpus, progress_interval=60)
+    if params.usepreviousUB == 'neighbours':   # band of the map of this job (UB matrices shared by the UB store)
+        print(f'{socket.gethostname()}: part {args.chunk + 1}/{args.nchunks} of the map, {nb_cpus} processes, '
+              f'material {params.key_material}\n.fit files -> {params.fit_folder}', flush=True)
+        allresults = IN.run_neighbours(listfiles, params, nb_cpus=nb_cpus, progress_interval=60, chunk=args.chunk,
+                                       nchunks=args.nchunks, clear_store=False if args.job else None)
+    else:
+        if args.nchunks > 1:
+            listfiles = [str(ff) for ff in np.array_split(np.array(listfiles, dtype=object), args.nchunks)[args.chunk]]
+        print(f'{socket.gethostname()}: {len(listfiles)} .cor files (part {args.chunk + 1}/{args.nchunks}), '
+              f'{nb_cpus} processes, material {params.key_material}\n.fit files -> {params.fit_folder}', flush=True)
+        allresults = run_multiprocessing(listfiles, params, nb_cpus=nb_cpus, progress_interval=60)
     summary = summarize_results(allresults, cfg['scan']['mapdims'])
     if args.job:
         filepath = Path(args.job) / f'allresults_part{args.chunk:03d}.pickle'

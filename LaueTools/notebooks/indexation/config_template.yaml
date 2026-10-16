@@ -50,9 +50,10 @@ material:
 indexing:
   e_min: 5                  # keV
   e_max: 22                 # keV, for strain refinement
-  e_max_MR: 19              # keV, for matching rate during indexing step
+  e_max_MR: 19              # keV, matching rate of candidate UB matrices (from scratch or previous ones) and spots
+                            # linked for the first refinement step (next steps: e_max)
   nbGrainstoFind: 1         # nb of grains (orientations) to find per image
-  depth: 0                  # micron (normal to sample surface)
+  depth: 0                  # micron (normal to sample surface, >0 below it): spots shifted along Y pixel. Top reflection geometry only; xbet, xgam neglected
   stop_Nb_Matches: 40       # stop exploring when a solution has this nb of matches (speed)
   maxnbspots_MReval: 10000
   MIN_NUMBERSPOTS_FOR_INDEXING: 6
@@ -63,10 +64,25 @@ indexing:
   blacklist: null
   blacklist_tolerance: 2.   # pixel, spots closer than this to a blacklisted spot are removed
   MatchingRate_List: null   # min matching rates (%) to go on refining; default [2, 2, ...]
+  # null: refinement steps = 'list matching tol angles' (below) with MatchingRate_List, all with e_max.
+  # Or steps [e_max (keV), matching tolerance angle (deg), min nb of matches]: e_max increases from the energy of
+  # indexing (e_max_MR) to the full range while the tolerance decreases (low symmetry or large unit cells), e.g.
+  # [[19, 0.3, 10], [23, 0.2, 12], [27, 0.1, 15]]  (python: IB.refinement_ramp(19, 27, 3, (0.3, 0.1), (10, 15)))
+  # Then e_max, 'list matching tol angles' and MatchingRate_List are not used
+  refinement_steps: null
   dict_indexrefine:
     # spots set A: n (-> 0..n-1, in this file only), 'to12' (0..12), '80to90' (80..90), 'start:stop' (start..stop-1),
     # or list [0, 2, 58]. CAUTION max(A) <= MAXINDEXPROBED
     central spots indices: 10
+    # or set A proposed for each image among its spots likely to have low Miller indices (as in the Autoindexation
+    # GUI): zones (spots at the intersections of most zone axes), triplets (spots of most recognised triplets of low
+    # indices directions: accurate lattice parameters needed) or zones+triplets. Then set B = set A (pairs of proposed
+    # spots only, a small nlutmax as 4 is enough) unless 'spots set B' is given
+    #central spots indices: zones
+    proposal nb spots: 10        # nb of spots proposed by each method
+    proposal zones tol: 0.05     # deg, max distance of a spot to a zone axis (0.03 - 0.08)
+    proposal triplets tol: 0.03  # deg, tolerance on the angles of a triplet
+    proposal nb probed: 200      # proposal among the first (most intense) spots
     MAXINDEXPROBED: 25      # spots set B = 0 .. MAXINDEXPROBED (included). Former name: NBMAXPROBED
     # or spots set B given explicitly (same syntax as set A, e.g. 'to40' or [0, 3, 5, 12]): only pairs of spots
     # (one of A, one of B) are tested and MAXINDEXPROBED is not used. null: set B defined by MAXINDEXPROBED

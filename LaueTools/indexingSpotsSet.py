@@ -38,6 +38,7 @@ if sys.version_info.major == 3:
     from . generaltools import printred, printgreen, printcyan, printyellow
     from . import spottracking as SpTra
     from . import orientations as ORI
+    from . import spotsproposal as SPROP
 
 else:
     import ConfigParser as CONF
@@ -55,6 +56,7 @@ else:
     from generaltools import printred, printgreen, printcyan, printyellow
     import spottracking as SpTra
     import orientations as ORI
+    import spotsproposal as SPROP
 
 
 CST_ENERGYKEV = DictLT.CST_ENERGYKEV
@@ -123,6 +125,73 @@ def parse_spots_set(spots) -> Union[List[int], None]:
     return list(dict.fromkeys(indices))   # order kept, duplicates removed
 
 
+# values of dict_indexrefine['central spots indices'] to propose the spots of set A for each image
+SPOTS_PROPOSAL_METHODS = ('zones', 'triplets', 'zones+triplets')
+
+
+def is_spots_proposal(spots) -> bool:
+    """True if spots (dict_indexrefine['central spots indices']) is a method of proposal of spots set A"""
+    return isinstance(spots, str) and spots.replace(' ', '').lower() in SPOTS_PROPOSAL_METHODS
+
+
+def propose_spots_setA(twotheta, chi, method: str, latticeparams=None, nb_spots: int = 10, tol_zones: float = 0.05,
+                       tol_triplets: float = 0.03, nb_probed: int = 200):
+    """spots likely to have low Miller indices, proposed as spots set A (as in the Autoindexation GUI)
+
+    method: 'zones' (spots at the intersections of the largest nb of zone axes, no lattice parameters needed),
+        'triplets' (spots of the largest nb of recognised triplets of low indices directions of the unit cell
+        latticeparams) or 'zones+triplets' (spots proposed by both methods)
+    twotheta, chi: scattering angles (deg) of the spots to index; only the nb_probed first ones are considered
+    nb_spots: nb of spots proposed by each method; tol_zones, tol_triplets: tolerances (deg), see spotsproposal
+
+    Returns (sorted list of proposed spot indices, info dict {method: [(spot, score), ...] best first})
+    """
+    nb = min(int(nb_probed), len(twotheta))
+    info, merged = {}, set()
+    if nb < 5:
+        return [], info
+    tth, chis = np.asarray(twotheta, dtype=float)[:nb], np.asarray(chi, dtype=float)[:nb]
+    for name in method.replace(' ', '').lower().split('+'):
+        if name == 'zones':
+            order, scores, _ = SPROP.rank_spots_by_zones(tth, chis, tol=tol_zones)
+        elif name == 'triplets':
+            if latticeparams is None:
+                raise ValueError("lattice parameters are needed to propose spots by 'triplets'")
+            order, scores = SPROP.rank_spots_by_triplets(tth, chis, latticeparams, maxindex=2, tol=tol_triplets)
+        else:
+            raise ValueError(f"unknown method of spots proposal {name!r}: {SPOTS_PROPOSAL_METHODS}")
+        proposed = [(int(spot), int(scores[spot])) for spot in order[:int(nb_spots)] if scores[spot] > 0]
+        info[name] = proposed
+        merged.update(spot for spot, _ in proposed)
+    return sorted(merged), info
+
+
+def parse_refinement_steps(refinement_steps) -> Union[List[tuple], None]:
+    """sequence of refinement steps -> list of (emax, tolerance angle, min nb of matches, min matching rate)
+
+    refinement_steps: None, or list of [emax (keV), matching tolerance angle (deg), min nb of matches]
+    (optional 4th element: min matching rate in %, default 0). At each step, experimental and simulated spots
+    (up to emax) closer than the tolerance angle are linked, UB and strain are refined with these links, and the
+    grain is kept if the nb of links (after refinement) is at least the min nb of matches.
+    Typical: emax increasing from the energy used for indexing to the full energy range, with decreasing
+    tolerance, e.g. [[18, 0.3, 10], [22, 0.2, 12], [27, 0.1, 15]] (low symmetry or large unit cells)
+    """
+    if refinement_steps is None:
+        return None
+    steps = []
+    for step in refinement_steps:
+        if len(step) not in (3, 4):
+            raise ValueError(f"refinement step {step} must be [emax, tolerance angle, min nb of matches]")
+        emax, tol, minnb = float(step[0]), float(step[1]), int(step[2])
+        minMR = float(step[3]) if len(step) == 4 else 0.
+        if emax <= 0 or tol <= 0 or minnb < 0:
+            raise ValueError(f"refinement step {step}: emax and tolerance angle must be > 0, min nb of matches >= 0")
+        steps.append((emax, tol, minnb, minMR))
+    if not steps:
+        raise ValueError("refinement_steps is empty")
+    return steps
+
+
 def get_maxindexprobed(dict_parameters: dict) -> int:
     """largest index of the spots of set B: dict_parameters['MAXINDEXPROBED']
     (or 'NBMAXPROBED', its former name, which had the same meaning: spots 0 to NBMAXPROBED included)"""
@@ -147,6 +216,9 @@ def spots_sets(dict_parameters: dict, nbspots: Union[int, None] = None, verbose:
     Returns (setA, setB, maxindex_probed): setB is None when set B is 0..maxindex_probed;
     maxindex_probed is the largest spot index used (in A or B)
     """
+    if is_spots_proposal(dict_parameters["central spots indices"]):
+        raise ValueError(f"spots set A is proposed for each image ('{dict_parameters['central spots indices']}'): "
+                         "it depends on the spots of the image (see propose_spots_setA())")
     setA = parse_spots_set(dict_parameters["central spots indices"])
     setB = parse_spots_set(dict_parameters.get("spots set B"))
     maxindex_probed = get_maxindexprobed(dict_parameters) if setB is None else max(setB)
@@ -215,6 +287,12 @@ class spotsset:
         self.dict_grain_latticeparameters = {}
         self.dict_grain_Ts = {}
         self.dict_grain_matching_rate = {} 
+        self.dict_grain_refinementsteps = {}  # history of the refinement steps of each grain (list of dict)
+        # indexing from scratch of each grain: spots pair (and hkl) of the best solution, best solution of each
+        # central spot probed, proposed spots set A (see IndexSpotsSet())
+        self.dict_grain_indexingpair = {}
+        self.last_indexing_solutions = None
+        self._last_abs_spotindex = None
         self.dict_Missing_Reflections = {}
         self.dict_grain_twins = {}
 
@@ -1116,6 +1194,7 @@ class spotsset:
         #         print "data_to_index", data_to_index
 
         (abs_spotindex, tth, chi, _, _, _) = data_to_index.T
+        self._last_abs_spotindex = np.array(abs_spotindex, dtype=int)   # .cor row of each spot to index
 
         nb_of_spots = len(abs_spotindex)
 
@@ -1250,7 +1329,8 @@ class spotsset:
                                                                 choose_UB_MinEulerepresentative=True,
                                                                 emax_matchringrate:float=None,
                                                                 writefitfile:bool=True,
-                                                                add_info_in_outputfilename:str=''):
+                                                                add_info_in_outputfilename:str='',
+                                                                refinement_steps=None):
         r"""
         General class method to index a set of experimental spots.
 
@@ -1266,7 +1346,10 @@ class spotsset:
         :type key_material: string
         :param emin: minimum energy bandpass
         :type emin: integer
-        :param emax: maximum energy bandpass (for structural refinement). self.emax_MR sets the maximum energy for angular matching rate computation
+        :param emax: maximum energy bandpass (for structural refinement). self.emax_MR (emax_matchringrate) sets the
+                     maximum energy of the angular matching rate of the candidate UB matrices (from scratch or
+                     previousResults) and of the spots linked for the first refinement step (without refinement_steps;
+                     next steps: emax)
         :type emax: integer
         :param dict_parameters: dictionary of parameters for the spots set size and the refinement procedure (see LaueTools.dict_LaueTools.dict_parameters)
         :type dict_parameters: dictionary
@@ -1286,6 +1369,10 @@ class spotsset:
         :param nbGrainstoFind: number of grain to find for a given material.
                             If 'max' then find the largest number of grains in data set.
         :type nbGrainstoFind: integer
+        :param refinement_steps: None, or list of [emax, tolerance angle, min nb of matches] of the successive
+                            refinement steps (see parse_refinement_steps()). It replaces angletol_list and
+                            MatchingRate_List, and emax (= emax of the last step). The steps of each grain are
+                            recorded in self.dict_grain_refinementsteps
         :param MatchingRate_List: list of minimum matching rates that accept to perform the next refinement step (with less tolerance angle)
                             Last term is the final minimum matching rate (in percent) to accept the final refinement.
         :type MatchingRate_List: list of floats
@@ -1303,7 +1390,9 @@ class spotsset:
         :type corfilename: string
         :param dirnameout_fitfile: folder to write .fit results file in
         :type dirnameout_fitfile: string
-        :param depth: normal to surface sample depth in microns
+        :param depth: depth in microns of the scattering grain, normal to the sample surface, positive below the surface.
+            Crude model: reflection geometry ('Z>0', sample tilted by 40 deg), detector tilts xbet and xgam neglected, spots
+            shifted along pixel Y only (see FitOrient.error_function_on_demand_strain())
 
         :param ResolutionAngstrom: float | None, largest dspacing (crudely approx = sqrt(h**2+k**2+l**2)), None, simulate exhaustively all nodes from perfect theo. crystal
 
@@ -1320,6 +1409,15 @@ class spotsset:
 
         if dictmaterials is not None:
             self.dictmaterials_index = dictmaterials
+
+        # refinement steps with their own emax, tolerance angle and min nb of matches
+        refinementsteps = parse_refinement_steps(refinement_steps)
+        if refinementsteps is not None:
+            if emax_matchringrate is None:
+                emax_matchringrate = emax   # indexing: matching rate up to the given emax
+            emax = refinementsteps[-1][0]   # final energy range
+            angletol_list = [step[1] for step in refinementsteps]
+            MatchingRate_List = [step[3] for step in refinementsteps]
 
         self.setMaterial(key_material)
         self.setEnergyBand(emin, emax, emax_matchringrate)
@@ -1574,8 +1672,32 @@ class spotsset:
                     self.AngTol_LUTmatching = dict_parameters["AngleTolLUT"]
                     # sets of spots A ('central spots indices') and B ('spots set B' or 0..MAXINDEXPROBED) whose
                     # mutual angles are recognised. Spots indices larger than the nb of spots left are ignored
+                    spotsproposal = None
+                    dict_spotssets = dict_parameters
+                    if is_spots_proposal(dict_parameters["central spots indices"]):
+                        # spots set A proposed from the spots of this image (zone axes intersections, triplets)
+                        method = dict_parameters["central spots indices"]
+                        proposed, proposalinfo = propose_spots_setA(
+                            self.TwiceTheta_Chi_Int[0], self.TwiceTheta_Chi_Int[1], method,
+                            latticeparams=self.dict_Materials[key_material][1],
+                            nb_spots=dict_parameters.get('proposal nb spots', 10),
+                            tol_zones=dict_parameters.get('proposal zones tol', 0.05),
+                            tol_triplets=dict_parameters.get('proposal triplets tol', 0.03),
+                            nb_probed=dict_parameters.get('proposal nb probed', 200))
+                        spotsproposal = {'method': method, 'spots': proposed, 'scores': proposalinfo,
+                                         'fallback': len(proposed) < 2}
+                        dict_spotssets = dict(dict_parameters)
+                        if len(proposed) >= 2:
+                            dict_spotssets["central spots indices"] = proposed
+                            if dict_parameters.get("spots set B") is None:
+                                # as in the GUI: angles between all pairs of proposed spots only
+                                dict_spotssets["spots set B"] = proposed
+                        else:   # no proposal: the most intense spots
+                            dict_spotssets["central spots indices"] = list(
+                                range(int(dict_parameters.get('proposal nb spots', 10))))
+                        if verbose>1: print('spots proposal', spotsproposal)
                     (spot_index_central_list,
-                     spots_set_B, MAXINDEXPROBED) = spots_sets(dict_parameters, nbspots=nbspots, verbose=verbose)
+                     spots_set_B, MAXINDEXPROBED) = spots_sets(dict_spotssets, nbspots=nbspots, verbose=verbose)
                     # set mutual angular distance from spots 0 to MAXINDEXPROBED
                     # TODO: build self.table_angdist but not yet effective
                     self.setTable_Angdist(nbmax=MAXINDEXPROBED + 1)
@@ -1620,6 +1742,12 @@ class spotsset:
                                             crudeMReval=self.crudeMReval,
                                             maxnbspots_MReval=self.maxnbspots_MReval,
                                             stop_Nb_Matches=self.stop_Nb_Matches)
+                    # spots pair of the best solution, best solution of each central spot probed, proposed set A
+                    self.dict_grain_indexingpair[grain_index] = None if bestUB is None else {
+                        'solutions': list(self.last_indexing_solutions or []), 'spots_proposal': spotsproposal,
+                        'set_A': list(spot_index_central_list),
+                        'set_B': None if spots_set_B is None else list(spots_set_B),
+                        'maxindex_probed': int(MAXINDEXPROBED)}
                     # a way to launch indexing from scratch one time. and it provides only one UB mrix
                     NeedtoProvideNewMatrices = False
                     indexing_from_scratch_counter += 1
@@ -1665,7 +1793,18 @@ class spotsset:
             # number of spots may change
             nbsteps = len(ANGLETOL_List)
             UBrefined = bestUB
+            self.dict_grain_refinementsteps[grain_index] = []   # history of the steps of this grain
             for step_refinement_index, AngleTol in enumerate(ANGLETOL_List):
+                # energy range and min nb of matches of the step (refinement_steps). Else: first step with the spots
+                # linked up to self.emax_MR (energy of the matching rate of the candidate UB matrix, from scratch
+                # or previous results), next steps up to self.emax (a single step: self.emax, final results)
+                if refinementsteps is not None:
+                    emax_step = refinementsteps[step_refinement_index][0]
+                elif step_refinement_index == 0 and nbsteps > 1 and self.emax_MR is not None:
+                    emax_step = self.emax_MR
+                else:
+                    emax_step = self.emax
+                minnb_step = 0 if refinementsteps is None else refinementsteps[step_refinement_index][2]
                 # step is counted from zero
                 if verbose>2:
                     print("\n------  ------ refining grain #%d step ------  -------%d/%s"
@@ -1681,7 +1820,7 @@ class spotsset:
                                 AngleTol=AngleTol,
                                 use_spots_in_currentselection=True,
                                 verbose=verbose-2,
-                                emax=self.emax)
+                                emax=emax_step)
 
                 if verbose>2:
                     print('\n\njust before self.refineUBSpotsFamily(grain_index,------>>  '
@@ -1719,9 +1858,18 @@ class spotsset:
                                                                 AngleTol=AngleTol,
                                                                 use_spots_in_currentselection=selectedspots_index,
                                                                 verbose=verbose-2,
-                                                                emax=self.emax)
+                                                                emax=emax_step)
                 else:
                     Matching_rate = None
+
+                enoughmatches = nb_updates is not None and nb_updates >= minnb_step
+                self.dict_grain_refinementsteps[grain_index].append(
+                    {'step': step_refinement_index, 'emax': emax_step, 'tol_angle': AngleTol,
+                     'min_nb_matches': minnb_step, 'nb_matches': nb_updates, 'matching_rate': Matching_rate,
+                     'pixdev': (None if refinedMatrix is None or self.pixelresidues is None
+                                else float(np.mean(self.pixelresidues))),
+                     'accepted': bool(refinedMatrix is not None and Matching_rate is not None and enoughmatches
+                                      and Matching_rate >= MatchingRate_List[step_refinement_index])})
 
                 MINIMUM_MATCHINGRATE = 10.0
                 MINIMUM_SPOTS_GRAIN = 6
@@ -1736,7 +1884,8 @@ class spotsset:
                 if (Matching_rate is None
                             or Matching_rate < MatchingRate_List[step_refinement_index]
                             or refinedMatrix is None
-                            or not GoodRefinement):
+                            or not GoodRefinement
+                            or not enoughmatches):
                     # matching rate too low
                     # then remove previous indexed data
                     if verbose>2: print("matching rate too low after refining")
@@ -1851,6 +2000,11 @@ class spotsset:
 
                                 # update self.dict_grain_matrix[grain_index] (used later to write results in file)
                                 self.dict_grain_matrix[grain_index] = UBsingle
+                                # UBsingle = refined UB with relabelled (permuted, signed) crystal axes, and B0 = a* I
+                                # (cubic) is unchanged: q = UBsingle B0 hklmin = refined UB B0 hkl. The crystal frame
+                                # quantities below (deviatoric strain, lattice parameters ...) are then computed in the
+                                # axes of UBsingle, consistently with the UB and hkl written in the .fit file
+                                self.refinedUBmatrix = UBsingle
 
                                 # recompute HKL according to this new matrix
                                 datafamily = self.getSpotsFamilyallData(grain_index)
@@ -2534,11 +2688,29 @@ class spotsset:
         if Res[0] is None:
             return Res
 
-        (list_matrices, _, _, MatchingRates) = Res
+        (list_matrices, list_stats, _, MatchingRates) = Res
 
         nbspotsIAM = len(self.absolute_index)
 
         best_result_index = np.argsort(MatchingRates)[::-1][0]
+
+        # spots pair and hkl of the solutions (one per central spot probed), best matching rate first
+        solutions = []
+        for k in np.argsort(MatchingRates)[::-1]:
+            try:
+                nbmatches, nbtheo, _, pairspots, pairhkl = list_stats[k][:5]
+                spotA, spotB = [int(i) for i in np.ravel(pairspots)[:2]]
+                hkls = np.array(pairhkl, dtype=float).reshape(-1, 3)[:2]
+                rows = self._last_abs_spotindex
+                solutions.append({'spot_A': spotA, 'spot_B': spotB,
+                                  'row_A': int(rows[spotA]) if rows is not None else spotA,
+                                  'row_B': int(rows[spotB]) if rows is not None else spotB,
+                                  'hkl_A': [int(round(v)) for v in hkls[0]], 'hkl_B': [int(round(v)) for v in hkls[1]],
+                                  'nb_matches': int(nbmatches), 'nb_theo': int(nbtheo),
+                                  'matching_rate': float(MatchingRates[k])})
+            except (ValueError, TypeError, IndexError):
+                continue
+        self.last_indexing_solutions = solutions
 
         matrix = list_matrices[best_result_index]
         score = MatchingRates[best_result_index]
@@ -2568,7 +2740,9 @@ class spotsset:
                         by intensity of exp. spot.
         :param nbSpotsToIndex: integer or 'all' select the nb of pairs to used for refinement.
 
-        :param depth: normal to surface sample depth in microns
+        :param depth: depth in microns of the scattering grain, normal to the sample surface, positive below the surface.
+            Crude model: reflection geometry ('Z>0', sample tilted by 40 deg), detector tilts xbet and xgam neglected, spots
+            shifted along pixel Y only (see FitOrient.error_function_on_demand_strain())
 
         :return: None, None if two few exp. data to fit
 

@@ -7,7 +7,7 @@ Steps (each one uses the dedicated modules, with YAML configuration files writte
 
 1. list the maps of the experiment (BLISS hdf5 file)         list_maps(), ScanSelector, scan_info()
 2. configuration files of peak search and indexation           make_configs()
-3. peak search (images -> .dat, .cor files)                    run_step('peaksearch', ...)   (peaksearch_batch)
+3. peak search (images -> .cor files, .dat files without calibration) run_step('peaksearch', ...)   (peaksearch_batch)
 4. indexation & refinement (.cor -> .fit files)                run_step('indexing', ...)     (indexing_batch)
 5. maps: quality, orientation (IPF), grains (segmentation)     load_fitfiles(), quality_maps(), segmentation()
 
@@ -15,7 +15,7 @@ Each step runs on this machine (multiprocessing) or as a job on the ESRF cluster
 Steps already done are skipped (results are reloaded), unless redo=True: running the notebook again is safe.
 Results are written next to the images, with RAW_DATA replaced by PROCESSED_DATA:
     <PROCESSED_DATA>/<sample>/<dataset>/scan0001/configs/   peaksearch.yaml, indexing.yaml
-                                                 /corfiles/  .dat, .cor files
+                                                 /corfiles/  .cor files (.dat: output write_dat)
                                                  /fitfiles_<material>/  .fit files
                                                  /slurm_jobs/  (jobs on the cluster)
 """
@@ -309,7 +309,8 @@ def _differences(cfg: dict, changes: dict, tree: dict) -> dict:
         node = cfg
         for key in IB._key_path(name, tree):
             node = node.get(key) if isinstance(node, dict) else None
-        if name.replace('_', ' ') in IB._SPOTS_SET_KEYS and value is not None:
+        if (name.replace('_', ' ') in IB._SPOTS_SET_KEYS and value is not None
+                and not IB.ISS.is_spots_proposal(value)):
             value = IB.ISS.parse_spots_set(value)   # python syntax of spots sets (5 -> [5])
         if not IB._same(value, node):
             diff[name] = value
@@ -398,15 +399,38 @@ def _indexing_fingerprint_keys(indexing: dict) -> dict:
     are not indexed again: parameters added later are left out when they have their default (no effect) value,
     and renamed parameters keep their former name (MAXINDEXPROBED -> NBMAXPROBED)"""
     keys = {k: v for k, v in indexing.items()
-            if not (k in ('blacklist', 'blacklist_tolerance') and indexing.get('blacklist') is None)}
+            if not (k in ('blacklist', 'blacklist_tolerance') and indexing.get('blacklist') is None)
+            and not (k in ('refinement_steps', 'solution_criteria') and v is None)
+            and not (k in ('solution_max_pixdev', 'solution_reject') and indexing.get('solution_criteria') is None)}
     dir_ = dict(keys['dict_indexrefine'])
     if dir_.get('spots set B') is None:
         dir_.pop('spots set B', None)
+    if not IB.ISS.is_spots_proposal(dir_.get('central spots indices')):   # parameters of the proposal of set A
+        for key in [k for k in dir_ if k.startswith('proposal ')]:
+            dir_.pop(key)
     for old, new in IB._KEY_ALIASES.items():
         if new in dir_:
             dir_[old] = dir_.pop(new)
     keys['dict_indexrefine'] = dir_
     return keys
+
+
+def _run_keys(cfg: dict) -> dict:
+    """run options of the fingerprint (options added later left out when they have their default value:
+    fingerprints of former maps)"""
+    run = cfg['run']
+    keys = {k: run[k] for k in ('usepreviousUB', 'skipindexing', 'starting_grainindex')}
+    if not run.get('ignorefitfileresults', True):
+        keys['ignorefitfileresults'] = False
+        keys['fit_acceptance'] = run.get('fit_acceptance')
+    if run.get('previous_fit_folder'):
+        keys['previous_fit_folder'] = str(run['previous_fit_folder'])
+    return keys
+
+
+def _selection_keys(cfg: dict) -> dict:
+    """selection of the fingerprint (image_indices left out when None: fingerprints of former maps)"""
+    return {k: v for k, v in cfg['selection'].items() if not (k == 'image_indices' and v is None)}
 
 
 def _fingerprint(step: str, cfg: dict) -> str:
@@ -418,19 +442,25 @@ def _fingerprint(step: str, cfg: dict) -> str:
                 'output': {k: out[k] for k in ('dat_folder', 'added_string', 'write_cor', 'nbfiles_per_folder',
                                                'subfolder_prefix')},
                 'peaksearch': cfg['peaksearch'], 'exclusion_boxes': cfg['exclusion_boxes'],
-                'selection': cfg['selection']}
+                'selection': _selection_keys(cfg)}
     else:
         peaks = sorted(Path(scan['cor_folder']).glob('peaksearch_*.pickle')) if scan['cor_folder'] else []
         keys = {'scan': {k: scan[k] for k in ('cor_folder', 'prefix', 'nbdigits', 'CCDLabel', 'nbfiles_per_folder',
                                               'subfolder_prefix')},
                 'output': {k: out[k] for k in ('fit_folder', 'fit_subfolders')},
                 'material': cfg['material'], 'indexing': _indexing_fingerprint_keys(cfg['indexing']),
-                'selection': cfg['selection'],
-                'run': {k: cfg['run'][k] for k in ('usepreviousUB', 'skipindexing', 'starting_grainindex')},
+                'selection': _selection_keys(cfg),
+                'run': _run_keys(cfg),
                 'ub_matrices': cfg['ub_matrices'],
                 'peaksearch_results': [p.stat().st_mtime for p in peaks]}   # new peak search -> new indexation
         if cfg.get('sequence') is not None:   # (key absent for single material: fingerprints of former maps)
             keys['sequence'] = cfg['sequence']
+        if cfg['run']['usepreviousUB'] == 'neighbours':   # (idem)
+            keys['neighbours'] = {k: v for k, v in IB.IN.settings(cfg['run']['neighbours']).items()
+                                  if k != 'library_refresh'}
+            seedsfile = keys['neighbours'].get('seeds_file')
+            if seedsfile and Path(seedsfile).exists():   # validated seeds changed -> index again
+                keys['neighbours']['seeds_file_content'] = hashlib.sha1(Path(seedsfile).read_bytes()).hexdigest()
     text = json.dumps(IB._to_plain(keys), sort_keys=True, default=str)
     return hashlib.sha1(text.encode()).hexdigest()
 
@@ -451,7 +481,31 @@ def _archive_previous(folder: Path) -> Optional[Path]:
 
 
 def _job_pointer(step: str, cfg: dict) -> Path:
-    return Path(cfg['configfile']).parent / f'{step}_slurm_job.json'
+    """file of the SLURM job submitted for a configuration file (e.g. configs/indexing_slurm_job.json for
+    indexing.yaml, configs/indexing_seeds_slurm_job.json for indexing_seeds.yaml)"""
+    stem = Path(cfg['configfile']).stem
+    return Path(cfg['configfile']).parent / f'{stem if stem.startswith(step) else step}_slurm_job.json'
+
+
+def _forget_ended_job(pointer: Path) -> bool:
+    """remove the pointer to a job submitted before that ended without all its results (cancelled, time limit,
+    failure), so that the step is computed again (previous results folder archived). True if removed.
+    The job state is known only where SLURM is available: elsewhere the pointer is kept (error)"""
+    job = IB.load_slurm_job(json.loads(pointer.read_text())['jobdir'])
+    parts = list(Path(job['jobdir']).glob('allresults_part*.pickle'))
+    if len(parts) >= job.get('nchunks', 1):
+        return False   # finished: its results are loaded
+    if not slurm_available():
+        raise RuntimeError(f"a SLURM job was submitted for this step ({job.get('job_id')}, {job['jobdir']}) and its "
+                           f"state cannot be known from this machine: run the cell where SLURM is available, or "
+                           f"delete {pointer} if this job is not running any more")
+    if job.get('job_id') and _slurm_states(job['job_id']):
+        return False   # still running or pending: waited for
+    GT.printyellow(f"job {job.get('job_id')} submitted before ended without all its results ({len(parts)}/"
+                   f"{job.get('nchunks', 1)} parts: cancelled, time limit or failure, see {job['jobdir']}/logs): "
+                   f"computing again (the results of this job are archived with the results folder)")
+    pointer.unlink()
+    return True
 
 
 def _slurm_states(job_id: str) -> List[str]:
@@ -529,6 +583,10 @@ def run_step(step: str, cfg: dict, execution: str = 'local', nb_cpus: Optional[i
         GT.printgreen(f'{step} results reloaded from {resfile}')
         return module.load_results(resfile)['allresults'] if step == 'peaksearch' else IB.load_allresults(resfile)['allresults']
 
+    tree, loader = (PB.DEFAULT_CONFIG, PB.load_config) if step == 'peaksearch' else (IB.DEFAULT_CONFIG, IB.load_config)
+    if IB._memory_changes(cfg, tree, loader):   # parameters changed in memory (e.g. pcfg['peaksearch'][...] = ...):
+        # written in the configuration file first (the file stays the reference of the results)
+        cfg = module.save_config(cfg, cfg['configfile'], overwrite=True)
     fingerprint = _fingerprint(step, cfg)
     if resfile.exists() and not redo:
         fpfile = _fingerprint_file(resfile)
@@ -553,8 +611,14 @@ def run_step(step: str, cfg: dict, execution: str = 'local', nb_cpus: Optional[i
         raise RuntimeError(f'no file to analyse for {step}')
     print(f'{step}: {len(listfiles)} files')
     outfolder = Path(cfg['output']['dat_folder'] if step == 'peaksearch' else cfg['output']['fit_folder'])
+    if pointer.exists():
+        _forget_ended_job(pointer)
     if not pointer.exists() and (redo or resfile.exists() or (outfolder.is_dir() and any(outfolder.iterdir()))):
-        _archive_previous(outfolder)   # (not while waiting for a job submitted before: it writes there)
+        archived = _archive_previous(outfolder)   # (not while waiting for a job submitted before: it writes there)
+        if (step == 'indexing' and archived is not None and not cfg['run'].get('previous_fit_folder')
+                and (cfg['run']['usepreviousUB'] == 'fromfitfile' or not cfg['run']['ignorefitfileresults'])):
+            params.previous_fit_folder = str(archived)   # previous .fit files read from the archived folder
+            print(f'previous .fit files read from {archived}')
 
     job = None
     if execution == 'slurm' and pointer.exists():   # job submitted before (e.g. wait interrupted): wait again
@@ -604,13 +668,152 @@ def run_step(step: str, cfg: dict, execution: str = 'local', nb_cpus: Optional[i
 
 
 # --------------------------------------------------------------------------------------
+#  INDEXING WORKFLOWS (with or without the .fit files of a previous indexation)
+# --------------------------------------------------------------------------------------
+INDEXING_WORKFLOWS = {
+    # name: (run options, description) (MODE of the notebook Indexation_MultiProcessing, Index_Refine GUI)
+    'scratch': ({'ignorefitfileresults': True, 'usepreviousUB': False, 'skipindexing': False},
+                'every point indexed from scratch, previous .fit files ignored (MODE 0)'),
+    'refine': ({'ignorefitfileresults': True, 'usepreviousUB': 'fromfitfile', 'skipindexing': True},
+               'UB matrices of the previous .fit files (all grains) refined only, with the current refinement '
+               'parameters (MODE 1)'),
+    'refine_or_scratch': ({'ignorefitfileresults': True, 'usepreviousUB': 'fromfitfile', 'skipindexing': False},
+                          'UB matrices of the previous .fit files refined; indexing from scratch if they are rejected '
+                          'or missing (MODE 3, GUI: update preexisting results)'),
+    'matrices': ({'ignorefitfileresults': True, 'skipindexing': True},
+                 'list of UB matrices (UB_MATRICES) checked and refined at every point, no indexing from scratch '
+                 '(MODE 2)'),
+    'matrices_or_scratch': ({'ignorefitfileresults': True, 'skipindexing': False},
+                            'list of UB matrices checked and refined first; indexing from scratch if they are '
+                            'rejected (MODE 4, GUI: guessed matrices)'),
+    'redo_poor': ({'ignorefitfileresults': False, 'usepreviousUB': False, 'skipindexing': False},
+                  'previous .fit files kept if accepted (ACCEPTANCE: min nb of spots, max pixel deviation); the '
+                  'others (and the missing ones) indexed from scratch'),
+}
+
+
+def indexing_workflow(icfg: dict, workflow: str = 'scratch', ub_matrices: Optional[dict] = None,
+                      acceptance: Optional[dict] = None, criteria=None, max_pixdev: Optional[float] = 1.0,
+                      reject: Optional[bool] = None, previous_fit_folder=None, verbose: bool = True) -> dict:
+    """write in the indexing configuration file of icfg the options of an indexing workflow (see
+    INDEXING_WORKFLOWS) and return the configuration to run with run_step('indexing', ...)
+
+    ub_matrices: {name: 3x3 matrix or .fit file (its UB matrix)} of workflows 'matrices' and 'matrices_or_scratch'
+    acceptance: {'min_nb_spots': n, 'max_pixdev': p} of the previous .fit files kept by 'redo_poor'
+    criteria: None, or criteria of a correct solution (steps [e_max, tolerance angle, min nb of matches], see
+        IB.verify_solution()) checked for every grain found, with max_pixdev (pixel) at the last step;
+        reject (default: True with criteria): grains failing them rejected (then indexing from scratch if the
+        workflow allows it)
+    previous_fit_folder: .fit files of the previous indexation (None: the results folder of this configuration,
+        archived as <fit_folder>_previous_<date> when the indexation is run again)
+    """
+    if workflow not in INDEXING_WORKFLOWS:
+        raise ValueError(f'workflow must be one of {list(INDEXING_WORKFLOWS)}, not {workflow!r}')
+    changes = dict(INDEXING_WORKFLOWS[workflow][0])
+    if workflow in ('matrices', 'matrices_or_scratch'):
+        if not ub_matrices:
+            raise ValueError(f"workflow {workflow!r}: give the UB matrices to check (ub_matrices / UB_MATRICES)")
+        mats = {}
+        for name, value in ub_matrices.items():
+            if isinstance(value, (str, Path)) and str(value).endswith('.fit'):
+                value = IB.fitfile_grains(Path(value).parent, Path(value).name.rsplit('_g', 1)[0])
+                value = next(g['UB'] for g in value if Path(g['path']).name == Path(str(ub_matrices[name])).name)
+            mats[name] = np.asarray(value, dtype=float).tolist()
+        changes['ub_matrices'] = {**(icfg.get('ub_matrices') or {}), **mats}
+        changes['usepreviousUB'] = list(mats)
+    acc = {'min_nb_spots': None, 'max_pixdev': None, **((acceptance or {}) if workflow == 'redo_poor' else {})}
+    changes['min_nb_spots'], changes['max_pixdev'] = acc['min_nb_spots'], acc['max_pixdev']   # (fit_acceptance)
+    changes['solution_criteria'] = criteria
+    changes['solution_max_pixdev'] = max_pixdev
+    changes['solution_reject'] = bool(criteria) if reject is None else bool(reject)
+    changes['previous_fit_folder'] = None if previous_fit_folder is None else str(previous_fit_folder)
+    if workflow != 'scratch' and workflow not in ('matrices', 'matrices_or_scratch'):
+        fitfolder = Path(previous_fit_folder or icfg['output']['fit_folder'])
+        if not (fitfolder.is_dir() and any(fitfolder.glob('*.fit')) or any(fitfolder.glob('*/*.fit'))):
+            GT.printyellow(f'workflow {workflow!r}: no .fit file in {fitfolder} (previous indexation)')
+    icfg = IB.save_config(icfg, icfg['configfile'], overwrite=True, **changes)
+    if verbose:
+        GT.printgreen(f"indexing workflow {workflow!r}: {INDEXING_WORKFLOWS[workflow][1]}")
+        if criteria:
+            print(f"criteria of a correct solution: {criteria}, max pixel deviation {max_pixdev} "
+                  f"({'failing grains rejected' if changes['solution_reject'] else 'reported only'})")
+    return icfg
+
+
+# --------------------------------------------------------------------------------------
 #  RESULTS: maps
 # --------------------------------------------------------------------------------------
-def load_fitfiles(icfg: dict, grainindex: int = 0):
+# peak list columns of PB.peaksearch_image(): names in the .cor files (.dat: same names, with peak_X peak_Y)
+_PEAKLIST_COLUMNS = ['X', 'Y', 'peak_Isub', 'peak_fwaxmaj', 'peak_fwaxmin', 'peak_inclination', 'Xdev', 'Ydev',
+                     'peak_bkg', 'Ipixmax']
+
+
+def _read_peaklist_file(args) -> tuple:
+    """(imageindex, nb of peaks, peaklist) of a .cor (or .dat) file, as PB.peaksearch_image() (-1 if not readable)"""
+    imageindex, path = args
+    try:
+        with open(path) as f:
+            names = f.readline().split()
+        data = np.atleast_2d(np.loadtxt(path, skiprows=1, comments='#'))
+    except Exception:
+        return imageindex, -1, None
+    if data.size == 0:
+        return imageindex, 0, None
+    names = [{'peak_X': 'X', 'peak_Y': 'Y'}.get(n, n) for n in names]
+    peaklist = np.full((len(data), len(_PEAKLIST_COLUMNS)), np.nan)
+    for k, name in enumerate(_PEAKLIST_COLUMNS):
+        if name in names:
+            peaklist[:, k] = data[:, names.index(name)]
+        elif name == 'peak_Isub' and 'I' in names:   # .cor file without the peak properties
+            peaklist[:, k] = data[:, names.index('I')]
+    return imageindex, len(peaklist), peaklist
+
+
+def load_corfiles(pcfg: dict, nb_cpus: Optional[int] = None, min_files_pool: int = 2000,
+                  max_cpus_pool: int = 32) -> list:
+    """peak search results read from the .cor files (or .dat files if there is no .cor file) already written in
+    dat_folder, without computing anything (e.g. peak search still running, interrupted, or done on SLURM without
+    the results pickle)
+
+    Returns allresults as run_step('peaksearch', ...): list of (imageindex, nb of peaks, peaklist array (nb peaks,
+    10 columns) X, Y, I, fwhm major, fwhm minor, inclination, Xdev, Ydev, background, Ipixmax), for
+    PB.summarize_results(), PB.peaks_of_image() ... Images without peak list file (not treated yet, or without peak)
+    are not in the list (nan in the map of PB.summarize_results()).
+    Read with a pool of nb_cpus processes (None: cpus available, at most max_cpus_pool) if there are at least
+    min_files_pool files, else in this process
+    """
+    scan, out = pcfg['scan'], pcfg['output']
+    stem = f"{scan['prefix']}{out['added_string']}"
+    folder = Path(out['dat_folder'])
+    files = {}
+    for ext in ('.dat', '.cor'):   # .cor files preferred
+        pattern = re.compile(rf"^{re.escape(stem)}(\d{{{scan['nbdigits']},}})\{ext}$")
+        found = folder.glob(f"{out['subfolder_prefix']}*/{stem}*{ext}") if out['nbfiles_per_folder'] \
+            else folder.glob(f'{stem}*{ext}')
+        files.update({int(m.group(1)): str(f) for f in found if (m := pattern.match(f.name))})
+    tasks = sorted(files.items())
+    t0 = time.time()
+    nb_cpus = nb_cpus or min(IB.available_cpus(), max_cpus_pool)
+    if len(tasks) >= min_files_pool and nb_cpus > 1:
+        with IB.mp_context().Pool(processes=nb_cpus) as pool:
+            allresults = pool.map(_read_peaklist_file, tasks, chunksize=16)
+    else:
+        allresults = [_read_peaklist_file(t) for t in tasks]
+    nfast, nslow = scan['mapdims']
+    nbcor = sum(1 for _, f in tasks if f.endswith('.cor'))
+    print(f"{len(allresults)} peak lists read ({nbcor} .cor, {len(tasks) - nbcor} .dat files) / {nfast * nslow} map "
+          f"points in {folder} ({time.time() - t0:.0f} s)")
+    return allresults
+
+
+def load_fitfiles(icfg: dict, grainindex: int = 0, nb_cpus: Optional[int] = None, min_files_pool: int = 2000,
+                  max_cpus_pool: int = 32):
     """parsed_fitfileseries of the .fit files of grain grainindex (UB, strain, nb of spots ... of all map points)
 
-    read in this process (~1 ms per file, faster than a pool for usual maps) and silently: the reader prints a
-    message for each line of the .fit files that it does not use
+    Read silently (the reader prints a message for each line of the .fit files that it does not use), with a pool of
+    nb_cpus processes (None: cpus available, see IB.available_cpus(), at most max_cpus_pool: more processes are slower
+    on a network file system) if the map has at least min_files_pool points (reading a .fit file on a network file
+    system takes ~10 ms), else in this process
     """
     import contextlib
     import io
@@ -618,15 +821,19 @@ def load_fitfiles(icfg: dict, grainindex: int = 0):
     scan = icfg['scan']
     layout = IB.fitfiles_layout(icfg)
     t0 = time.time()
+    nbpoints = scan['mapdims'][0] * scan['mapdims'][1]
+    nb_cpus = nb_cpus or min(IB.available_cpus(), max_cpus_pool)
+    pool = nbpoints >= min_files_pool and nb_cpus > 1
     with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
         ffs = parsed_fitfileseries(folderpath=str(icfg['output']['fit_folder']), nb_cols=scan['mapdims'][0],
                                    nb_rows=scan['mapdims'][1], prefix=scan['prefix'], suffix=f'_g{grainindex}.fit',
-                                   use_multiprocessing=False, nbdigits=scan['nbdigits'],
+                                   use_multiprocessing=pool, nbdigits=scan['nbdigits'],
                                    nbfiles_per_folder=layout['fit_nbfiles_per_folder'],
-                                   subfolder_prefix=layout['subfolder_prefix'])
+                                   subfolder_prefix=layout['subfolder_prefix'],
+                                   nb_cpus=nb_cpus if pool else None)
     nbfound = int(np.sum(np.isfinite(ffs.UB[:, 0, 0])))
     print(f"{nbfound} .fit files of grain {grainindex} read / {scan['mapdims'][0] * scan['mapdims'][1]} map points "
-          f"({time.time() - t0:.0f} s)")
+          f"({time.time() - t0:.0f} s{', ' + str(ffs.nb_cpus) + ' processes' if pool else ''})")
     return ffs
 
 
@@ -698,7 +905,7 @@ def print_parameters(cfg: dict, step: str):
 # --------------------------------------------------------------------------------------
 #  all grains of the .fit files
 # --------------------------------------------------------------------------------------
-def load_grains(icfg: dict, nbgrains: Optional[int] = None) -> dict:
+def load_grains(icfg: dict, nbgrains: Optional[int] = None, nb_cpus: Optional[int] = None) -> dict:
     """.fit files of all grains (_g0.fit, _g1.fit, ...) of the map, and at each point the 'best' grain: the one with
     the most indexed spots (g0 is the first grain found, not always the best one)
 
@@ -707,7 +914,7 @@ def load_grains(icfg: dict, nbgrains: Optional[int] = None) -> dict:
     'best_UB' (nbpoints, 3, 3) (NaN where no grain)
     """
     nbgrains = nbgrains or icfg['indexing']['nbGrainstoFind']
-    ffs = [load_fitfiles(icfg, g) for g in range(nbgrains)]
+    ffs = [load_fitfiles(icfg, g, nb_cpus=nb_cpus) for g in range(nbgrains)]   # nb_cpus: see load_fitfiles()
     nbspots = np.array([np.asarray(f.NumberOfIndexedSpots, dtype=float).ravel() for f in ffs])
     pixdev = np.array([np.asarray(f.MeanDevPixel, dtype=float).ravel() for f in ffs])
     npts = nbspots.shape[1]
@@ -786,13 +993,11 @@ def orientation_maps(grains: dict, icfg: dict, mask: Optional[np.ndarray] = None
     import matplotlib.pyplot as plt
     from LaueTools import ipfmap as IPF
     scan, post = icfg['scan'], icfg['postprocess']
-    laue_group = post['laue_group']
-    if laue_group == 'auto':
-        laue_group = IPF.laue_group_of_material(icfg['material']['key_material'], icfg['material']['mymaterials'])
+    group = laue_group(icfg)
     UB = grains['best_UB']
     fig, axes = plt.subplots(1, 4, figsize=(17, 4.2), gridspec_kw={'width_ratios': [1, 1, 1, 0.8]})
     for ax, axis in zip(axes, ('x', 'y', 'z')):
-        rgb = IPF.ipf_rgb_map(UB, scan['invmapdims'], laue_group, axis, sample_tilt, mask)
+        rgb = IPF.ipf_rgb_map(UB, scan['invmapdims'], group, axis, sample_tilt, mask)
         rgba = np.ones(rgb.shape[:2] + (4,))
         rgba[..., :3] = np.nan_to_num(rgb)
         rgba[..., 3] = np.all(np.isfinite(rgb), axis=2)   # masked and missing points: transparent (black background)
@@ -801,7 +1006,54 @@ def orientation_maps(grains: dict, icfg: dict, mask: Optional[np.ndarray] = None
     directions = IPF.sample_directions_in_crystal(UB, 'z', sample_tilt)
     if mask is not None:
         directions = directions[~np.asarray(mask, dtype=bool).ravel()]
-    IPF.plot_ipf_key(laue_group, ax=axes[-1], directions=directions, title=f'{laue_group}  (points: IPF-Z)')
+    IPF.plot_ipf_key(group, ax=axes[-1], directions=directions, title=f'{group}  (points: IPF-Z)')
+    fig.tight_layout()
+    return fig
+
+
+def laue_group(icfg: dict) -> str:
+    """Laue group of the IPF colors and pole figures: postprocess: laue_group of the configuration ('auto': from the
+    lattice parameters of the material, e.g. '2/m' for a monoclinic cell with unique axis b)"""
+    from LaueTools import ipfmap as IPF
+    group = icfg['postprocess']['laue_group']
+    if group == 'auto':
+        group = IPF.laue_group_of_material(icfg['material']['key_material'], icfg['material']['mymaterials'])
+    return group
+
+
+# default plane families of pole figures for each Laue group
+POLE_FIGURES_HKLS = {'m-3m': ((0, 0, 1), (0, 1, 1), (1, 1, 1)), '4/mmm': ((0, 0, 1), (1, 0, 0), (1, 1, 0)),
+                     '6/mmm': ((0, 0, 1), (1, 0, 0), (1, 1, 0)), '-3m1': ((0, 0, 1), (1, 0, 0), (1, 1, 0))}
+
+
+def pole_figures(grains: dict, icfg: dict, hkls=None, mask: Optional[np.ndarray] = None,
+                 sample_tilt: float = 40., equivalents: bool = True, markersize: float = 3):
+    """pole figures (stereographic projection, upper hemisphere, sample frame: X right, Y up, Z sample normal at the
+    center) of the plane families hkls of the best grain of each point (see load_grains()), any crystal symmetry.
+    hkls: Miller indices of the planes, one pole figure each (None: {001} {011} {111} for cubic, {001} {100} {110}
+    for tetragonal, hexagonal, trigonal, else {001} {010} {100})
+    Points are colored as in the IPF-Z map, to relate a pole to its points of the map.
+    equivalents: also the planes equivalent by the Laue group (postprocess: laue_group)
+    mask: (True = masked) points left out (e.g. from quality_maps())"""
+    import matplotlib.pyplot as plt
+    from LaueTools import ipfmap as IPF
+    from LaueTools import CrystalParameters as CP
+    from LaueTools import dict_LaueTools as DictLT
+    mat, mym = icfg['material']['key_material'], icfg['material']['mymaterials']
+    latticeparams = (mym[mat] if mym and mat in mym else DictLT.dict_Materials[mat])[1]
+    B0 = CP.calc_B_RR(latticeparams)
+    group = laue_group(icfg)
+    if hkls is None:
+        hkls = POLE_FIGURES_HKLS.get(group, ((0, 0, 1), (0, 1, 0), (1, 0, 0)))
+    UB = np.array(grains['best_UB'], dtype=float)
+    if mask is not None:
+        UB[np.asarray(mask, dtype=bool).ravel()[:len(UB)]] = np.nan
+    colors = IPF.ipf_colors(IPF.sample_directions_in_crystal(UB, 'z', sample_tilt), group)
+    fig, axes = plt.subplots(1, len(hkls) + 1, figsize=(4 * len(hkls) + 3.2, 4.2), squeeze=False,
+                             gridspec_kw={'width_ratios': [1] * len(hkls) + [0.8]})
+    IPF.plot_pole_figures(UB, hkls, B0, group if equivalents else None, anglesample=sample_tilt, colors=colors,
+                          axes=axes[0][:-1], markersize=markersize, title_prefix=f'{mat} ')
+    IPF.plot_ipf_key(group, ax=axes[0][-1], title=f'{group}: colors (IPF-Z)')
     fig.tight_layout()
     return fig
 
