@@ -14,7 +14,7 @@ include = ["LaueTools*"]
 
 [project]
 name = "lauetools"
-version = "3.2.16"
+version = "3.2.17"
 authors = [
     {name = "J S Micha", email = "micha@esrf.fr"},
 ]
