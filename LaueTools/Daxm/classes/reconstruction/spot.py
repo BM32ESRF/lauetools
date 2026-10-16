@@ -388,39 +388,18 @@ class SpotReconstructor:
         # --- Precompute mask ---
         mask = self.scan.img_exist[self.pw_idx]
 
-        # --- Precompute all Pcam points (flattened grid) ---
-        grid_ix, grid_iy = np.meshgrid(np.arange(self.grid_nx), np.arange(self.grid_ny), indexing='ij')
-        grid_ix_flat = grid_ix.ravel()
-        grid_iy_flat = grid_iy.ravel()
-        Pcam_flat = np.array([self.grid_Pcam[ix][iy] for ix, iy in zip(grid_ix_flat, grid_iy_flat)])  # Shape: (n_grid_points, 3)
+        # --- transmission matrix of a pixel: one call for all wire positions and all sub-sampled depths ---
+        # (same matrix as in reconstruct_old(): mean over the oversamp depths of each depth bin)
+        ny = len(self.ygrid)
+        yall = np.concatenate(yi)
 
-        # --- Extract wire attributes for Numba ---
-        wire_axis = np.array(self.wire.axis)  # Assuming self.wire.axis is a np.ndarray
-        wire_R = float(self.wire.R)            # Assuming self.wire.R is a float
-        abscoeff = float(self.abscoeff)       # Ensure it's a float
-
-        # --- Precompute M_all (transmission matrices) ---
-        n_yi = len(yi)
-        n_pixels = len(self.pw)
-        n_grid_points = len(grid_ix_flat)
-        M_all = np.zeros((n_grid_points, n_pixels))  # Shape: (n_grid_points, n_pixels)
-
-        for k in range(n_grid_points):
-            for j, pw in enumerate(self.pw):
-                # Precompute M for all yi at once (vectorized over yi)
-                transmissions = np.array([
-                    mywire.calc_transmission_optimized(pw, y, Pcam_flat[k], wire_axis, wire_R, abscoeff)
-                    for y in yi
-                ])
-                M_all[k, j] = np.mean(transmissions)  # Average over yi
-
-        # --- Precompute S_all (frames_cor) ---
-        S_all = np.array([self.frames_cor[ix][iy] for ix, iy in zip(grid_ix_flat, grid_iy_flat)])  # Shape: (n_grid_points, n_pixels)
+        def transmission_matrix(Pcam):
+            M = self.wire.calc_transmission(self.pw, yall, Pcam, abscoeff=self.abscoeff)
+            return M.reshape(len(self.pw), len(yi), ny).mean(axis=1)
 
         # --- Initialize rec ---
-        self.rec = np.zeros((self.grid_nx, self.grid_ny, len(self.ygrid)), dtype=float)
+        self.rec = np.zeros((self.grid_nx, self.grid_ny, ny), dtype=float)
 
-        # --- Regularization functions (unchanged) ---
         if regularize:
             if reg_method == 'lasso':
                 def lnorm(x):
@@ -435,31 +414,24 @@ class SpotReconstructor:
                 jac = 2.0 * (np.dot(M.T, Mx_S) + reg_alpha * x)
                 return fval, jac
 
-        # --- Vectorized reconstruction loop ---
-        for k in range(n_grid_points):
-            ix, iy = grid_ix_flat[k], grid_iy_flat[k]
-            M = M_all[k, :][mask]  # Apply mask
-            S = S_all[k, :][mask]  # Apply mask
+        for ix in range(self.grid_nx):
+            for iy in range(self.grid_ny):
+                S = self.frames_cor[ix][iy][mask]
+                M = transmission_matrix(self.grid_Pcam[ix][iy])[mask, :]
 
-            if regularize:
-                if reg_method == "lasso":
-                    x0 = np.zeros(len(self.ygrid), dtype=float)
-                    ub = None
+                if regularize:
+                    if reg_method == "lasso":
+                        x0 = np.zeros(ny, dtype=float)
+                        ub = None
+                    else:
+                        x0, _ = spo.nnls(M, S)
+                        ub = np.sum(x0)
+
+                    res = spo.minimize(objfun, args=(M, S), jac=True, x0=x0, bounds=[(0, ub)] * len(x0),
+                                       options={'eps': 1e-06, 'ftol': 1e-06})
+                    self.rec[ix, iy] = res.x
                 else:
-                    x0, _ = spo.nnls(M, S)
-                    ub = np.sum(x0)
-
-                res = spo.minimize(
-                    objfun,
-                    args=(M, S),
-                    jac=True,
-                    x0=x0,
-                    bounds=[(0, ub)] * len(x0),
-                    options={'eps': 1e-06, 'ftol': 1e-06}
-                )
-                self.rec[ix, iy] = res.x
-            else:
-                self.rec[ix, iy], _ = spo.nnls(M, S)
+                    self.rec[ix, iy], _ = spo.nnls(M, S)
 
         # --- Reverse ygrid if needed ---
         if self.ygrid[0] > self.ygrid[-1]:

@@ -1,0 +1,75 @@
+# =====================================================================================
+#  LaueTools - configuration of the analysis of a DAXM wire scan (one sample point, images = wire positions)
+#
+#  1) copy this file (e.g. configs/my_scan.yaml) and edit it, or let DW.new_config() write it from the scan
+#  2) set CONFIG = 'configs/my_scan.yaml' in the first cell of the daxm notebooks
+#
+#  Paths: absolute, or relative to the folder of this file. '~' and $VARIABLES are expanded.
+#  Parameters left out take their default value.
+#  Units: microns for ybeam (position of the scattering source along the beam, >0 deeper in the sample,
+#  0 at the reference point of the wires calibration) and depth = ybeam * sin(sample tilt)
+# =====================================================================================
+name: my daxm scan
+description: >
+  sample, beamtime ...
+
+scan:
+  # images: <image_folder>/<prefix>####<suffix>, one image per wire position
+  image_folder: /data/visitor/<proposal>/bm32/<date>/RAW_DATA/<sample>/<dataset>/scan0002
+  prefix: img_              # img_0023.tif -> 'img_'   (eiger4m_ for EIGER_4MCdTe)
+  suffix: .tif              # img_0023.tif -> '.tif'   (.h5 for EIGER_4MCdTe)
+  nbdigits: 4               # img_0023.tif -> 4
+  first_image_index: 0      # index of the first image of the wire scan
+  nb_images: 371            # nb of images of the wire scan (nb of steps + 1)
+  CCDLabel: sCMOS           # sCMOS, sCMOS_4M, EIGER_4MCdTe, ... (keys of dict_LaueTools.dict_CCD)
+  nbframes_per_file: 1      # stacked images files only
+  # wire positions: read in the BLISS hdf5 file of the dataset (scan <scan_number>.1, motor <wire_motor>) ...
+  hdf5_file: null
+  scan_number: null
+  hdf5_node: null           # name of the scan in hdf5_file if not <scan_number>.1 (file of a proposal: <sample>_<dataset>_<n>.1)
+  wire_motor: zf
+  # ... or, without hdf5 file, evenly spaced (mm) as in the command  ascan zf <wire_start> <wire_stop> <nb steps> t
+  wire_start: null
+  wire_stop: null
+
+detector:
+  detfile: null             # detector calibration .det file
+
+wires:
+  # wires trajectory parameters (.calib file of the wires calibration). null: dips only, no depth
+  calibfile: null
+  yref: 0.                  # sample position (mm) of the wires calibration (as in CalibManager)
+
+sample:
+  tilt: 40.                 # angle (deg) between the beam and the sample surface
+
+output:
+  folder: null              # results folder (default: PROCESSED_DATA mirror of image_folder + /daxm)
+
+# -------------------------------------------------------------------------------------
+#  quick daxm: depth of the Laue spots from the dips of their intensity profile (no image reconstruction)
+# -------------------------------------------------------------------------------------
+quickdaxm:
+  # spots: auto (found in the max over the images of the scan), or path of a .dat, .cor or .fit file
+  peaklist: auto
+  spots_threshold: 300.     # [auto] min intensity of a spot above the local background
+  spots_max_number: 2000    # [auto] strongest spots kept
+  # intensity profile of a spot = mean of its core - median of the border of a box around it.
+  # Fluorescence is the same in the core and on the border: its smooth dips are removed.
+  boxsize: 5                # half size (pixel) of the box
+  coresize: 1               # half size (pixel) of the core (1: 3x3 pixels)
+  # dip = images where the profile is below low_fraction * plateau, with edges higher than
+  # min_edge_fraction * plateau
+  low_fraction: 0.3
+  min_edge_fraction: 0.5    # higher: rejects more dips due to intensity fluctuations
+  min_snr: 8.               # min plateau / noise of a profile
+  min_signal: 50.           # min plateau (counts above local background)
+  min_width: 4              # min nb of images of a dip
+  edge_window: 20           # nb of images outside a dip used to estimate the plateau
+  # position along the beam: for each wire, ybeam from the entry edge and from the exit edge of the dip
+  ybeam_range: [-100., 200.]  # accepted ybeam (microns). Keep it smaller than the spacing of the wires
+  max_mismatch: 10.         # max difference (microns) between ybeam of entry and exit edges
+  # .cor files per slice along the beam: <folder>/depthslices/<name>_0000.cor ... (2theta, chi of the slice center)
+  slice_step: 5.            # distance (microns of ybeam) between slices
+  slice_thickness: null     # thickness of a slice (null: slice_step)
+  slice_min_spots: 6        # slices with fewer spots are not written

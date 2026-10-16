@@ -422,9 +422,9 @@ class StaticPointScan(object):
                 if verbose:
                     print('\nself.hdf5scanId',self.hdf5scanId)
                     print('self.spec_file (hdf5)', self.spec_file)
-                
-                    # read single key scan (for the moment)
-                    self.spec_data = logfiler.Scan_hdf5(self.spec, self.hdf5scanId, verbose=verbose)
+
+                # read single key scan (for the moment)
+                self.spec_data = logfiler.Scan_hdf5(self.spec, self.hdf5scanId, verbose=verbose)
 
                 self.scan_cmd = self.input['scanCmd']
                 self.scan_fullcommand = self.input.get('fullcommand', 'unknown')
@@ -440,7 +440,8 @@ class StaticPointScan(object):
             
                 cmd_parts = self.spec.cmd_list[self.hdf5scanId].split()
 
-                
+                # wire motor of the scan command (needed to read the wire positions)
+                self.spec_motor = next((mot for mot in ('yf', 'zf') if mot in cmd_parts), self.spec_motor)
                 self.wire_position = getattr(self.spec_data, self.spec_motor)
                 self.spec_monitor = getattr(self.spec_data, "mon")
                 exposuretime = float(self.spec_data.command.split(' ')[-2])

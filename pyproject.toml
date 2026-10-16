@@ -89,6 +89,10 @@ LaueTools = [
     "notebooks/peaksearch/*.yaml",
     "notebooks/peaksearch/*.md",
     "notebooks/peaksearch/configs/*.yaml",
+    # daxm notebooks and their YAML configuration template
+    "notebooks/daxm/*.ipynb",
+    "notebooks/daxm/*.yaml",
+    "notebooks/daxm/*.md",
     # quickstart notebook (scans of the experiment -> grain maps)
     "notebooks/quickstart/*.ipynb",
     "notebooks/quickstart/*.md",

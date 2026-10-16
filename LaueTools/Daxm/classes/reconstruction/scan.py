@@ -821,49 +821,7 @@ def fun_reconstruct_spot(args):
                                 verbose=verbose-1,
                             )
 
-    # --- Replace I/O-bound operations with preloaded_images ---
-    if hasattr(spot, 'frames_cor'):
-        spot.frames_cor = [preloaded_images[i] for i in range(len(spot.frames_cor))]
-
-    # --- Extract wire attributes for Numba ---
-    wire_axis = np.array(wire.axis) if hasattr(wire, 'axis') else np.array([0.0, 0.0, 1.0])
-    wire_R = float(wire.R) if hasattr(wire, 'R') else 1.0
-
-    # --- Monkey-patch wire methods to use optimized Numba functions ---
-    if hasattr(wire, 'calc_transmission') and hasattr(wire, 'calc_crosslength'):
-        original_calc_transmission = wire.calc_transmission
-        original_calc_crosslength = wire.calc_crosslength
-
-        # Wrapper for calc_transmission
-        def calc_transmission_wrapper(pw, ysrc, Pcam, energy=None, abscoeff=None):
-            # Extract components from pw and Pcam (assuming they are arrays or objects)
-            pw_x, pw_y, pw_z = pw[0], pw[1], pw[2] if hasattr(pw, '__len__') else (pw.x, pw.y, pw.z)
-            Pcam_x, Pcam_y, Pcam_z = Pcam[0], Pcam[1], Pcam[2] if hasattr(Pcam, '__len__') else (Pcam.x, Pcam.y, Pcam.z)
-            wire_axis_x, wire_axis_y, wire_axis_z = wire_axis[0], wire_axis[1], wire_axis[2]
-            return calc_transmission_optimized(
-                pw_x, pw_y, pw_z, ysrc,
-                Pcam_x, Pcam_y, Pcam_z,
-                wire_axis_x, wire_axis_y, wire_axis_z,
-                wire_R,
-                abscoeff if abscoeff is not None else original_calc_transmission(pw, ysrc, Pcam, energy, abscoeff)
-            )
-
-        # Wrapper for calc_crosslength
-        def calc_crosslength_wrapper(pw, ysrc, Pcam):
-            pw_x, pw_y, pw_z = pw[0], pw[1], pw[2] if hasattr(pw, '__len__') else (pw.x, pw.y, pw.z)
-            Pcam_x, Pcam_y, Pcam_z = Pcam[0], Pcam[1], Pcam[2] if hasattr(Pcam, '__len__') else (Pcam.x, Pcam.y, Pcam.z)
-            wire_axis_x, wire_axis_y, wire_axis_z = wire_axis[0], wire_axis[1], wire_axis[2]
-            return calc_crosslength_optimized(
-                pw_x, pw_y, pw_z, ysrc,
-                Pcam_x, Pcam_y, Pcam_z,
-                wire_axis_x, wire_axis_y, wire_axis_z,
-                wire_R
-            )
-
-        wire.calc_transmission = calc_transmission_wrapper
-        wire.calc_crosslength = calc_crosslength_wrapper
-
-    # --- Run reconstruction with optimized methods ---
+    # --- Run reconstruction ---
     spot.reconstruct(
         regularize=rec_args.get('regularize', False),
         reg_alpha=rec_args.get('reg_alpha', 0.5),
@@ -871,12 +829,6 @@ def fun_reconstruct_spot(args):
         oversamp=rec_args.get('oversamp', 20),
         verbose=verbose-1
     )
-
-    # --- Restore original wire methods (optional) ---
-    if hasattr(wire, 'calc_transmission'):
-        wire.calc_transmission = original_calc_transmission
-    if hasattr(wire, 'calc_crosslength'):
-        wire.calc_crosslength = original_calc_crosslength
 
     # --- Save spot if needed ---
     if save_spot is not None:
