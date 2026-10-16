@@ -23,6 +23,7 @@ import math
 import numpy as np
 
 import wx
+from LaueTools.GUI.fastfiledialog import FastFileDialog  # fast in folders with many files
 import yaml
 
 if wx.__version__ < "4.":
@@ -450,7 +451,7 @@ class CrystalParamPanel(wx.Panel):
         wcd = "All files (*)|*|dict_Materials files (*.dat)|*.dat|YAML materials (*.yaml;*.yml)|*.yaml;*.yml|Material files (*.mat)|*.mat"
         _dir = os.getcwd()
 
-        open_dlg = wx.FileDialog(self, message="Choose a materials file",
+        open_dlg = FastFileDialog(self, message="Choose a materials file",
                                     defaultDir=_dir,
                                     wildcard=wcd,
                                     style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,)
@@ -731,6 +732,10 @@ class MoveCCDandXtal(wx.Panel):
         st9 = stepangletxt = wx.StaticText(self, -1, "step (deg)")
         self.stepanglerot = wx.TextCtrl(self, -1, "10.")
 
+        self.Enable2SpotsRotationLabel = "2 Spots Axis && Rotate"
+        self.rotate2spotsbtn = wx.ToggleButton(self, -1, self.Enable2SpotsRotationLabel)
+        self.rotate2spotsbtn.Bind(wx.EVT_TOGGLEBUTTON, self.OnActivate2SpotsRotation)
+
         self.listofparamfitctrl = [self.cb_dd, self.cb_Xcen, self.cb_Ycen, self.cb_angle1,
                                     self.cb_angle2,  # detector param
                                     self.cb_theta1,
@@ -769,6 +774,9 @@ class MoveCCDandXtal(wx.Panel):
         hrotbox.Add(st9, 0, wx.EXPAND, 10)
         hrotbox.Add(self.stepanglerot, 0, wx.EXPAND, 10)
 
+        hrot2box = wx.BoxSizer(wx.HORIZONTAL)
+        hrot2box.Add(self.rotate2spotsbtn, 0, wx.EXPAND, 10)
+
 
 
         vdetbox = wx.BoxSizer(wx.VERTICAL)
@@ -792,6 +800,7 @@ class MoveCCDandXtal(wx.Panel):
         vangbox.Add(a3, 0, wx.EXPAND, 0)
         vangbox.Add(h2boxes[2], 0, wx.EXPAND, 0)
         vangbox.Add(hrotbox, 0, wx.EXPAND, 5)
+        vangbox.Add(hrot2box, 0, wx.EXPAND, 5)
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(vdetbox, 0, wx.EXPAND, 10)
@@ -817,6 +826,14 @@ class MoveCCDandXtal(wx.Panel):
         stepangletxt.SetToolTipString(rottip)
         self.stepanglerot.SetToolTipString(rottip)
 
+        rot2tip = ("[For 2theta/chi, pixels and gnomonic coordinates]\n Rotate crystal around the axis "
+                    "perpendicular to the q vectors of two clicked spots (q1 x q2).\n")
+        rot2tip += "Left click on two spots (snapped to the nearest exp. spot) to define the axis.\n"
+        rot2tip += "Then drag with the right mouse button to rotate the crystal orientation around this axis, "
+        rot2tip += 'or press "+" or "-" keys to rotate by the step angle.\n'
+        rot2tip += "A third left click starts a new selection. Release the button to come back to the other functionnalities."
+        self.rotate2spotsbtn.SetToolTipString(rot2tip)
+
     def OnActivateRotation(self, _):
 
         self.mainframe.RotationActivated = not self.mainframe.RotationActivated
@@ -827,9 +844,19 @@ class MoveCCDandXtal(wx.Panel):
         if self.mainframe.RotationActivated:
             print("Activate Rotation around axis")
             self.rotatebtn.SetLabel("DISABLE\nRotation\naround\nselected Axis")
+            if self.rotate2spotsbtn.GetValue():
+                self.rotate2spotsbtn.SetValue(False)
+                self.mainframe.Activate2SpotsRotation(False)
         else:
             print("Disable Rotation around axis")
             self.rotatebtn.SetLabel(self.EnableRotationLabel)
+
+    def OnActivate2SpotsRotation(self, _):
+        flag = self.rotate2spotsbtn.GetValue()
+        if flag and self.mainframe.RotationActivated:
+            self.mainframe.RotationActivated = False
+            self.rotatebtn.SetLabel(self.EnableRotationLabel)
+        self.mainframe.Activate2SpotsRotation(flag)
 
 
 class StrainXtal(wx.Panel):
@@ -1355,6 +1382,11 @@ class MainCalibrationFrame(wx.Frame):
 
         self.RotationActivated = False
         self.SelectedRotationAxis = None
+
+        # rotation around axis q1 x q2 defined by two clicked spots
+        self.TwoSpotsRotationActivated = False
+        self.TwoSpotsPoints = []  # list of (xplot, yplot, 2theta, chi)
+        self.TwoSpotsAxis = None
 
         self.savedindex = 0
         self.storedmatrixindex = 0
@@ -3495,6 +3527,9 @@ class MainCalibrationFrame(wx.Frame):
             self.SelectedRotationAxis = None
             self.moveccdandxtal.rotatebtn.SetLabel(self.moveccdandxtal.EnableRotationLabel)
             self.RotationActivated = False
+            if self.TwoSpotsRotationActivated:
+                self.moveccdandxtal.rotate2spotsbtn.SetValue(False)
+                self.Activate2SpotsRotation(False)
 
             self.p2S = 1
             self.p3S = 0
@@ -3515,6 +3550,9 @@ class MainCalibrationFrame(wx.Frame):
             self.SelectedRotationAxis = None
             self.moveccdandxtal.rotatebtn.SetLabel(self.moveccdandxtal.EnableRotationLabel)
             self.RotationActivated = False
+            if self.TwoSpotsRotationActivated:
+                self.moveccdandxtal.rotate2spotsbtn.SetValue(False)
+                self.Activate2SpotsRotation(False)
 
             self.p3S = 1
             self.p2S = 0
@@ -4355,6 +4393,16 @@ class MainCalibrationFrame(wx.Frame):
 
             self.axes.scatter(Xlink, Ylink, s=100., alpha=0.5, c='yellow')
 
+        # spots selected for the rotation axis q1 x q2
+        if self.TwoSpotsRotationActivated and self.TwoSpotsPoints:
+            Xsel = [pt[0] for pt in self.TwoSpotsPoints]
+            Ysel = [pt[1] for pt in self.TwoSpotsPoints]
+            self.axes.scatter(Xsel, Ysel, s=250., marker="s", edgecolor="m",
+                              facecolor="None", linewidths=2)
+            for k, (xs, ys) in enumerate(zip(Xsel, Ysel)):
+                self.axes.annotate("q%d" % (k + 1), (xs, ys), color="m",
+                                   xytext=(8, 8), textcoords="offset points")
+
         self.axes.set_title("%s %d spots" % (os.path.split(self.filename)[-1], len(self.twicetheta)))
         self.axes.grid(True)
 
@@ -4804,6 +4852,10 @@ class MainCalibrationFrame(wx.Frame):
                     print('X,Y',event.xdata, event.ydata)
                     print('2theta, chi', tw, chi)
 
+            if self.TwoSpotsRotationActivated and self.toolbar.mode == "":
+                self.onClick_2spots(event)
+                return
+
             # rotation  around self.centerx, self.centery triggered by button and NOT MOUSE
             if self.RotationActivated:
                 # axis is already defined
@@ -4833,6 +4885,11 @@ class MainCalibrationFrame(wx.Frame):
         #print('Release  button', event.button)
         if self.press is None:
             #print('self.press is None when Release')
+            return
+
+        if self.TwoSpotsRotationActivated:
+            # rotation axis is defined by the two selected spots
+            self.press = None
             return
 
         if event.button == 1:
@@ -5061,6 +5118,10 @@ class MainCalibrationFrame(wx.Frame):
         if self.toolbar.mode in ('pan/zoom', 'zoom rect'):
             #print('self.toolbar.mode', self.toolbar.mode)
             return
+
+        if self.TwoSpotsRotationActivated:
+            self.onMotion_2spots(event)
+            return
         
         xpress, ypress = self.press
         dx = event.xdata - xpress
@@ -5114,6 +5175,117 @@ class MainCalibrationFrame(wx.Frame):
             self.press = X2, Y2
         elif self.datatype == "gnomon":
             self.press = gX2, gY2
+
+    def Activate2SpotsRotation(self, flag):
+        """enable/disable the crystal rotation around the axis q1 x q2 defined by two clicked spots"""
+        self.TwoSpotsRotationActivated = flag
+        self.TwoSpotsPoints = []
+        self.TwoSpotsAxis = None
+        self.SelectedRotationAxis = None
+        self.press = None
+        if flag:
+            print("Activate rotation around axis q1 x q2: left click on two spots, "
+                  "then drag with right button")
+        else:
+            print("Disable rotation around axis q1 x q2")
+        self._replot(1)
+
+    def plotcoords2twotheta(self, x, y):
+        """convert a point in plot coordinates (self.datatype) into (2theta, chi) in deg"""
+        if self.datatype == "pixels":
+            return self.convertpixels2twotheta(x, y)
+        if self.datatype == "gnomon":
+            return self.convertgnomon2twotheta(x, y)
+        return x, y
+
+    def getExpSpotsPlotCoords(self):
+        """return X, Y arrays of experimental spots as plotted in _replot()"""
+        if self.datatype == "2thetachi":
+            originChi = 0
+            if self.plotrangepanel.shiftChiOrigin.GetValue():
+                originChi = float(self.plotrangepanel.meanchi.GetValue())
+            return np.asarray(self.twicetheta), np.asarray(self.chi) + originChi
+        if self.datatype == "gnomon":
+            return np.asarray(self.data_gnomonx), np.asarray(self.data_gnomony)
+        # pixels (same offsets than in _replot())
+        return np.asarray(self.data_x) - 1, np.asarray(self.data_y) - 1
+
+    def onClick_2spots(self, event):
+        """left click: select a spot (snapped to the nearest exp. spot) defining the rotation axis q1 x q2
+        right click: start the dragging rotation around this axis"""
+        if event.button == 1:
+            if len(self.TwoSpotsPoints) >= 2:
+                # start a new selection
+                self.TwoSpotsPoints = []
+                self.TwoSpotsAxis = None
+                self.SelectedRotationAxis = None
+
+            x, y = event.xdata, event.ydata
+            twth, chi = None, None
+
+            # snap to the nearest experimental spot (within 20 screen pixels)
+            Xexp, Yexp = self.getExpSpotsPlotCoords()
+            if len(Xexp) > 0:
+                disp = self.axes.transData.transform(np.column_stack((Xexp, Yexp)))
+                dist = np.hypot(disp[:, 0] - event.x, disp[:, 1] - event.y)
+                ispot = int(np.argmin(dist))
+                if dist[ispot] <= 20:
+                    x, y = Xexp[ispot], Yexp[ispot]
+                    twth, chi = self.twicetheta[ispot], self.chi[ispot]
+                    print("spot #%d selected: 2theta, chi = %.3f, %.3f" % (ispot, twth, chi))
+
+            if twth is None:
+                twth, chi = self.plotcoords2twotheta(x, y)
+                print("point selected (no exp. spot nearby): 2theta, chi = %.3f, %.3f" % (twth, chi))
+
+            self.TwoSpotsPoints.append((x, y, twth, chi))
+
+            if len(self.TwoSpotsPoints) == 2:
+                q1 = qunit(*self.TwoSpotsPoints[0][2:])
+                q2 = qunit(*self.TwoSpotsPoints[1][2:])
+                qaxis = np.cross(q1, q2)
+                norm = np.sqrt(np.dot(qaxis, qaxis))
+                if norm < 1e-6:
+                    wx.MessageBox("The two selected spots have (nearly) parallel q vectors.\n"
+                                  "Please select two other spots.", "Info")
+                    self.TwoSpotsPoints = []
+                else:
+                    self.TwoSpotsAxis = qaxis / norm
+                    self.SelectedRotationAxis = self.TwoSpotsAxis
+                    print("Rotation axis q1 x q2 (lab frame): ", self.TwoSpotsAxis)
+                    print("angle between q1 and q2: %.3f deg"
+                          % (np.arccos(np.clip(np.dot(q1, q2), -1, 1)) / DEG))
+            self._replot(event)
+
+        elif event.button == 3:
+            if self.TwoSpotsAxis is None:
+                print("Select first two spots with left mouse button")
+                return
+            self.press = event.xdata, event.ydata
+
+    def onMotion_2spots(self, event):
+        """rotate crystal around self.TwoSpotsAxis following the mouse dragged with right button"""
+        if self.TwoSpotsAxis is None:
+            return
+
+        twth1, chi1 = self.plotcoords2twotheta(*self.press)
+        twth2, chi2 = self.plotcoords2twotheta(event.xdata, event.ydata)
+
+        qaxis = self.TwoSpotsAxis
+        q1 = qunit(twth1, chi1)
+        q2 = qunit(twth2, chi2)
+        # projections perpendicular to rotation axis
+        p1 = q1 - np.dot(q1, qaxis) * qaxis
+        p2 = q2 - np.dot(q2, qaxis) * qaxis
+        if np.dot(p1, p1) < 1e-8 or np.dot(p2, p2) < 1e-8:
+            return
+        # signed angle bringing p1 onto p2 around qaxis
+        angle = np.arctan2(np.dot(qaxis, np.cross(p1, p2)), np.dot(p1, p2)) / DEG
+
+        self.SelectedRotationAxis = qaxis
+        self.RotateAroundAxis(angle)
+
+        self.press = event.xdata, event.ydata
 
     def convertgnomon2twotheta(self, gX, gY):
         """convert one gnomonic projection point (gX, gY) into (2theta, chi) in deg"""
