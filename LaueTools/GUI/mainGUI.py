@@ -47,6 +47,7 @@ matplotlib.use("WXAgg")
 
 import numpy as np
 import wx
+from LaueTools.GUI.fastfiledialog import FastFileDialog  # fast in folders with many files
 import yaml
 
 print('----------------------------------------------')
@@ -500,7 +501,7 @@ class LaueToolsGUImainframe(wx.Frame):
         wcd = "All files (*)|*|dict_Materials files (*.dat)|*.dat|YAML materials (*.yaml;*.yml)|*.yaml;*.yml|Material files (*.mat)|*.mat"
         _dir = os.getcwd()
 
-        open_dlg = wx.FileDialog(self, message="Choose a materials file",
+        open_dlg = FastFileDialog(self, message="Choose a materials file",
                                     defaultDir=_dir,
                                     wildcard=wcd,
                                     style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST,)
@@ -2283,7 +2284,7 @@ class CliquesFindingBoard(wx.Frame):
         defaultFolderAnglesFile = LaueToolsProjectFolder
 
         wcd = "AnglesLUT file (*.angles)|*.angles|All files(*)|*"
-        open_dlg = wx.FileDialog(self, message="Choose a file", defaultDir=defaultFolderAnglesFile,
+        open_dlg = FastFileDialog(self, message="Choose a file", defaultDir=defaultFolderAnglesFile,
                                                                 defaultFile="",
                                                                 wildcard=wcd,
                                                                 style=wx.FD_OPEN | wx.FD_CHANGE_DIR)

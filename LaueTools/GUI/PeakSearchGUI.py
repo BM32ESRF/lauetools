@@ -7,6 +7,8 @@ import copy
 
 import numpy as np
 import wx
+from LaueTools.GUI.fastfiledialog import FastFileDialog  # fast in folders with many files
+import wx.lib.scrolledpanel as scrolled
 
 import h5py
 
@@ -117,13 +119,25 @@ else:
     import IOimagefile as IOimage
     import imageprocessing as ImProc
 
- 
-class ViewColorPanel(wx.Panel):
+
+class ScrolledPagePanel(scrolled.ScrolledPanel):
+    """notebook page showing scrollbars when it is not large enough to display
+    all its widgets (laptop or low resolution screen)
+    """
+    def __init__(self, parent):
+        scrolled.ScrolledPanel.__init__(self, parent, wx.ID_ANY)
+
+    def SetSizer(self, sizer, deleteOld=True):
+        scrolled.ScrolledPanel.SetSizer(self, sizer, deleteOld)
+        self.SetupScrolling(scrollToTop=False)
+
+
+class ViewColorPanel(ScrolledPagePanel):
     """class to play with color LUT and intensity scale
     """
     def __init__(self, parent):
 
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
 
         self.mainframe = parent.GetParent().GetParent()  # layout2()
 
@@ -641,12 +655,12 @@ class ViewColorPanel(wx.Panel):
                 self.mainframe.Show_Image(1, datatype="Raw Image")
 
 
-class FilterBackGroundPanel(wx.Panel):
+class FilterBackGroundPanel(ScrolledPagePanel):
     """class to handle image background tools
     """
     def __init__(self, parent):
 
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
         self.mainframe = parent.GetParent().GetParent()  # layout2()
 
         self.BImageFilename = self.mainframe.BImageFilename
@@ -924,11 +938,11 @@ class FilterBackGroundPanel(wx.Panel):
             self.mainframe.Show_Image(1)
 
 
-class BrowseCropPanel(wx.Panel):
+class BrowseCropPanel(ScrolledPagePanel):
     """class to handle crop operation on images"""
     def __init__(self, parent):
         """init"""
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
 
         self.mainframe = parent.GetParent().GetParent()  # layout2()
 
@@ -1112,10 +1126,10 @@ class BrowseCropPanel(wx.Panel):
         self.nbdigitsctrl.SetToolTipString(tpnbdigits)
 
 
-class MosaicAndMonitor(wx.Panel):
+class MosaicAndMonitor(ScrolledPagePanel):
     def __init__(self, parent):
 
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
 
         self.dict_ROI = {"None": (5, 2, 2)}
 
@@ -1173,7 +1187,7 @@ class MosaicAndMonitor(wx.Panel):
 
         self.twtROI = wx.StaticText(self, -1, "User-defined ROI")
 
-        self.comboROI = wx.ComboBox(self, -1, "None", size=(-1, 40),
+        self.comboROI = wx.ComboBox(self, -1, "None",
                                         choices=list(self.dict_ROI.keys()))
         
         self.transposemap = wx.CheckBox(self, -1, "Transpose Map")
@@ -1184,7 +1198,7 @@ class MosaicAndMonitor(wx.Panel):
         self.txtnbdigits = wx.StaticText(self, -1, "#digits")
         self.nbdigitsctrl = wx.TextCtrl(self, -1, "4")
 
-        txt3 = wx.StaticText(self, -1, "Counters & Monitors selection")
+        txt3 = wx.StaticText(self, -1, "Counters && Monitors selection")
         txt3.SetFont(font3)
 
         self.mosaiccounter = wx.CheckBox(self, -1, "Mosaic")
@@ -1246,7 +1260,7 @@ class MosaicAndMonitor(wx.Panel):
         self.outmirrorbtn = wx.RadioButton(self, -1, "PROCESSED_DATA mirror")
         self.outotherbtn = wx.RadioButton(self, -1, "other:")
         self.outimagefolderbtn.SetValue(True)
-        self.outotherctrl = wx.TextCtrl(self, -1, "", size=(250, -1), style=wx.TE_PROCESS_ENTER)
+        self.outotherctrl = wx.TextCtrl(self, -1, "", size=(120, -1), style=wx.TE_PROCESS_ENTER)
         self.outbrowsebtn = wx.Button(self, -1, "Browse")
         self.outbrowsebtn.Bind(wx.EVT_BUTTON, self.OnBrowseOutputFolder)
         for btn in (self.outimagefolderbtn, self.outmirrorbtn, self.outotherbtn):
@@ -1372,6 +1386,7 @@ class MosaicAndMonitor(wx.Panel):
         vbox.Add(outputsizer, 0, wx.EXPAND)
         vbox.Add(self.outputfoldertxt, 0, wx.EXPAND | wx.LEFT, 10)
         vbox.Add(savesizer, 0, wx.EXPAND)
+        # full width, constant height
         vbox.Add(self.btnMosaic, 0, wx.EXPAND)
 
         self.SetSizer(vbox)
@@ -1628,10 +1643,10 @@ class MosaicAndMonitor(wx.Panel):
         self.list_of_windows = []
 
 
-class ROISelection(wx.Panel):
+class ROISelection(ScrolledPagePanel):
     def __init__(self, parent):
 
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
         self.mainframe = parent.GetParent().GetParent()  # layout2()
 
         self.list_of_windows = []
@@ -1697,7 +1712,10 @@ class ROISelection(wx.Panel):
         vbox.Add(NavigBoxsizer0, 0, wx.EXPAND)
         vbox.Add(txt2, 0, wx.EXPAND)
         vbox.Add(NavigBoxsizer2, 0, wx.EXPAND)
-        vbox.Add(self.deleteROIsbtn, 0, wx.ALL, 5)
+        NavigBoxsizer2b = wx.BoxSizer(wx.HORIZONTAL)
+        NavigBoxsizer2b.Add(self.centerROIbtn, 0, wx.ALL, 5)
+        NavigBoxsizer2b.Add(self.deleteROIsbtn, 0, wx.ALL, 5)
+        vbox.Add(NavigBoxsizer2b, 0, wx.EXPAND)
         vbox.Add(txt3, 0, wx.EXPAND)
         vbox.Add(NavigBoxsizer3, 0, wx.EXPAND)
         vbox.Add(txt4, 0, wx.EXPAND)
@@ -2360,7 +2378,7 @@ class PlotPeakListPanel(wx.Panel):
         self.detfiletxtctrl.SetValue(self.mainframe.DetFilename)
 
 
-class findLocalMaxima_Meth_1(wx.Panel):
+class findLocalMaxima_Meth_1(ScrolledPagePanel):
     """
     class of method 1 for local maxima search (intensity threshold)
     """
@@ -2369,7 +2387,7 @@ class findLocalMaxima_Meth_1(wx.Panel):
     def __init__(self, parent):
         """
         """
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
 
         self.methodnumber = 1
         mainframe = parent.GetParent().GetParent()
@@ -2415,7 +2433,7 @@ class findLocalMaxima_Meth_1(wx.Panel):
         self.IT.SetToolTipString(ittp)
 
 
-class findLocalMaxima_Meth_2(wx.Panel):
+class findLocalMaxima_Meth_2(ScrolledPagePanel):
     """
     class of method parameters for 2nd method of local maxima(shifted arrays)
     """
@@ -2424,7 +2442,7 @@ class findLocalMaxima_Meth_2(wx.Panel):
     def __init__(self, parent):
         """
         """
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
 
         self.methodnumber = 2
 
@@ -2432,13 +2450,26 @@ class findLocalMaxima_Meth_2(wx.Panel):
         #        self.title2 = wx.StaticText(self, -1, 'Local Maxima Search Parameters(Shifted Arrays)', (5, 6))
         #        self.title2.SetFont(font3)
 
-        pnrtxt = wx.StaticText(self, -1, "PixelNearRadius", (5, 5))
-        self.PNR = wx.SpinCtrl(self, -1, "10", (140, 5), #(100, -1),
-                                                    min=5, max=9999)
+        pnrtxt = wx.StaticText(self, -1, "PixelNearRadius")
+        self.PNR = wx.SpinCtrl(self, -1, "10", min=5, max=9999)
 
-        ittxt = wx.StaticText(self, -1, "IntensityThreshold", (5, 35))
-        self.IT = wx.SpinCtrl(self, -1, "500", (140, 35), #(100, -1),
-                                                    min=0, max=9999)
+        ittxt = wx.StaticText(self, -1, "IntensityThreshold")
+        self.IT = wx.SpinCtrl(self, -1, "500", min=0, max=9999)
+
+        # layout
+        h1 = wx.BoxSizer(wx.HORIZONTAL)
+        h1.Add(pnrtxt, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        h1.Add(self.PNR, 0, wx.ALL, 5)
+
+        h2 = wx.BoxSizer(wx.HORIZONTAL)
+        h2.Add(ittxt, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL, 5)
+        h2.Add(self.IT, 0, wx.ALL, 5)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(h1, 0, wx.EXPAND)
+        vbox.Add(h2, 0, wx.EXPAND)
+
+        self.SetSizer(vbox)
 
         # tooltips
         pnrtp = "Minimum pixel distances between local maxima"
@@ -2450,7 +2481,7 @@ class findLocalMaxima_Meth_2(wx.Panel):
         ittxt.SetToolTipString(ittp)
         self.IT.SetToolTipString(ittp)
 
-class findLocalMaxima_Meth_3(wx.Panel):
+class findLocalMaxima_Meth_3(ScrolledPagePanel):
     """
     class of method 3 for local maxima search (convolution by a mexican hat kernel)
     """
@@ -2472,46 +2503,71 @@ class findLocalMaxima_Meth_3(wx.Panel):
         dataimage_ROI_display
         """
         self.methodnumber = 3
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
 
         self.mainframe = parent.GetParent().GetParent()
 
         # widgets ---------------------------------
-        posv = 30
+        pnrtxt = wx.StaticText(self, -1, "PixelNearRadius")
+        self.PNR = wx.SpinCtrl(self, -1, "10", min=5, max=9999)
 
-        pnrtxt = wx.StaticText(self, -1, "PixelNearRadius", (5, 32 - posv))
-        self.PNR = wx.SpinCtrl(self, -1, "10", (125, 30 - posv), #(100, -1),
-                                                        min=5, max=9999)
-
-        showhisto_btn = wx.Button(self, -1, "ShowHisto", (350, 30 - posv))
+        showhisto_btn = wx.Button(self, -1, "ShowHisto")
         showhisto_btn.Bind(wx.EVT_BUTTON, self.mainframe.ShowHisto_ConvolvedData)
 
-        Recompute_btn = wx.Button(self, -1, "Compute Conv.", (220, 30 - posv))
+        Recompute_btn = wx.Button(self, -1, "Compute Conv.")
         Recompute_btn.Bind(wx.EVT_BUTTON, self.mainframe.ComputeConvolvedData)
 
-        tctxt = wx.StaticText(self, -1, "ThresholdConvolve", (5, 72 - posv))
-        self.ThresholdConvolveCtrl = wx.SpinCtrl(self, -1, "1000", (135, 70 - posv), #(100, -1),
-                                                                                min=0, max=9999)
+        tctxt = wx.StaticText(self, -1, "ThresholdConvolve")
+        self.ThresholdConvolveCtrl = wx.SpinCtrl(self, -1, "1000", min=0, max=9999)
         self.Bind(wx.EVT_SPINCTRL, self.mainframe.Show_ConvolvedImage, self.ThresholdConvolveCtrl)
 
-        self.showconvolvedImage_btn = wx.ToggleButton(self, -1, "Show Conv. Image", (260, 70 - posv))
+        self.showconvolvedImage_btn = wx.ToggleButton(self, -1, "Show Conv. Image")
         self.showconvolvedImage_btn.Bind(wx.EVT_TOGGLEBUTTON, self.OnSwitchImageDisplay)
 
         self.TogglebtnState = 0  # show raw image
 
-        self.Applythreshold = wx.CheckBox(self, -1, "Show thresholding", (5, 110 - posv))
+        self.Applythreshold = wx.CheckBox(self, -1, "Show thresholding")
         self.Applythreshold.SetValue(True)
         self.Applythreshold.Bind(wx.EVT_CHECKBOX, self.mainframe.Show_ConvolvedImage)
 
-        vmaxtxt = wx.StaticText(self, -1, "Max. Intensity", (190, 110 - posv))
-        self.vmaxctrl = wx.SpinCtrl(self, -1, "65000", #(290, 112 - posv),
-                                                    min=2, max=9999)
+        vmaxtxt = wx.StaticText(self, -1, "Max. Intensity")
+        self.vmaxctrl = wx.SpinCtrl(self, -1, "65000", min=2, max=9999)
         self.vmaxctrl.Bind(wx.EVT_SPINCTRL, self.mainframe.OnSpinCtrl_IminDisplayed)
 
-        ittxt = wx.StaticText(self, -1, "Intensity Threshold (raw data)", (5, 152 - posv))
-        ittxt2 = wx.StaticText(self, -1, "with respect to local background", (5, 172 - posv))
-        self.IT = wx.SpinCtrl(self, -1, "500", (210, 150 - posv), #(100, -1),
-                                                                min=0, max=9999)
+        ittxt = wx.StaticText(self, -1, "Intensity Threshold (raw data)")
+        ittxt2 = wx.StaticText(self, -1, "with respect to local background")
+        self.IT = wx.SpinCtrl(self, -1, "500", min=0, max=9999)
+
+        # layout
+        centered = wx.ALL | wx.ALIGN_CENTER_VERTICAL
+        h1 = wx.BoxSizer(wx.HORIZONTAL)
+        h1.Add(pnrtxt, 0, centered, 5)
+        h1.Add(self.PNR, 0, wx.ALL, 5)
+        h1.Add(Recompute_btn, 0, wx.ALL, 5)
+        h1.Add(showhisto_btn, 0, wx.ALL, 5)
+
+        h2 = wx.BoxSizer(wx.HORIZONTAL)
+        h2.Add(tctxt, 0, centered, 5)
+        h2.Add(self.ThresholdConvolveCtrl, 0, wx.ALL, 5)
+        h2.Add(self.showconvolvedImage_btn, 0, wx.ALL, 5)
+
+        h3 = wx.BoxSizer(wx.HORIZONTAL)
+        h3.Add(self.Applythreshold, 0, centered, 5)
+        h3.Add(vmaxtxt, 0, centered, 5)
+        h3.Add(self.vmaxctrl, 0, wx.ALL, 5)
+
+        vtxt = wx.BoxSizer(wx.VERTICAL)
+        vtxt.Add(ittxt, 0)
+        vtxt.Add(ittxt2, 0)
+        h4 = wx.BoxSizer(wx.HORIZONTAL)
+        h4.Add(vtxt, 0, centered, 5)
+        h4.Add(self.IT, 0, wx.ALL, 5)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        for hsizer in (h1, h2, h3, h4):
+            vbox.Add(hsizer, 0, wx.EXPAND)
+
+        self.SetSizer(vbox)
 
         # tooltips ---------------------------
         pnrtp = "Minimum pixel distances between local maxima"
@@ -2559,7 +2615,7 @@ class findLocalMaxima_Meth_3(wx.Panel):
             self.mainframe.dataimage_ROI_display = self.mainframe.dataimage_ROI
             self.mainframe.Show_Image(evt)
 
-class findLocalMaxima_Meth_4(wx.Panel):
+class findLocalMaxima_Meth_4(ScrolledPagePanel):
     """
     class of method 4 for local maxima search with skimage
     """
@@ -2570,7 +2626,7 @@ class findLocalMaxima_Meth_4(wx.Panel):
         """
         self.mainframe = parent.GetParent().GetParent()
 
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
 
         self.methodnumber = 4
 
@@ -2632,7 +2688,7 @@ class findLocalMaxima_Meth_4(wx.Panel):
         bstxt.SetToolTipString(bstp)
         self.BS.SetToolTipString(bstp)
         
-class FitParametersPanel(wx.Panel):
+class FitParametersPanel(ScrolledPagePanel):
     def __init__(self, parent):
         """
         method 1 parameters for method #0 for local maxima search + fit(intensity threshold)
@@ -2649,7 +2705,7 @@ class FitParametersPanel(wx.Panel):
 
         self.methodnumber = 5 
 
-        wx.Panel.__init__(self, parent=parent, id=wx.ID_ANY)
+        ScrolledPagePanel.__init__(self, parent)
 
         font3 = wx.Font(10, wx.MODERN, wx.NORMAL, wx.BOLD)
 
@@ -2657,7 +2713,7 @@ class FitParametersPanel(wx.Panel):
         txt0.SetFont(font3)
 
         maxnbtxt = wx.StaticText(self, -1, "Max. Nb of Fits")
-        self.NbMaxFits = wx.TextCtrl(self, -1, "2000")
+        self.NbMaxFits = wx.TextCtrl(self, -1, "2000", size=(70, -1))
         #        self.peaksearchComments = wx.TextCtrl(self, -1, '', (100, 105))
 
         self.onWholeImage = wx.CheckBox(self, -1, "Apply on whole Image")
@@ -2677,14 +2733,14 @@ class FitParametersPanel(wx.Panel):
         #        self.fitfunc.Bind(wx.EVT_COMBOBOX, self.OnfitfuncChange)
 
         xtoltxt = wx.StaticText(self, -1, "xtol")
-        self.xtol = wx.TextCtrl(self, -1, "0.001")
+        self.xtol = wx.TextCtrl(self, -1, "0.001", size=(70, -1))
 
         boxtxt = wx.StaticText(self, -1, "Boxsize")
         self.boxsize = wx.SpinCtrl(self, -1, "15", #size=(100,-1),
                                             min=1, max=9999)
 
         peaksizetxt = wx.StaticText(self, -1, "Guessed Peak size")
-        self.peaksizectrl = wx.TextCtrl(self, -1, "0.9")
+        self.peaksizectrl = wx.TextCtrl(self, -1, "0.9", size=(70, -1))
 
         # rejection parameters after refinement
         txt2 = wx.StaticText(self, -1, "Rejection parameters")
@@ -2693,19 +2749,19 @@ class FitParametersPanel(wx.Panel):
         saturation_value = DictLT.dict_CCD[self.granparent.GetParent().CCDLabel][2]
 
         pixdevtxt = wx.StaticText(self, -1, "Max. Deviation (pixel)")
-        self.FitPixelDev = wx.TextCtrl(self, -1, "6.0")
+        self.FitPixelDev = wx.TextCtrl(self, -1, "6.0", size=(70, -1))
 
         maxItxt = wx.StaticText(self, -1, "Peak Intensity    Max: ")
-        self.maxIctrl = wx.TextCtrl(self, -1, str(int(saturation_value) - 1))
+        self.maxIctrl = wx.TextCtrl(self, -1, str(int(saturation_value) - 1), size=(70, -1))
 
         minItxt = wx.StaticText(self, -1, "Min:")
-        self.minIctrl = wx.TextCtrl(self, -1, "0")
+        self.minIctrl = wx.TextCtrl(self, -1, "0", size=(70, -1))
 
         peaksizemaxtxt = wx.StaticText(self, -1, "Peak size   Max :")
-        self.peaksizemaxctrl = wx.TextCtrl(self, -1, "3.0")
+        self.peaksizemaxctrl = wx.TextCtrl(self, -1, "3.0", size=(70, -1))
 
         peaksizemintxt = wx.StaticText(self, -1, "Min :")
-        self.peaksizeminctrl = wx.TextCtrl(self, -1, "0.65")
+        self.peaksizeminctrl = wx.TextCtrl(self, -1, "0.65", size=(70, -1))
 
         self.initbuttons()
 
@@ -2746,18 +2802,19 @@ class FitParametersPanel(wx.Panel):
         HBoxsizer5.Add(self.NbMaxFits, 0, wx.ALL, 5)
         HBoxsizer5.Add(self.onWholeImage, 0, wx.ALL, 5)
 
+        # two groups of widgets per line to limit the panel height (small screens)
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(txt0, 0, wx.EXPAND)
-        vbox.Add(HBoxsizer5, 0, wx.EXPAND)
-
-        vbox.Add(HBoxsizer1, 0, wx.EXPAND)
-        vbox.Add(txt1, 0, wx.EXPAND)
-        vbox.Add(HBoxsizer2, 0, wx.EXPAND)
-        vbox.Add(HBoxsizer3, 0, wx.EXPAND)
-        vbox.Add(txt2, 0, wx.EXPAND)
-        vbox.Add(HBoxsizer4, 0, wx.EXPAND)
-        vbox.Add(HBoxsizer4b, 0, wx.EXPAND)
-        vbox.Add(HBoxsizer4c, 0, wx.EXPAND)
+        for title, hsizers in ((None, (HBoxsizer5, HBoxsizer1)),
+                                (txt1, (HBoxsizer2, HBoxsizer3)),
+                                (txt2, (HBoxsizer4b, HBoxsizer4c)),
+                                (None, (HBoxsizer4,))):
+            if title is not None:
+                vbox.Add(title, 0, wx.EXPAND)
+            hline = wx.BoxSizer(wx.HORIZONTAL)
+            for hsizer in hsizers:
+                hline.Add(hsizer, 0, wx.RIGHT, 15)
+            vbox.Add(hline, 0, wx.EXPAND)
 
         self.SetSizer(vbox)
 
@@ -3226,6 +3283,9 @@ class MainPeakSearchFrame(wx.Frame):
     def __init__(self, parent, _id, _initialParameter, title, size=4, verbose=0):
         wx.Frame.__init__(self, parent, _id, title, size=(600, 1000))
 
+        self.vbox_notebooks = None
+        self.notebooks_full_height = 0
+
         self.initialParameter = _initialParameter
 
         self.verbose =verbose
@@ -3510,7 +3570,8 @@ class MainPeakSearchFrame(wx.Frame):
         vbox.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
         vbox.Add(self.toolbar, 0, wx.EXPAND)
 
-        btnSizer = wx.BoxSizer(wx.HORIZONTAL)
+        # buttons are wrapped on several lines if the window is not wide enough
+        btnSizer = wx.WrapSizer(wx.HORIZONTAL)
         btnSizer.Add(self.localfitbtn, 0, wx.ALL, 5)
         btnSizer.AddSpacer(60)
         btnSizer.Add(self.AddPeak, 0, wx.ALL, 5)
@@ -3523,15 +3584,18 @@ class MainPeakSearchFrame(wx.Frame):
         btnSizer.AddSpacer(15)
         btnSizer.Add(quitbutton, 0, wx.ALL, 5)
 
-        btnSizer2 = wx.BoxSizer(wx.HORIZONTAL)
+        btnSizer2 = wx.WrapSizer(wx.HORIZONTAL)
         btnSizer2.Add(self.plot_singlefitresults_chck, 0, wx.ALL)
         btnSizer2.Add(self.allways_addpeak_chck, 0, wx.ALL)
         btnSizer2.Add(self.numvalues_chck, 0, wx.ALL)
         btnSizer2.Add(self.btnOpenPeakList, 0, wx.ALL)
 
+        # pages of both notebooks are scrollable: notebooks can be shrunk on small screens.
+        # height is shared according to the needs of current pages (see update_notebooks_layout())
         vbox2 = wx.BoxSizer(wx.VERTICAL)
         vbox2.Add(self.nb0, 1, wx.EXPAND, 0)
         vbox2.Add(self.nb, 1, wx.EXPAND, 0)
+        self.vbox_notebooks = vbox2
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(vbox, 1, wx.EXPAND)
@@ -3543,8 +3607,10 @@ class MainPeakSearchFrame(wx.Frame):
         vboxgeneral.Add(btnSizer, 0, wx.EXPAND, 0)
 
         self.panel.SetSizer(vboxgeneral)
-        vboxgeneral.Fit(self)
-        self.Layout()
+        self.set_frame_size(fitwidth=True)
+        self.panel.Bind(wx.EVT_SIZE, self.OnSizePanel)
+        # sizes of widgets are fully known only when the frame is shown
+        wx.CallAfter(self.set_frame_size)
 
         # tooltips
         self.localfitbtn.SetToolTipString('Fit peak position close the last clicked point in '
@@ -3611,6 +3677,97 @@ class MainPeakSearchFrame(wx.Frame):
         if WXPYTHON3:
             self.RoiSelector.SetToolTipString("Pixel ROIs Selector from current peaks list of manual selection")
 
+    @staticmethod
+    def page_full_size(page):
+        """return size needed by a notebook page to show all its widgets"""
+        if page is None:
+            return wx.Size(0, 0)
+        if page.GetSizer() is not None:
+            return page.GetSizer().GetMinSize()
+        return page.GetBestSize()
+
+    def page_full_height(self, page):
+        """return height needed by a notebook page to show all its widgets"""
+        return self.page_full_size(page).height
+
+    @staticmethod
+    def tabs_height(notebook):
+        """return height of the tabs bar of notebook"""
+        page = notebook.GetCurrentPage()
+        if page is not None:
+            height = notebook.GetSize().height - page.GetSize().height
+            if 0 < height < 5 * notebook.GetCharHeight():
+                return height
+        return 3 * notebook.GetCharHeight()
+
+    def notebook_full_height(self, notebook):
+        """return height of notebook needed to show all widgets of its highest page"""
+        pagesheight = max([self.page_full_height(notebook.GetPage(k))
+                                                for k in range(notebook.GetPageCount())])
+        return pagesheight + self.tabs_height(notebook)
+
+    def set_frame_size(self, fitwidth=False):
+        """set frame size to show all pages of notebooks without scrollbar,
+        but not larger than the screen
+        """
+        if not self:  # frame already closed
+            return
+        screen = wx.Display(max(0, wx.Display.GetFromWindow(self))).GetClientArea()
+
+        pages = [nbk.GetPage(k) for nbk in (self.nb0, self.nb) for k in range(nbk.GetPageCount())]
+        scrollbarwidth = wx.SystemSettings.GetMetric(wx.SYS_VSCROLL_X)
+        if scrollbarwidth <= 0:
+            scrollbarwidth = 20
+        pageswidth = max([self.page_full_size(page).width for page in pages]) + scrollbarwidth
+        pageswidth = min(pageswidth, screen.width - self.canvas.GetMinSize().width)
+        for nbk in (self.nb0, self.nb):
+            nbk.SetMinSize((pageswidth, 4 * nbk.GetCharHeight()))
+
+        if fitwidth:
+            self.panel.GetSizer().Fit(self)
+        self.panel.SetSize(self.GetClientSize())
+        self.panel.Layout()
+
+        self.notebooks_full_height = (self.notebook_full_height(self.nb0)
+                                        + self.notebook_full_height(self.nb))
+        width, height = self.GetSize()
+        height += self.notebooks_full_height - self.vbox_notebooks.GetSize().height
+        self.SetSize(min(width, screen.width), min(height, screen.height))
+        self.panel.SetSize(self.GetClientSize())
+        self.update_notebooks_layout()
+
+    def update_notebooks_layout(self, toppage=None, bottompage=None):
+        """share the height between top and bottom notebooks according to the height needed
+        by their current pages.
+
+        When the window is not high enough (laptop, low resolution screen) and the top tab is one
+        where peak search parameters are not needed (Mosaic & Monitor, ROIs Selector),
+        the bottom notebook is hidden to let this tab use the whole height.
+        """
+        if not self or self.vbox_notebooks is None:
+            return
+        if toppage is None:
+            toppage = self.nb0.GetCurrentPage()
+        if bottompage is None:
+            bottompage = self.nb.GetCurrentPage()
+        needtop = self.page_full_height(toppage) + self.tabs_height(self.nb0)
+        needbottom = self.page_full_height(bottompage) + self.tabs_height(self.nb)
+
+        fullheightpages = [page for page in (self.Monitor, getattr(self, "RoiSelector", None))
+                                                                            if page is not None]
+        available = self.vbox_notebooks.GetSize().height
+        showbottom = not (toppage in fullheightpages
+                            and available < needtop + self.notebook_full_height(self.nb))
+
+        self.vbox_notebooks.GetItem(self.nb0).SetProportion(max(1, needtop))
+        self.vbox_notebooks.GetItem(self.nb).SetProportion(max(1, needbottom))
+        self.nb.Show(showbottom)
+        self.panel.Layout()
+
+    def OnSizePanel(self, event):
+        event.Skip()
+        wx.CallAfter(self.update_notebooks_layout)
+
     def line_select_callback(self, eclick, erelease):
         """eclick and erelease are the press and release events"""
         x1, y1 = eclick.xdata, eclick.ydata
@@ -3623,16 +3780,14 @@ class MainPeakSearchFrame(wx.Frame):
         handling changing tab of top notebook
         """
 
-        #selected_tab = self.nb0.GetSelection()
-        # print("selected tab:", selected_tab)
-        # print(self.nb0.GetPage(self.nb0.GetSelection()))
-        # print(self.nb0.GetPage(self.nb0.GetSelection()).GetName())
+        self.update_notebooks_layout(toppage=self.nb0.GetPage(event.GetSelection()))
 
         event.Skip()  # patch for windows to update the tab display
 
     def OnTabChange_PeakSearchMethod(self, event):
         #        print 'tab changed'
         selected_tab = self.nb.GetSelection()
+        self.update_notebooks_layout(bottompage=self.nb.GetPage(event.GetSelection()))
         #         print "selected tab:", selected_tab
         #         print self.nb.GetPage(self.nb.GetSelection())
         #         print self.nb.GetPage(self.nb.GetSelection()).GetName()
@@ -3710,7 +3865,7 @@ class MainPeakSearchFrame(wx.Frame):
         # wcd0 = "All files(*)|*|MAR CCD image(*.mccd)|*.mccd|mar tiff(*.tiff)|*.tiff|mar tif(*.tif)|*.tif|Princeton(*.spe)|*.spe|Frelon(*.edf)|*.edf"
 
         # start in the folder of the current image
-        filepath_dlg = wx.FileDialog(self, "Select binary image file", defaultDir=self.dirname,
+        filepath_dlg = FastFileDialog(self, "Select binary image file", defaultDir=self.dirname,
                                                 wildcard=DictLT.getwildcardstring(self.CCDLabel))
         if filepath_dlg.ShowModal() == wx.ID_OK:
 
@@ -5133,7 +5288,7 @@ class MainPeakSearchFrame(wx.Frame):
                          ccdlabel=self.CCDLabel, dictfittingparameters=dictfittingparameters)
 
     def onOpenBImage(self, _):
-        self.FileDialog = wx.FileDialog(self, "Choose an image", style=wx.OPEN,
+        self.FileDialog = FastFileDialog(self, "Choose an image", style=wx.OPEN,
                                                                         defaultDir=self.dirname)
         dlg = self.FileDialog
         dlg.SetMessage("Choose an image as 'B' array")
@@ -5153,7 +5308,7 @@ class MainPeakSearchFrame(wx.Frame):
             print('***** \n\nself.image_with_index',self.image_with_index)
 
     def onOpenBlackListFile(self, _):
-        myFileDialog = wx.FileDialog(self, "Choose a List of peaks not to be considered",
+        myFileDialog = FastFileDialog(self, "Choose a List of peaks not to be considered",
                                     style=wx.OPEN,
                                     defaultDir=self.dirname)
         dlg = myFileDialog
@@ -5168,7 +5323,7 @@ class MainPeakSearchFrame(wx.Frame):
             pass
 
     def ReadDetFile(self, _):
-        myFileDialog = wx.FileDialog(self,
+        myFileDialog = FastFileDialog(self,
                                     "Choose a detector calibration File .det",
                                     style=wx.OPEN,
                                     defaultDir=self.dirname,

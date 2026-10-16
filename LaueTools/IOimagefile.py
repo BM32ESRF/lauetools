@@ -52,7 +52,7 @@ try:
     libtiff_ctypes.suppress_warnings()
     LIBTIFF_EXISTS = True
 except (ImportError, ValueError, AttributeError, NameError):
-    print("-- WARNING: Missing library libtiff, Please install: pylibtiff if you need open some tiff images. However, Fabio or PIL can do the job!")
+    # print("-- WARNING: Missing library libtiff, Please install: pylibtiff if you need open some tiff images. However, Fabio or PIL can do the job!")
     LIBTIFF_EXISTS = False
 
 try:

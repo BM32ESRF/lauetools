@@ -14,6 +14,7 @@ import copy
 import shutil
 
 import wx
+from LaueTools.GUI.fastfiledialog import FastFileDialog  # fast in folders with many files
 
 if sys.version_info.major == 3:
     from . import CCDFileParametersGUI as CCDParamGUI
@@ -58,7 +59,7 @@ def askUserForFilename(parent, filetype = 'peaklist', **dialogOptions):
     
     returns boolean userProvidedFilename
     """
-    dialog = wx.FileDialog(parent, **dialogOptions)
+    dialog = FastFileDialog(parent, **dialogOptions)   # (system dialog: Browse... button)
     if dialog.ShowModal() == wx.ID_OK:
         userProvidedFilename = True
         # self.filename = dialog.GetFilename()
