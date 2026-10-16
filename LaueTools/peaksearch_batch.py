@@ -82,6 +82,7 @@ DEFAULT_CONFIG = {
         'nbfiles_per_folder': None,
         'subfolder_prefix': 'images_',
         'write_cor': True,        # write .cor files (needs scan: detfile)
+        'write_dat': False,       # also keep the .dat files (with .cor files: same peaks; without .cor: always written)
         'results_folder': None,   # folder of peaksearch_<stamp>.pickle (default: dat_folder)
         'results_stamp': 'peaks',
     },
@@ -118,7 +119,7 @@ DEFAULT_CONFIG = {
     'exclusion_boxes': [],
     'run': {
         'nb_cpus': None,           # None: all available cpus
-        'overwrite': True,         # False: only images without .dat file (e.g. to resume an interrupted batch)
+        'overwrite': True,         # False: only images without .cor (or .dat) file (e.g. to resume an interrupted batch)
         'verboselevel': 0,
         'test_image_index': 0,     # image used for single image tests
     },
@@ -281,8 +282,10 @@ def print_config(cfg: dict):
     print(f"---- {cfg['name']} ----  ({cfg['configfile']})")
     print(f"images:      {scan['image_folder']}/{scan['prefix']}{'#' * scan['nbdigits']}{scan['suffix']}")
     subfolder = (f"{out['subfolder_prefix']}<start>_<end>/" if out['nbfiles_per_folder'] else '')
-    print(f"peak lists:  {out['dat_folder']}/{subfolder}{scan['prefix']}{out['added_string']}{'#' * scan['nbdigits']}.dat"
-          f"{' and .cor' if out['write_cor'] and scan['detfile'] else ''}"
+    withcor = out['write_cor'] and scan['detfile']
+    exts = ('.cor' + (' and .dat' if out.get('write_dat') else '')) if withcor else '.dat'
+    print(f"peak lists:  {out['dat_folder']}/{subfolder}{scan['prefix']}{out['added_string']}{'#' * scan['nbdigits']}"
+          f"{exts}"
           + (f"  ({out['nbfiles_per_folder']} files per subfolder)" if out['nbfiles_per_folder'] else ''))
     print(f"map:         mapdims (fast, slow) = {scan['mapdims']}, motors ({scan['fast_motor']}, {scan['slow_motor']})")
     print(f"detector:    {scan['CCDLabel']}, calibration {scan['detfile']}")
@@ -347,6 +350,12 @@ def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['PeakSear
         if params.added_string != cfg['output']['added_string']:
             pathchanges[('output', 'added_string')] = params.added_string
     pathchanges.update({IB._key_path(name, DEFAULT_CONFIG): value for name, value in changes.items()})
+    # parameters of cfg changed in memory (e.g. pcfg['peaksearch']['IntensityThreshold'] = 300) written too
+    memory = {p: v for p, v in IB._memory_changes(cfg, DEFAULT_CONFIG, load_config, with_old=True).items()
+              if p not in pathchanges}
+    if memory:
+        print(f'{len(memory)} parameter(s) changed in memory (cfg) written too')
+    pathchanges = {**{p: v for p, (v, _) in memory.items()}, **pathchanges}
 
     if not pathchanges:
         print('no parameter differs from the configuration file')
@@ -354,6 +363,8 @@ def save_config(cfg: dict, newfile: Union[str, Path], params: Optional['PeakSear
         old = cfg
         for key in path:
             old = old.get(key) if isinstance(old, dict) else None
+        if path in memory:   # value in the file (cfg holds the new value)
+            old = memory[path][1]
         print(f"  {': '.join(path)}: {IB._to_plain(old)} -> {IB._to_plain(value)}")
 
     header = (f"# saved {datetime.datetime.now():%Y-%m-%d %H:%M} from {Path(cfg['configfile']).name} "
@@ -407,6 +418,7 @@ class PeakSearchParams:
     detfile: Optional[str] = None
     overwrite: bool = True
     writefiles: bool = True               # False: no .dat and .cor file (tests)
+    write_dat: bool = True                # .dat file written (always without calibration: no .cor file)
     verboselevel: int = 0
 
     def peaksearch_kwargs(self) -> dict:
@@ -442,7 +454,8 @@ def params_from_config(cfg: dict, **kwargs) -> PeakSearchParams:
                               exclusion_boxes=copy.deepcopy(cfg['exclusion_boxes']),
                               added_string=out['added_string'], nbfiles_per_folder=out['nbfiles_per_folder'],
                               subfolder_prefix=out['subfolder_prefix'], calibration=calibration, detfile=detfile,
-                              overwrite=cfg['run']['overwrite'], verboselevel=cfg['run']['verboselevel'])
+                              overwrite=cfg['run']['overwrite'], verboselevel=cfg['run']['verboselevel'],
+                              write_dat=bool(out.get('write_dat', False)) or calibration is None)
     return dataclasses.replace(params, **kwargs)
 
 
@@ -475,12 +488,13 @@ def peaksearch_image(imagefile: Union[str, Path], params: PeakSearchParams) -> t
     Returns (imageindex, nb of peaks, peaklist) with peaklist an array (nb peaks, 10 columns):
     X, Y, I (background subtracted), fwhm major axis, fwhm minor axis, inclination, Xdev, Ydev, background, Ipixmax.
     nb of peaks = -1 if the image could not be read or the peak search failed, peaklist = None if no peak.
-    Without params.overwrite, images with an existing .dat file are skipped: (imageindex, -2, None)
+    Without params.overwrite, images with an existing .cor (or .dat) file are skipped: (imageindex, -2, None)
+    With calibration, only the .cor file is written (it contains all the peak properties), unless params.write_dat
     """
     imagefile = Path(imagefile)
     imageindex = GT.getfileindex(str(imagefile))
     datfile = datfile_path(params, imageindex)
-    if not params.overwrite and datfile.exists():
+    if not params.overwrite and (datfile.exists() or datfile.with_suffix('.cor').exists()):
         return imageindex, -2, None
     try:
         res = RMCCD.PeakSearch(str(imagefile), **params.peaksearch_kwargs())
@@ -495,14 +509,14 @@ def peaksearch_image(imagefile: Union[str, Path], params: PeakSearchParams) -> t
 
     if params.writefiles:
         datfile.parent.mkdir(parents=True, exist_ok=True)
-        fullpath_datfile = RMCCD.writepeaklist(peaklist, datfile.stem, outputfolder=str(datfile.parent),
-                                               initialfilename=str(imagefile), verbose=max(params.verboselevel - 1, 0))
-        if params.calibration is not None:
-            LaueGeo.convert2corfile(Path(fullpath_datfile).name, [], dirname_in=str(datfile.parent),
-                                    dirname_out=str(datfile.parent),
-                                    CCDCalibdict=copy.deepcopy(params.calibration), add_props=True, verbose=0)
+        if params.calibration is not None:   # .cor file (and .dat file if params.write_dat)
+            written, _ = LaueGeo.peaklist_to_corfile(peaklist, datfile.stem, str(datfile.parent), params.calibration,
+                                                     initialfilename=str(imagefile), write_dat=params.write_dat)
+        else:
+            written = RMCCD.writepeaklist(peaklist, datfile.stem, outputfolder=str(datfile.parent),
+                                          initialfilename=str(imagefile), verbose=max(params.verboselevel - 1, 0))
         if params.verboselevel > 0:
-            print(f'{imagefile.name}: {len(peaklist)} peaks -> {fullpath_datfile}')
+            print(f'{imagefile.name}: {len(peaklist)} peaks -> {written}')
     return imageindex, len(peaklist), peaklist
 
 
@@ -512,7 +526,7 @@ def print_result(res: tuple):
     if nbpeaks == -1:
         GT.printred(f'image {imageindex}: peak search failed (image not readable?)')
     elif nbpeaks == -2:
-        print(f'image {imageindex}: skipped (.dat file exists and overwrite is False)')
+        print(f'image {imageindex}: skipped (.cor or .dat file exists and overwrite is False)')
     elif nbpeaks == 0:
         GT.printyellow(f'image {imageindex}: no peak found')
     else:
@@ -640,7 +654,7 @@ def summarize_results(allresults: list, mapdims=None) -> dict:
         print(f'nb of peaks per image: min {nbpeaks[treated].min()}, mean {nbpeaks[treated].mean():.1f}, '
               f'max {nbpeaks[treated].max()}')
     for key, label in (('emptyimages', 'without peak'), ('failedimages', 'failed (not readable?)'),
-                       ('skippedimages', 'skipped (existing .dat file)')):
+                       ('skippedimages', 'skipped (existing .cor or .dat file)')):
         if summary[key]:
             print(f'nb of images {label}: {len(summary[key])}  {summary[key][:10]}{" ..." if len(summary[key]) > 10 else ""}')
     return summary
