@@ -628,6 +628,69 @@ def session_mp_context():
     return multiprocessing.get_context('spawn')
 
 
+def roicenters_from_peaklistfile(filepath: str, maxnbrois: Optional[int] = None) -> List[List[int]]:
+    """(X, Y) pixel positions of peaks (rounded) in a peak list file .dat, .cor or .fit (Xexp, Yexp
+    of all grains), in file order (usually decreasing intensity)
+
+    :param maxnbrois: max number of ROIs (first peaks of file), None: all peaks
+    """
+    import LaueTools.IOLaueTools as IOLT
+    ext = os.path.splitext(filepath)[1].lower()
+    if ext == '.dat':
+        XY = np.atleast_2d(IOLT.read_Peaklist(filepath))[:, :2]
+    elif ext == '.cor':
+        res = IOLT.readfile_cor(filepath)
+        XY = np.column_stack((np.ravel(res[3]), np.ravel(res[4])))
+    elif ext == '.fit':
+        res, columns = IOLT.readfitfile_multigrains(filepath, return_columnheaders=True)
+        spotsdata = np.atleast_2d(res[4])
+        XY = spotsdata[:, [columns['Xexp'], columns['Yexp']]]
+    else:
+        raise ValueError(f"unknown peak list file extension '{ext}' (.dat, .cor or .fit): {filepath}")
+    centers = [[int(round(x)), int(round(y))] for x, y in XY]
+    return centers if maxnbrois is None else centers[:int(maxnbrois)]
+
+
+def roicenters_grid(CCDLabel: str, step, boxsize_X: int = 0, boxsize_Y: int = 0,
+                    xlim=None, ylim=None) -> List[List[int]]:
+    """(X, Y) pixel positions of a regular grid of ROIs centers on detector
+
+    :param step: grid step in pixel (int, or (stepX, stepY))
+    :param xlim, ylim: (min, max) pixel range along X and Y (default: whole detector frame with ROIs
+        entirely in frame)
+    """
+    framedim = DictLT.dict_CCD[CCDLabel][0]  # (nb lines, nb columns)
+    stepX, stepY = (step, step) if np.isscalar(step) else step
+    xmin, xmax = xlim if xlim is not None else (boxsize_X, framedim[1] - 1 - boxsize_X)
+    ymin, ymax = ylim if ylim is not None else (boxsize_Y, framedim[0] - 1 - boxsize_Y)
+    return [[int(x), int(y)] for y in range(int(ymin), int(ymax) + 1, int(stepY))
+                             for x in range(int(xmin), int(xmax) + 1, int(stepX))]
+
+
+def resolve_roicenters(roicenters, CCDLabel: str, boxsize_X: int = 0, boxsize_Y: int = 0
+                                                                        ) -> List[List[int]]:
+    """list of (X, Y) ROIs centers from roicenters given as:
+        - list of (X, Y) pixel positions (or a single (X, Y))
+        - path of a peak list file .dat, .cor, .fit (see roicenters_from_peaklistfile())
+        - dict {'file': path, 'maxnbrois': int} (maxnbrois optional)
+        - dict {'grid': step or (stepX, stepY), 'xlim': (min, max), 'ylim': (min, max)}
+          (xlim, ylim optional, see roicenters_grid())
+    """
+    if isinstance(roicenters, (str, Path)):
+        return roicenters_from_peaklistfile(str(roicenters))
+    if isinstance(roicenters, dict):
+        if 'file' in roicenters:
+            return roicenters_from_peaklistfile(str(roicenters['file']), roicenters.get('maxnbrois'))
+        if 'grid' in roicenters:
+            return roicenters_grid(CCDLabel, roicenters['grid'], boxsize_X, boxsize_Y,
+                                    roicenters.get('xlim'), roicenters.get('ylim'))
+        raise ValueError(f"roicenters dict must have key 'file' or 'grid': {roicenters}")
+    roicenters = np.array(roicenters)
+    if roicenters.ndim == 1:  # single (X, Y)
+        roicenters = roicenters.reshape((1, 2))
+    return [[int(x), int(y)] for x, y in roicenters]
+
+
 class ROICountersWorkflow:
     """Compute counters (see ROI_COUNTERS) in ROIs centered on detector pixels over a set of
     images (e.g. 2D map), images being processed in parallel.
@@ -636,7 +699,8 @@ class ROICountersWorkflow:
         folder, CCDLabel, filename_representative or (prefix, suffix), nbdigits: images files
             (see image_filepath())
         listindices: images indices (in map order, line by line for a 2D map)
-        roicenters: list of (X, Y) pixel positions of ROIs centers (or roicenter for a single ROI)
+        roicenters: list of (X, Y) pixel positions of ROIs centers (or roicenter for a single ROI),
+            or peak list file path (.dat, .cor, .fit) or grid dict (see resolve_roicenters())
         boxsize_X, boxsize_Y: ROI half sizes along X and Y (ROI shape is (2*boxsize_Y+1, 2*boxsize_X+1))
         counters: list of counters names (keys of ROI_COUNTERS)
     optional keys:
@@ -651,9 +715,14 @@ class ROICountersWorkflow:
         params = dict(params)
         if params.get('roicenters') is None:
             params['roicenters'] = [params['roicenter']]
-        params['roicenters'] = [[int(x), int(y)] for x, y in params['roicenters']]
-        params['listindices'] = [int(index) for index in np.ravel(params['listindices'])]
         params['boxsize_X'], params['boxsize_Y'] = int(params['boxsize_X']), int(params['boxsize_Y'])
+        if not isinstance(params['roicenters'], (list, tuple, np.ndarray)):
+            params['roicenters_source'] = params['roicenters']  # file path or grid dict
+        params['roicenters'] = resolve_roicenters(params['roicenters'], params['CCDLabel'],
+                                                    params['boxsize_X'], params['boxsize_Y'])
+        if not params['roicenters']:
+            raise ValueError(f"no ROI center from {params.get('roicenters_source')}")
+        params['listindices'] = [int(index) for index in np.ravel(params['listindices'])]
         unknown = set(params['counters']) - set(ROI_COUNTERS)
         if unknown:
             raise ValueError(f"unknown counters {unknown}. Possible counters: {list(ROI_COUNTERS)}")
@@ -753,6 +822,56 @@ def load_results(path: str) -> Dict[str, Any]:
     with h5py.File(path, 'r') as f:
         results = {key: f[key][()] for key in f.keys()}
         results['params'] = json.loads(f.attrs['params'])
+    return results
+
+
+def params_hash(params: Dict[str, Any]) -> str:
+    """short hash of workflow parameters (json of params with sorted keys)"""
+    import hashlib
+    text = json.dumps(to_jsonable(params), sort_keys=True)
+    return hashlib.sha1(text.encode()).hexdigest()[:12]
+
+
+def run_roi_counters_cached(params: Dict[str, Any], cachefolder: str, nb_cpus: Optional[int] = None,
+                            progressbar: bool = False, recompute: bool = False,
+                            prefix: str = 'roicounters', reuse_incomplete: bool = False) -> Dict[str, Any]:
+    """run ROICountersWorkflow, or load its results if already computed with the same parameters
+
+    results are saved in cachefolder/{prefix}_{params_hash}.h5 (see save_results())
+
+    :param recompute: compute even if results file exists
+    :param reuse_incomplete: reuse results with missing images (else recomputed: scan possibly
+        not completed when results were computed)
+    :return: results (see ROICountersWorkflow.run_roi_counters_workflow()), with key 'resultsfile'
+    """
+    workflow = ROICountersWorkflow(params)
+    jsonparams = json.loads(json.dumps(to_jsonable(workflow.params)))
+    path = os.path.join(cachefolder, f'{prefix}_{params_hash(workflow.params)}.h5')
+    if os.path.exists(path) and not recompute:
+        try:
+            results = load_results(path)
+        except Exception as exc:  # corrupted or being written
+            print(f'cannot read results file {path}: {exc}')
+            results = None
+        if results is not None and results['params'] != jsonparams:
+            print(f'parameters of results file differ: recompute ({path})')
+        elif results is not None:
+            nbmissing = int(np.sum(results['missing']))
+            if nbmissing and not reuse_incomplete:
+                print(f'{nbmissing} missing images in results file: recompute ({path})')
+            else:
+                print(f'results loaded (same parameters) from {path}'
+                      + (f' ({nbmissing} missing images)' if nbmissing else ''))
+                results['resultsfile'] = path
+                return results
+    results = workflow.run_roi_counters_workflow(nb_cpus=nb_cpus, progressbar=progressbar)
+    try:
+        os.makedirs(cachefolder, exist_ok=True)
+        save_results(results, path)
+        results['resultsfile'] = path
+        print(f'results saved in {path}')
+    except OSError as exc:
+        print(f'cannot save results in {path}: {exc}')
     return results
 
 

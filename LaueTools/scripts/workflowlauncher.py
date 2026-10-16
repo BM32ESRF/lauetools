@@ -1,6 +1,6 @@
 r"""
-workflowlauncher: run LaueTools workflows (ROI counters and mosaic, see workflows.ROICountersWorkflow)
-described by a configuration file, on the local machine or on a SLURM partition of ESRF cluster.
+workflowlauncher: run LaueTools workflows (ROI counters and mosaic, see workflows.ROICountersWorkflow;
+quick daxm, see daxm_workflow) described by a configuration file, on the local machine or on a SLURM partition of ESRF cluster.
 
 The same workflow can be launched from the LaueTools GUI (PeakSearchGUI 'Mosaic & Monitor' tab),
 from a jupyter notebook or from the command line::
@@ -9,6 +9,8 @@ from a jupyter notebook or from the command line::
     python -m LaueTools.scripts.workflowlauncher run config.json --ncpus 32
     # launch in background on this machine or submit to a SLURM partition
     python -m LaueTools.scripts.workflowlauncher submit config.json --resource magnifix --ncpus 96 --wait
+    # on several nodes (images shared between nodes, results merged at the end of the job)
+    python -m LaueTools.scripts.workflowlauncher submit config.json --resource magnifix3 --wait
     # list computing resources
     python -m LaueTools.scripts.workflowlauncher resources
 
@@ -17,6 +19,9 @@ config.json::
     {"workflow": "roi_counters",
      "output": "/path/to/results.h5",
      "params": {...  see workflows.ROICountersWorkflow  ...}}
+
+    "roicenters" in params: list of [X, Y], peak list file path (.dat, .cor, .fit, absolute path for
+    SLURM jobs) or grid {"grid": step} (see workflows.resolve_roicenters())
 
 From a notebook::
 
@@ -50,15 +55,21 @@ import threading
 import time
 from typing import Any, Dict, Optional, Tuple
 
+import numpy as np
+
 import LaueTools
 import LaueTools.scripts.workflows as wf
 
 # 'type': 'local' (this machine) or 'slurm' (partition, optional constraint)
-# 'nbcpus': default nb of cpus
+# 'nbcpus': default nb of cpus (per node). Not set for 'nodes' > 1: whole nodes (all their cpus)
+# 'nodes': nb of nodes (default 1). Images are shared between nodes (1 task per node, part files of
+#     results merged at the end of the job, see run_config() and merge_parts())
 COMPUTING_RESOURCES = {
     'local': {'type': 'local', 'description': 'this machine'},
     'magnifix': {'type': 'slurm', 'partition': 'magnifix', 'nbcpus': 96,
                     'description': 'SLURM partition magnifix'},
+    'magnifix3': {'type': 'slurm', 'partition': 'magnifix3', 'nodes': 3,
+                    'description': 'SLURM partition magnifix3, 3 nodes (images shared between nodes)'},
     'ub20': {'type': 'slurm', 'partition': 'ub20', 'nbcpus': 96,
                 'description': 'SLURM partition ub20'},
     'nice-hpc7': {'type': 'slurm', 'partition': 'nice', 'constraint': 'hpc7', 'nbcpus': 96,
@@ -90,6 +101,20 @@ def job_filepaths(output: str) -> Dict[str, str]:
     base = os.path.splitext(output)[0]
     return {'config': base + '.config.json', 'log': base + '.log',
             'status': base + '.status.json', 'script': base + '.slurm'}
+
+
+def part_output(output: str, part: int, nbparts: int) -> str:
+    """results file of part (task on a node) of a job computed by nbparts tasks"""
+    return f'{os.path.splitext(output)[0]}.part{part}of{nbparts}.h5'
+
+
+def part_config(config: Dict[str, Any], part: int, nbparts: int) -> Dict[str, Any]:
+    """configuration of part of workflow: part-th chunk of images (contiguous, map order)"""
+    if not 0 <= part < nbparts:
+        raise ValueError(f'part {part} not in [0, {nbparts - 1}]')
+    listindices = np.array_split(np.ravel(config['params']['listindices']).astype(int), nbparts)[part]
+    params = dict(config['params'], listindices=listindices.tolist())
+    return dict(config, params=params, output=part_output(config['output'], part, nbparts))
 
 
 def write_status(path: str, **status):
@@ -191,12 +216,44 @@ def write_config(config: Dict[str, Any], path: Optional[str] = None) -> str:
     return path
 
 
-def run_config(config, nb_cpus: Optional[int] = None) -> Dict[str, Any]:
-    """compute workflow described by config (dict or path to json file) in this process,
-    save results in config['output'] and update job status file"""
+# workflows of run_config(): 'roi_counters' (workflows.ROICountersWorkflow),
+# 'quickdaxm' (daxm_workflow.compute_quickdaxm, params: daxm configuration)
+WORKFLOWS = ('roi_counters', 'quickdaxm')
+
+
+def _run_quickdaxm(params, output, nb_cpus, progress, statuspath, jobinfo) -> Dict[str, Any]:
+    # imported here: DAXM modules (numba) are not needed by the other workflows
+    import LaueTools.daxm_workflow as DW
+    from LaueTools.Daxm import quickdaxm as QD
+    results = DW.compute_quickdaxm(params, nb_cpus, progress)
+    QD.save_results(results, output)
+    nbimages = len(results['missing'])
+    write_status(statuspath, state='COMPLETED', done=nbimages, total=nbimages, output=output,
+                    nbmissing=int(results['missing'].sum()), **jobinfo)
+    print(f'results saved in {output}', flush=True)
+    return results
+
+
+def read_config(config) -> Dict[str, Any]:
     if isinstance(config, str):
         with open(config, 'r') as f:
-            config = json.load(f)
+            return json.load(f)
+    return config
+
+
+def run_config(config, nb_cpus: Optional[int] = None, part: Optional[int] = None,
+                nbparts: int = 1) -> Dict[str, Any]:
+    """compute workflow described by config (dict or path to json file) in this process,
+    save results in config['output'] and update job status file
+
+    :param part, nbparts: compute only part-th chunk of images out of nbparts (results in
+        part_output() file, see merge_parts()). Default part: SLURM task index (SLURM_PROCID)
+    """
+    config = read_config(config)
+    if nbparts > 1:
+        if part is None:
+            part = int(os.environ.get('SLURM_PROCID', 0))
+        config = part_config(config, part, nbparts)
     workflow = config.get('workflow', 'roi_counters')
     output = config['output']
     statuspath = job_filepaths(output)['status']
@@ -204,13 +261,15 @@ def run_config(config, nb_cpus: Optional[int] = None) -> Dict[str, Any]:
                 'slurm_jobid': os.environ.get('SLURM_JOB_ID')}
     write_status(statuspath, state='RUNNING', done=0, total=None, **jobinfo)
     try:
-        if workflow != 'roi_counters':
+        if workflow not in WORKFLOWS:
             raise ValueError(f"unknown workflow '{workflow}'")
         params = config['params']
 
         def progress(done, total):
             write_status(statuspath, state='RUNNING', done=done, total=total, **jobinfo)
 
+        if workflow == 'quickdaxm':
+            return _run_quickdaxm(params, output, nb_cpus, progress, statuspath, jobinfo)
         # progress bar in a terminal, progress lines in log file of job
         results = wf.ROICountersWorkflow(params).run_roi_counters_workflow(nb_cpus,
                                                     progressbar=sys.stderr.isatty(),
@@ -226,6 +285,42 @@ def run_config(config, nb_cpus: Optional[int] = None) -> Dict[str, Any]:
     return results
 
 
+def merge_parts(config, nbparts: int, remove: bool = True) -> Dict[str, Any]:
+    """merge results of the nbparts parts of workflow of config (see run_config()) in config['output']
+    and update job status file
+
+    :param remove: remove part files (results and status) after merging
+    """
+    config = read_config(config)
+    output = config['output']
+    statuspath = job_filepaths(output)['status']
+    jobinfo = {'host': socket.gethostname(), 'slurm_jobid': os.environ.get('SLURM_JOB_ID')}
+    try:
+        if config.get('workflow', 'roi_counters') != 'roi_counters':
+            raise ValueError(f"merging of parts not implemented for workflow '{config.get('workflow')}'")
+        parts = [wf.load_results(part_output(output, k, nbparts)) for k in range(nbparts)]
+        results = {key: np.concatenate([part[key] for part in parts])
+                    for key in parts[0] if key != 'params'}
+        results['params'] = wf.ROICountersWorkflow(config['params']).params
+        wf.save_results(results, output)
+    except BaseException as exc:
+        write_status(statuspath, state='FAILED', message=f'merge: {type(exc).__name__}: {exc}', **jobinfo)
+        raise
+    if remove:
+        for k in range(nbparts):
+            for path in (part_output(output, k, nbparts),
+                         job_filepaths(part_output(output, k, nbparts))['status']):
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
+    nbimages = len(results['imageindices'])
+    write_status(statuspath, state='COMPLETED', done=nbimages, total=nbimages, output=output,
+                    nbmissing=int(results['missing'].sum()), **jobinfo)
+    print(f'{nbparts} parts merged, results saved in {output}', flush=True)
+    return results
+
+
 def _slurm_command(args, submit_host: Optional[str] = None):
     """SLURM command args, run through ssh on submit host if not available on this machine"""
     if shutil.which(args[0]):
@@ -234,10 +329,15 @@ def _slurm_command(args, submit_host: Optional[str] = None):
             ' '.join(shlex.quote(str(arg)) for arg in args)]
 
 
-def slurm_script(configpath: str, resource: Dict[str, Any], nbcpus: int, jobname: str,
+def slurm_script(configpath: str, resource: Dict[str, Any], nbcpus: Optional[int], jobname: str,
                     time_limit: str = DEFAULT_TIME_LIMIT, mem_per_cpu: str = DEFAULT_MEM_PER_CPU,
-                    python: Optional[str] = None) -> str:
-    """content of sbatch script running workflow of configpath"""
+                    python: Optional[str] = None, nbnodes: int = 1) -> str:
+    """content of sbatch script running workflow of configpath
+
+    :param nbcpus: nb of cpus per node (None: whole nodes, all their cpus and memory)
+    :param nbnodes: nb of nodes. For nbnodes > 1, images are shared between nodes (1 task per node,
+        see run_config()) and the parts of results are merged at the end (see merge_parts())
+    """
     configpath = os.path.abspath(configpath)
     with open(configpath, 'r') as f:
         files = job_filepaths(json.load(f)['output'])
@@ -247,20 +347,35 @@ def slurm_script(configpath: str, resource: Dict[str, Any], nbcpus: int, jobname
              f"#SBATCH --partition={resource['partition']}"]
     if resource.get('constraint'):
         lines.append(f"#SBATCH --constraint={resource['constraint']}")
-    lines += ['#SBATCH --nodes=1',
-              '#SBATCH --ntasks=1',
-              f'#SBATCH --cpus-per-task={nbcpus}',
-              f'#SBATCH --mem-per-cpu={mem_per_cpu}',
-              f'#SBATCH --time={time_limit}',
+    lines += [f'#SBATCH --nodes={nbnodes}',
+              f'#SBATCH --ntasks={nbnodes}',
+              '#SBATCH --ntasks-per-node=1']
+    if nbcpus:
+        lines += [f'#SBATCH --cpus-per-task={nbcpus}',
+                  f'#SBATCH --mem-per-cpu={mem_per_cpu}']
+        taskcpus = f'${{SLURM_CPUS_PER_TASK:-{nbcpus}}}'
+    else:  # whole nodes
+        lines += ['#SBATCH --exclusive',
+                  '#SBATCH --mem=0']
+        taskcpus = '$SLURM_CPUS_ON_NODE'
+    lines += [f'#SBATCH --time={time_limit}',
               f"#SBATCH --output={files['log']}",
               '',
-              'echo "host: $(hostname)   date: $(date)   cpus: $SLURM_CPUS_PER_TASK"',
+              f'echo "host: $(hostname)   date: $(date)   nodes: $SLURM_JOB_NODELIST   cpus per node: {taskcpus}"',
               f'module load mamba > /dev/null 2>&1 && conda activate {shlex.quote(sys.prefix)} > /dev/null 2>&1',
               'export OMP_NUM_THREADS=1',
-              f'export PYTHONPATH={shlex.quote(LAUETOOLS_PARENT_FOLDER)}${{PYTHONPATH:+:$PYTHONPATH}}',
-              f'{shlex.quote(python)} -m LaueTools.scripts.workflowlauncher run '
-              f"{shlex.quote(configpath)} --ncpus ${{SLURM_CPUS_PER_TASK:-{nbcpus}}}",
-              'rc=$?',
+              f'export PYTHONPATH={shlex.quote(LAUETOOLS_PARENT_FOLDER)}${{PYTHONPATH:+:$PYTHONPATH}}']
+    launcher = f'{shlex.quote(python)} -m LaueTools.scripts.workflowlauncher'
+    if nbnodes == 1:
+        lines += [f'{launcher} run {shlex.quote(configpath)} --ncpus {taskcpus}',
+                  'rc=$?']
+    else:
+        # 1 task per node (part index: SLURM_PROCID), then merge of parts
+        lines += [f'srun --label --kill-on-bad-exit=1 --cpus-per-task={taskcpus} '
+                  f'{launcher} run {shlex.quote(configpath)} --ncpus {taskcpus} --nbparts {nbnodes}',
+                  'rc=$?',
+                  f'if [ $rc -eq 0 ]; then {launcher} merge {shlex.quote(configpath)} --nbparts {nbnodes}; rc=$?; fi']
+    lines += [
               # failure before python could write the job status (e.g. environment problem)
               f"if [ $rc -ne 0 ] && ! grep -q FAILED {shlex.quote(files['status'])} 2>/dev/null; then",
               f"""  echo '{{"state": "FAILED", "message": "exit code '$rc', see log"}}' > {shlex.quote(files['status'])}""",
@@ -290,6 +405,8 @@ class WorkflowJob:
         """job status dict with key 'state' (PENDING, RUNNING, COMPLETED, FAILED, CANCELLED)
         and, while running, 'done' and 'total' (nb of processed images and nb of images)"""
         status = read_status(self.files['status']) or {'state': 'PENDING'}
+        if status['state'] == 'RUNNING' and status.get('nbparts'):
+            status = self._parts_status(status)
         if self.process is not None and status['state'] not in FINAL_STATES:
             returncode = self.process.poll()
             if returncode is not None:
@@ -297,6 +414,24 @@ class WorkflowJob:
                 status = read_status(self.files['status']) or status
                 if status['state'] not in FINAL_STATES:
                     status = {'state': 'FAILED', 'message': f'process exit code {returncode}, see log'}
+        return status
+
+    def _parts_status(self, status: Dict[str, Any]) -> Dict[str, Any]:
+        """status of a job computed by several tasks (status files of parts, see run_config())"""
+        nbparts = status['nbparts']
+        parts = [read_status(job_filepaths(part_output(self.output, k, nbparts))['status']) or
+                    {'state': 'PENDING'} for k in range(nbparts)]
+        if all(part['state'] == 'PENDING' for part in parts):  # e.g. job in SLURM queue
+            return dict(status, state='PENDING')
+        failed = [part for part in parts if part['state'] == 'FAILED']
+        if failed:
+            return dict(failed[0], state='RUNNING', message=f"a part failed: {failed[0].get('message')}")
+        totals = [part.get('total') for part in parts]
+        status = dict(status, done=sum(part.get('done') or 0 for part in parts),
+                        total=sum(totals) if None not in totals else None,
+                        host=', '.join(part['host'] for part in parts if part.get('host')))
+        if all(part['state'] == 'COMPLETED' for part in parts):
+            status['message'] = 'merging parts'
         return status
 
     def state(self) -> str:
@@ -338,7 +473,15 @@ class WorkflowJob:
         return text
 
     def results(self) -> Dict[str, Any]:
-        """load results (see workflows.load_results())"""
+        """load results (see workflows.load_results(), or quickdaxm.load_results() for 'quickdaxm')"""
+        try:
+            with open(self.files['config'], 'r') as f:
+                workflow = json.load(f).get('workflow', 'roi_counters')
+        except (OSError, ValueError):
+            workflow = 'roi_counters'
+        if workflow == 'quickdaxm':
+            from LaueTools.Daxm import quickdaxm as QD
+            return QD.load_results(self.output)
         return wf.load_results(self.output)
 
     def remove_files(self):
@@ -469,11 +612,14 @@ class JobProgressBar:
 
 def launch(config: Dict[str, Any], resource: str = 'local', nbcpus: Optional[int] = None,
             time_limit: str = DEFAULT_TIME_LIMIT, mem_per_cpu: str = DEFAULT_MEM_PER_CPU,
-            submit_host: Optional[str] = None, python: Optional[str] = None) -> WorkflowJob:
+            submit_host: Optional[str] = None, python: Optional[str] = None,
+            nbnodes: Optional[int] = None) -> WorkflowJob:
     """launch workflow of config (see make_config()) in background on this machine
     (resource='local') or submit it to a SLURM partition (see COMPUTING_RESOURCES)
 
-    :param nbcpus: nb of cpus (default: nbcpus of resource or all cpus of local machine)
+    :param nbcpus: nb of cpus, per node for SLURM (default: nbcpus of resource or all cpus of local
+        machine, or all cpus of nodes for SLURM resource of several nodes without nbcpus)
+    :param nbnodes: nb of SLURM nodes (default: 'nodes' of resource, 1)
     :param time_limit, mem_per_cpu: SLURM job time limit and memory per cpu
     :param submit_host: machine where to run SLURM commands through ssh if they are not available
         on this machine (default: SLURM_SUBMIT_HOST)
@@ -488,7 +634,10 @@ def launch(config: Dict[str, Any], resource: str = 'local', nbcpus: Optional[int
     files = job_filepaths(output)
     configpath = write_config(config, files['config'])
     python = python or sys.executable
-    nbcpus = int(nbcpus or resource_def.get('nbcpus') or wf.available_cpus())
+    nbnodes = int(nbnodes or resource_def.get('nodes', 1)) if resource_def['type'] == 'slurm' else 1
+    nbcpus = nbcpus or resource_def.get('nbcpus')
+    if nbcpus or nbnodes == 1:
+        nbcpus = int(nbcpus or wf.available_cpus())
     write_status(files['status'], state='PENDING', resource=resource)
 
     if resource_def['type'] == 'local':
@@ -505,7 +654,8 @@ def launch(config: Dict[str, Any], resource: str = 'local', nbcpus: Optional[int
         raise ValueError(f"unknown type of computing resource {resource_def['type']}")
     jobname = 'lt_' + os.path.splitext(os.path.basename(output))[0][:40]
     with open(files['script'], 'w') as f:
-        f.write(slurm_script(configpath, resource_def, nbcpus, jobname, time_limit, mem_per_cpu, python))
+        f.write(slurm_script(configpath, resource_def, nbcpus, jobname, time_limit, mem_per_cpu, python,
+                                nbnodes))
     cmd = _slurm_command(['sbatch', '--parsable', files['script']], submit_host)
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
@@ -517,8 +667,13 @@ def launch(config: Dict[str, Any], resource: str = 'local', nbcpus: Optional[int
         write_status(files['status'], state='FAILED', message=f'sbatch failed: {message}')
         raise RuntimeError(f"cannot submit SLURM job with: {' '.join(cmd)}\n{message}")
     jobid = res.stdout.strip().split(';')[0].split()[-1]
-    write_status(files['status'], state='PENDING', resource=resource, slurm_jobid=jobid)
-    print(f'SLURM job {jobid} submitted on {resource}, log: {files["log"]}')
+    if nbnodes > 1:  # job status: RUNNING with progress of parts, until merged results (COMPLETED)
+        write_status(files['status'], state='RUNNING', resource=resource, slurm_jobid=jobid,
+                        nbparts=nbnodes)
+    else:
+        write_status(files['status'], state='PENDING', resource=resource, slurm_jobid=jobid)
+    print(f'SLURM job {jobid} submitted on {resource}' + (f' ({nbnodes} nodes)' if nbnodes > 1 else '')
+            + f', log: {files["log"]}')
     return WorkflowJob(output, resource, jobid=jobid, submit_host=submit_host)
 
 
@@ -530,13 +685,23 @@ def main(argv=None):
     prun = subparsers.add_parser('run', help='compute workflow in this process')
     prun.add_argument('config', help='json configuration file')
     prun.add_argument('--ncpus', type=int, default=None, help='nb of cpus (default: all available)')
+    prun.add_argument('--nbparts', type=int, default=1,
+                        help='compute only a part of images out of nbparts (e.g. 1 SLURM task per node)')
+    prun.add_argument('--part', type=int, default=None,
+                        help='index of part (default: SLURM task index SLURM_PROCID)')
+    pmerge = subparsers.add_parser('merge', help='merge results of parts (run --nbparts)')
+    pmerge.add_argument('config', help='json configuration file')
+    pmerge.add_argument('--nbparts', type=int, required=True)
+    pmerge.add_argument('--keep-parts', action='store_true', help='do not remove part files')
 
     psubmit = subparsers.add_parser('submit', help='launch workflow in background on this machine '
                                                     'or submit it to a SLURM partition')
     psubmit.add_argument('config', help='json configuration file')
     psubmit.add_argument('--resource', default='local', choices=list(COMPUTING_RESOURCES),
                             help='computing resource (default: local)')
-    psubmit.add_argument('--ncpus', type=int, default=None)
+    psubmit.add_argument('--ncpus', type=int, default=None, help='nb of cpus (per node for SLURM)')
+    psubmit.add_argument('--nodes', type=int, default=None,
+                            help='nb of SLURM nodes (default: nodes of resource, 1)')
     psubmit.add_argument('--time', default=DEFAULT_TIME_LIMIT, help='SLURM time limit')
     psubmit.add_argument('--mem-per-cpu', default=DEFAULT_MEM_PER_CPU, help='SLURM memory per cpu')
     psubmit.add_argument('--submit-host', default=None,
@@ -547,11 +712,14 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
     if args.command == 'run':
-        run_config(args.config, args.ncpus)
+        run_config(args.config, args.ncpus, args.part, args.nbparts)
+    elif args.command == 'merge':
+        merge_parts(args.config, args.nbparts, remove=not args.keep_parts)
     elif args.command == 'submit':
         with open(args.config, 'r') as f:
             config = json.load(f)
-        job = launch(config, args.resource, args.ncpus, args.time, args.mem_per_cpu, args.submit_host)
+        job = launch(config, args.resource, args.ncpus, args.time, args.mem_per_cpu, args.submit_host,
+                        nbnodes=args.nodes)
         if args.wait:
             status = job.wait()
             if status['state'] != 'COMPLETED':
@@ -560,7 +728,8 @@ def main(argv=None):
     elif args.command == 'resources':
         for name, resource in COMPUTING_RESOURCES.items():
             print(f"{name:12s} {resource.get('description', '')}"
-                    + (f" ({resource['nbcpus']} cpus)" if resource.get('nbcpus') else ''))
+                    + (f" ({resource['nbcpus']} cpus)" if resource.get('nbcpus') else '')
+                    + (f" ({resource['nodes']} nodes)" if resource.get('nodes', 1) > 1 else ''))
 
 
 if __name__ == '__main__':
