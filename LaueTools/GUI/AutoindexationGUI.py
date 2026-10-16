@@ -12,6 +12,7 @@ https://gitlab.esrf.fr/micha/lauetools
 import sys
 import time
 import os
+import threading
 import wx
 import numpy as np
 
@@ -248,11 +249,17 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         self.StartButton = wx.Button(self, -1, "Start", size=(-1, 80))
         self.StartButton.SetFont(font3)
+        self.StopButton = wx.Button(self, -1, "Stop", size=(-1, 80))
+        self.StopButton.SetToolTipString('Stop the running indexation safely: the processes of the matching rates are '
+                                         'terminated and the solutions found so far are kept')
+        self.StopButton.Disable()
+        self._running, self._quit_after_stop = False, False
         quitbtn = wx.Button(self, 2, "Quit", size=(-1, 80))
         self.textprocess = wx.StaticText(self, -1, "                     ")
         self.gauge = wx.Gauge(self, -1, 1000, size=(250, -1))
 
         self.StartButton.Bind(wx.EVT_BUTTON, self.OnStart)
+        self.StopButton.Bind(wx.EVT_BUTTON, self.OnStop)
         quitbtn.Bind(wx.EVT_BUTTON, self.OnQuit)
 
         self.sb = self.CreateStatusBar()
@@ -334,6 +341,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
 
         h10box = wx.BoxSizer(wx.HORIZONTAL)
         h10box.Add(self.StartButton, 1, wx.EXPAND, 10)
+        h10box.Add(self.StopButton, 0, wx.EXPAND, 10)
         h10box.Add(quitbtn, 0, wx.EXPAND, 10)
         h10box.Add(self.textprocess, 0, wx.EXPAND, 10)
         h10box.Add(self.gauge, 0, wx.EXPAND, 10)
@@ -960,72 +968,85 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         self.textprocess.SetLabel("Processing Indexation")
         self.gauge.SetRange(nbmax_probed * nb_central_spots)
 
-        if verbose>0:
-            print('To decide to use getOrientMatrices() or getOrientMatrices_fromTwoSets()')
-            print('spotssettype   :', spotssettype)
+        def _search():   # run in a background thread: the board stays responsive (Stop button)
+            nonlocal spotsB
+            res = ([], [])
 
-        if spotssettype in ("rangeset", ):
-            res = INDEX.getOrientMatrices(spot_index_central,
-                                    energy_max,
-                                    Tabledistance[:nbmax_probed, :nbmax_probed],
-                                    self.select_theta,
-                                    self.select_chi,
-                                    n=n,
-                                    ResolutionAngstrom=ResolutionAngstrom,
-                                    B=B,
-                                    cubicSymmetry=restrictLUT_cubicSymmetry,
-                                    hexagonalSymmetry=CP.isHexagonal(latticeparams),
-                                    LUT=None,
-                                    LUT_tol_angle=rough_tolangle,
-                                    MR_tol_angle=fine_tolangle,
-                                    Minimum_Nb_Matches=Minimum_MatchesNb,
-                                    key_material=self.key_material,
-                                    plot=0,
-                                    verbose=verboselevel-1,
-                                    detectorparameters=detectorparameters,
-                                    addMatrix=None,  # To add a priori good candidates...
-                                    set_central_spots_hkl=set_central_spots_hkl,
-                                    verbosedetails=verboselevel,  # verbosedetails,
-                                    gauge=self.gauge,
-                                    dictmaterials=self.IndexationParameters['dict_Materials'],
-                                    MaxRadiusHKL=False,#True could be OK for this workflow
+            if verbose>0:
+                print('To decide to use getOrientMatrices() or getOrientMatrices_fromTwoSets()')
+                print('spotssettype   :', spotssettype)
+
+            if spotssettype in ("rangeset", ):
+                res = INDEX.getOrientMatrices(spot_index_central,
+                                        energy_max,
+                                        Tabledistance[:nbmax_probed, :nbmax_probed],
+                                        self.select_theta,
+                                        self.select_chi,
+                                        n=n,
+                                        ResolutionAngstrom=ResolutionAngstrom,
+                                        B=B,
+                                        cubicSymmetry=restrictLUT_cubicSymmetry,
+                                        hexagonalSymmetry=CP.isHexagonal(latticeparams),
+                                        LUT=None,
+                                        LUT_tol_angle=rough_tolangle,
+                                        MR_tol_angle=fine_tolangle,
+                                        Minimum_Nb_Matches=Minimum_MatchesNb,
+                                        key_material=self.key_material,
+                                        plot=0,
+                                        verbose=verboselevel-1,
+                                        detectorparameters=detectorparameters,
+                                        addMatrix=None,  # To add a priori good candidates...
+                                        set_central_spots_hkl=set_central_spots_hkl,
+                                        verbosedetails=verboselevel,  # verbosedetails,
+                                        gauge=_GaugeProxy(self.gauge),   # (updated from the GUI thread)
+                                        dictmaterials=self.IndexationParameters['dict_Materials'],
+                                        MaxRadiusHKL=False,#True could be OK for this workflow
+                                        LUT_with_rules=LUT_with_rules,
+                                        excludespotspairs=None,
+                                        LUTfraction=LUTfraction,
+                                        useparallelcomputing=True)
+
+            elif spotssettype in ('listsetA', 'listsetAB', ):
+                # and spotsB is checked
+                if spotssettype in ('listsetA', ):
+                    spotsB = spot_index_central
+
+                if verbose>4:
+                    print('arguments of  getOrientMatrices_fromTwoSets()')
+                    print("--->")
+                    print('spot_index_central',spot_index_central)
+                    print('spotsB',spotsB)
+                    print('energy_max', energy_max)
+                    print('self.select_theta', self.select_theta)
+                    print('self.select_chi', self.select_chi)
+                    print('n', n)
+                    print('self.key_material', self.key_material)
+                    print('rough_tolangle', rough_tolangle)
+                    print('detectorparameters', detectorparameters)
+                    print('set_central_spots_hkl', set_central_spots_hkl)
+                    print('Minimum_MatchesNb', Minimum_MatchesNb)
+                    print('LUT_with_rules', LUT_with_rules)
+                    print('LUTfraction', LUTfraction)
+
+                res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
+                                    energy_max, self.select_theta, self.select_chi,
+                                    n, self.key_material, rough_tolangle,
+                                    detectorparameters,
+                                    set_hkl_1=set_central_spots_hkl,
+                                    minimumNbMatches=Minimum_MatchesNb,
                                     LUT_with_rules=LUT_with_rules,
                                     excludespotspairs=None,
                                     LUTfraction=LUTfraction,
-                                    useparallelcomputing=True)
+                                    verbose=verboselevel-1)
+            return res
 
-        elif spotssettype in ('listsetA', 'listsetAB', ):
-            # and spotsB is checked
-            if spotssettype in ('listsetA', ):
-                spotsB = spot_index_central
-
-            if verbose>4:
-                print('arguments of  getOrientMatrices_fromTwoSets()')
-                print("--->")
-                print('spot_index_central',spot_index_central)
-                print('spotsB',spotsB)
-                print('energy_max', energy_max)
-                print('self.select_theta', self.select_theta)
-                print('self.select_chi', self.select_chi)
-                print('n', n)
-                print('self.key_material', self.key_material)
-                print('rough_tolangle', rough_tolangle)
-                print('detectorparameters', detectorparameters)
-                print('set_central_spots_hkl', set_central_spots_hkl)
-                print('Minimum_MatchesNb', Minimum_MatchesNb)
-                print('LUT_with_rules', LUT_with_rules)
-                print('LUTfraction', LUTfraction)
-
-            res = INDEX.getOrientMatrices_fromTwoSets(spot_index_central, spotsB,
-                                energy_max, self.select_theta, self.select_chi,
-                                n, self.key_material, rough_tolangle,
-                                detectorparameters,
-                                set_hkl_1=set_central_spots_hkl,
-                                minimumNbMatches=Minimum_MatchesNb,
-                                LUT_with_rules=LUT_with_rules,
-                                excludespotspairs=None,
-                                LUTfraction=LUTfraction,
-                                verbose=verboselevel-1)
+        res, stopped = self._run_stoppable(_search)
+        if stopped:
+            self.textprocess.SetLabel("Indexation stopped")
+            if len(res[0]) == 0:
+                wx.MessageBox('Indexation stopped: no solution found before the stop', 'INFO')
+                return
+            print(f'Indexation stopped: {len(res[0])} solution(s) found before the stop')
 
         if len(res[0]) > 0:
             self.bestmatrices, stats_res = res
@@ -1267,10 +1288,70 @@ class DistanceScreeningIndexationBoard(wx.Frame):
                 "! NOTHING FOUND !\nTry to reduce the Minimum Number Matched Spots to catch something!",
                 "INFO")
 
+    def _run_stoppable(self, func):
+        """run func() (indexation) in a background thread while the board stays responsive (Stop button).
+        Returns (result of func, True if stopped by the Stop button)"""
+        INDEX.clear_stop()
+        out = {}
+
+        def target():
+            try:
+                out['res'] = func()
+            except Exception as err:   # re-raised in the GUI thread
+                out['err'] = err
+
+        thread = threading.Thread(target=target, daemon=True)
+        self._running = True
+        self.StartButton.Disable()
+        self.StopButton.Enable()
+        thread.start()
+        try:
+            while thread.is_alive():
+                wx.GetApp().Yield(True)   # events of the board (Stop, Quit, gauge updates)
+                thread.join(0.05)
+        finally:
+            self._running = False
+            self.StartButton.Enable()
+            self.StopButton.Disable()
+        stopped = INDEX.stop_requested()
+        INDEX.clear_stop()
+        if self._quit_after_stop:
+            wx.CallAfter(self.Close)
+        if 'err' in out:
+            raise out['err']
+        return out.get('res', ([], [])), stopped
+
+    def OnStop(self, _):
+        """stop the running indexation safely (solutions found so far kept)"""
+        if self._running:
+            INDEX.request_stop()
+            self.StopButton.Disable()
+            self.textprocess.SetLabel("Stopping indexation...")
+
     def OnQuit(self, _):
-        """ quit
+        """ quit (a running indexation is stopped first)
         """
+        if self._running:
+            self._quit_after_stop = True
+            self.OnStop(None)
+            return
         self.Close()
+
+class _GaugeProxy:
+    """gauge updated from a background thread: calls done in the GUI thread (wx.CallAfter)"""
+
+    def __init__(self, gauge):
+        self._gauge = gauge
+
+    def SetValue(self, value):
+        wx.CallAfter(self._gauge.SetValue, int(value))
+
+    def SetRange(self, value):
+        wx.CallAfter(self._gauge.SetRange, int(value))
+
+    def __getattr__(self, attr):
+        return getattr(self._gauge, attr)
+
 
 if __name__ == "__main__":
     filename = "/home/micha/LaueTools/Examples/Ge/dat_Ge0001.cor"

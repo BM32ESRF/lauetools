@@ -20,6 +20,7 @@ import pylab as p
 import numpy as np
 
 import multiprocessing
+import threading
 from multiprocessing import cpu_count
 from tqdm import tqdm
 import itertools
@@ -710,6 +711,8 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
                                                         applyExtinctionRules=applyExtinctionRules, verbose=verbose-1)
     print('still in in matrices_from_onespot_new()-----------------')
     for spotindex_2, angle in enumerate(Distances_from_central_spot):
+        if STOP_REQUEST.is_set():   # stop requested (request_stop())
+            break
         if angle ==0.0:
             continue
             
@@ -734,6 +737,45 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
     return Loop_on_PlanesPairs_and_Get_Matrices(PPs_list, spot_index, coord_central_spot,
                                             coords_exp, B0, verbose=verbose-1,
                                             excludespotspairs=excludespotspairs)
+
+
+# --------------------------------------------------------------------------------------
+#  STOP of a running indexing (e.g. 'Stop' button of the Autoindexation board)
+# --------------------------------------------------------------------------------------
+STOP_REQUEST = threading.Event()
+
+
+def request_stop():
+    """ask the running getOrientMatrices() / getOrientMatrices_fromTwoSets() to stop (from another thread): they
+    return the solutions found so far; the multiprocessing pool of matching rates is terminated"""
+    STOP_REQUEST.set()
+
+
+def clear_stop():
+    STOP_REQUEST.clear()
+
+
+def stop_requested() -> bool:
+    return STOP_REQUEST.is_set()
+
+
+def _matching_rates_stoppable(args, nb: int, ncpus: int) -> list:
+    """matchingrate.Angular_residues_np(*arg) for the nb tuples of args with a pool of ncpus processes, by chunks of
+    ~16 matrices per process: a stop request (request_stop()) is taken into account between two chunks, and the
+    results not computed are None. (The pool is never terminated while workers are sending results:
+    Pool.terminate() can then wait forever for the lock of the results queue)"""
+    args = list(args)
+    results = [None] * nb
+    chunk = max(16 * max(ncpus, 1), 64)
+    with multiprocessing.Pool(ncpus) as pool, tqdm(total=nb) as bar:
+        for first in range(0, nb, chunk):
+            if STOP_REQUEST.is_set():
+                print(f'indexing stopped: {first} / {nb} matching rates computed')
+                break
+            part = pool.map(worker_unpack, args[first:first + chunk], chunksize=max(1, chunk // (4 * max(ncpus, 1))))
+            results[first:first + len(part)] = part
+            bar.update(len(part))
+    return results
 
 
 def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, coords_1, coords_2,
@@ -831,7 +873,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
     # TODO: use multiprocessing if nb_UB_matrices > 1000
 
 
-    print('\nnb_UB_matrices in getUBs_and_MatchingRate() for matching rate evaluation:', nb_UB_matrices)
+    print(f"Spot indices: {spot_index_1}, {spot_index_2}\nNumber of UB matrices in getUBs_and_MatchingRate() for matching rate evaluation: {nb_UB_matrices}")
     # Thanks to Ravi
     if nb_UB_matrices > minimumnbmatricesformultiprocessing:
         args = zip(list_orient_matrix,
@@ -847,8 +889,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
                    itertools.repeat(0.999),
                    itertools.repeat(dictmaterials),
                    )
-        with multiprocessing.Pool(max(cpu_count()-1,1)) as pool:
-            results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=len(list_orient_matrix)))
+        # (stoppable: request_stop())
+        results = _matching_rates_stoppable(args, len(list_orient_matrix), max(cpu_count() - 1, 1))
 
         for mat_ind, AngRes in enumerate(results):
             if AngRes is None:
@@ -869,6 +911,8 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
             # print(list_orient_matrix)
 
         for _mat_ind in list(range(nb_UB_matrices)):
+            if STOP_REQUEST.is_set():   # stop requested (request_stop())
+                break
             mat_ind = int(_mat_ind)
             if WORKEREXIST:
                 #             print "there is a worker !!"
@@ -1133,6 +1177,8 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
 
     # loop over all possible pairs of planes found in LUT
     for k, PP in enumerate(PP_list):
+        if STOP_REQUEST.is_set():   # stop requested (request_stop()): matrices computed so far
+            break
 
         hkls, spotindex_2, nbplanepairs = PP
 
@@ -1176,6 +1222,8 @@ def Loop_on_PlanesPairs_and_Get_Matrices(PP_list, spot_index, coord1, coords, B,
 
         # loop over the plane pairs
         for planepair in hkls:
+            if STOP_REQUEST.is_set():   # stop requested (request_stop())
+                break
             hkl1, hkl2 = planepair
             #print('planepair: ', planepair)
             #print("hkl1, hkl2 ", hkl1, hkl2)
@@ -1857,7 +1905,9 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
     # i1,i2 local index to scan selectedspots_ind
 
     SolutionsFound = False
-    # loop over all possible spots pairs in selected set of spots
+    # loop over all possible spots pairs in selected set of spots: each pair of different spots once
+    # ((a, b) and (b, a) have the same angular distance; e.g. set B = set A: n (n - 1) / 2 pairs)
+    seenpairs = set()
     for i1, i2 in GT.mutualpairs(range(len(selectedspots_ind1)),
                                 range(len(selectedspots_ind2))):
 
@@ -1867,9 +1917,9 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
         if spot_index_1 == spot_index_2:
             continue
 
-        pair = [spot_index_1, spot_index_2]
-        reverse_pair = [spot_index_2, spot_index_1]
-        if pair not in probedpairs and reverse_pair not in probedpairs:
+        key = frozenset((int(spot_index_1), int(spot_index_2)))
+        if key not in seenpairs:
+            seenpairs.add(key)
             probedpairs.append((i1, i2, spot_index_1, spot_index_2))
 
     # ---------   START of INDEXATION  -------------
@@ -1878,6 +1928,9 @@ def getOrientMatrices_fromTwoSets(selectedspots_ind1, selectedspots_ind2,
     stats_resList = []
 
     for i1, i2, spot_index_1, spot_index_2 in probedpairs:
+        if STOP_REQUEST.is_set():   # stop requested (request_stop()): solutions found so far
+            print('indexing stopped (getOrientMatrices_fromTwoSets): solutions of the pairs already probed')
+            break
         expdistance_2spots = Tabledistance[i1, i2]
         # print("\n**getOrientMatrices_fromTwoSets *\n\ni1,i2, "
         #     "local_spotindex1,local_spotindex2", i1, i2, spot_index_1, spot_index_2)
@@ -2210,6 +2263,9 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
 
     reachedhighmatching = False  # stopping flag
     for k_centspot_index, spot_index_central in enumerate(list_spot_central_indices):
+        if STOP_REQUEST.is_set():   # stop requested (request_stop()): solutions of the central spots already done
+            print('indexing stopped (getOrientMatrices): solutions of the central spots already probed')
+            break
         if verbose>1:
             print("Calculating all possible matrices from exp spot #%d and the %d other(s)"
                 % (spot_index_central, nbofpeaks))
@@ -2379,8 +2435,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                 #print('args of multiprocessing', next(args))
                 print('ncpus', ncpus)
             # deprecated for python  3.12
-            with multiprocessing.Pool(ncpus) as pool:
-                results = pool.starmap(matchingrate.Angular_residues_np, tqdm(args, total=nb_ub_matrices))
+            # (stoppable: request_stop())
+            results = _matching_rates_stoppable(args, nb_ub_matrices, ncpus)
             # ok for python  3.12
             # results= run_parallel(list_orient_matrix,
             #                         twiceTheta_exp,
@@ -2439,6 +2495,8 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
             # --- loop over orient matrix given from LUT recognition for one central spot
             currentspotindex2 = -1
             for mat_ind in list(range(nb_ub_matrices)):
+                if STOP_REQUEST.is_set():   # stop requested (request_stop())
+                    break
                 # compute matching (indexation) rate
                 AngRes = matchingrate.Angular_residues_np(list_orient_matrix[mat_ind],
                                                             twiceTheta_exp,
