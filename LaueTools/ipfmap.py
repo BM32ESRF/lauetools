@@ -22,7 +22,12 @@ Frames (LaueTools conventions):
   (which is rotated by 90 deg around Z). On BM32: xech = -Y sample, yech = X sample, zech = Z sample
 
 Supported Laue groups: 'm-3m' (cubic), '6/mmm' (hexagonal), '-3m1' (trigonal, hexagonal axes, e.g. Al2O3),
-'4/mmm' (tetragonal), 'mmm' (orthorhombic)
+'4/mmm' (tetragonal), 'mmm' (orthorhombic), '2/m' (monoclinic, unique axis b; '2/m_a', '2/m_c': unique axis a, c)
+and '-1' (triclinic). The fundamental sector of '2/m' (a quarter of the sphere) and '-1' (a hemisphere) is not a
+triangle: color = hue from the azimuth around the pole (2-fold axis, or c for '-1'), saturation from the angle to the
+pole (white at the pole)
+
+Pole figures (stereographic projection of crystal plane normals {hkl} in the sample frame): plot_pole_figures()
 
 Typical use::
 
@@ -106,6 +111,21 @@ LAUE_GROUPS = {
     'mmm': {'ops': _closure([_twofold([1, 0, 0]), _twofold([0, 1, 0]), -np.eye(3)]),
             'corners': np.array([[0, 0, 1.], [1, 0, 0], [0, 1, 0]]),
             'labels': ('[001]', '[100]', '[010]')},
+    # monoclinic and triclinic: fundamental sector = directions v with v.pole >= 0 and azimuth (from e1 towards e2
+    # around the pole) in [0, period) deg. Orthonormal crystal frame: x // a*, z // c, so that the 2-fold axis is
+    # y (unique axis b), x (unique axis a) or z (unique axis c)
+    '2/m': {'ops': _closure([_twofold([0, 1, 0]), -np.eye(3)]), 'pole': np.array([0, 1., 0]),
+            'e1': np.array([0, 0, 1.]), 'e2': np.array([1., 0, 0]), 'period': 180.,
+            'labels': ('[010]', '[001]', 'a* (100)')},
+    '2/m_a': {'ops': _closure([_twofold([1, 0, 0]), -np.eye(3)]), 'pole': np.array([1., 0, 0]),
+              'e1': np.array([0, 1., 0]), 'e2': np.array([0, 0, 1.]), 'period': 180.,
+              'labels': ('[100]', 'b* (010)', '[001]')},
+    '2/m_c': {'ops': _closure([_twofold([0, 0, 1]), -np.eye(3)]), 'pole': np.array([0, 0, 1.]),
+              'e1': np.array([1., 0, 0]), 'e2': np.array([0, 1., 0]), 'period': 180.,
+              'labels': ('[001]', 'a* (100)', 'y')},
+    '-1': {'ops': np.array([np.eye(3), -np.eye(3)]), 'pole': np.array([0, 0, 1.]),
+           'e1': np.array([1., 0, 0]), 'e2': np.array([0, 1., 0]), 'period': 360.,
+           'labels': ('[001]', 'a* (100)', 'y')},
 }
 
 
@@ -125,8 +145,12 @@ def guess_laue_group(latticeparameters: Sequence[float], tol: float = 1e-3) -> s
             return 'mmm'
         if eq(gamma, 120) and eq(a, b):
             return '6/mmm'
-    raise ValueError(f'lattice parameters {latticeparameters}: Laue group not supported for IPF colors '
-                     f'(supported: {list(LAUE_GROUPS)})')
+        return '2/m_c'                      # monoclinic, unique axis c
+    if eq(alpha, 90) and eq(gamma, 90):
+        return '2/m'                        # monoclinic, unique axis b
+    if eq(beta, 90) and eq(gamma, 90):
+        return '2/m_a'                      # monoclinic, unique axis a
+    return '-1'                             # triclinic
 
 
 def laue_group_of_material(key_material: str, dictmaterials: Optional[dict] = None) -> str:
@@ -176,15 +200,42 @@ def sample_directions_in_crystal(UB: np.ndarray, sample_axis: Union[str, Sequenc
     return np.einsum('nji,j->ni', rot, axis_lab)
 
 
+def _polar_azimuth(vectors: np.ndarray, group: dict) -> Tuple[np.ndarray, np.ndarray]:
+    """angle (deg) to the pole and azimuth (deg, in [0, 360)) around it from e1 towards e2 of unit vectors (..., 3)"""
+    vectors = vectors / np.linalg.norm(vectors, axis=-1, keepdims=True)
+    polar = np.degrees(np.arccos(np.clip(vectors @ group['pole'], -1, 1)))
+    azimuth = np.degrees(np.arctan2(vectors @ group['e2'], vectors @ group['e1'])) % 360.
+    return polar, azimuth
+
+
+def _sector_colors(polar: np.ndarray, azimuth: np.ndarray, group: dict) -> np.ndarray:
+    """RGB colors of directions of the fundamental sector of '2/m', '-1' (hue: azimuth, saturation: polar angle)"""
+    from matplotlib.colors import hsv_to_rgb
+    hsv = np.stack([(azimuth / group['period']) % 1., np.clip(polar / 90., 0, 1), np.ones_like(polar)], axis=-1)
+    return hsv_to_rgb(np.nan_to_num(hsv))
+
+
 def reduce_to_fundamental(directions: np.ndarray, laue_group: str) -> Tuple[np.ndarray, np.ndarray]:
-    """bring crystal directions (n, 3) into the standard triangle of the Laue group
+    """bring crystal directions (n, 3) into the standard triangle (fundamental sector) of the Laue group
 
     Returns
     -------
-    reduced directions (n, 3), barycentric weights (n, 3) on the triangle corners (>= 0). NaN for NaN input
+    reduced directions (n, 3), barycentric weights (n, 3) on the triangle corners (>= 0) (for '2/m', '-1': angle to
+    the pole, azimuth and 0). NaN for NaN input
     """
     group = LAUE_GROUPS[laue_group]
     directions = np.asarray(directions, dtype=float).reshape(-1, 3)
+    if 'pole' in group:   # monoclinic, triclinic: sector v.pole >= 0, azimuth in [0, period)
+        equiv = np.einsum('oij,nj->oni', group['ops'], directions)
+        polar, azimuth = _polar_azimuth(equiv, group)
+        inside = (polar <= 90. + 1e-9) & (azimuth < group['period'] - 1e-9)
+        best = np.argmax(np.where(np.isfinite(polar), inside, False), axis=0)
+        idx = np.arange(len(directions))
+        reduced = equiv[best, idx]
+        info = np.stack([polar[best, idx], azimuth[best, idx], np.zeros(len(idx))], axis=1)
+        nan = ~np.all(np.isfinite(directions), axis=1)
+        reduced[nan], info[nan] = np.nan, np.nan
+        return reduced, info
     invcorners = np.linalg.inv(group['corners'].T)
     equiv = np.einsum('oij,nj->oni', group['ops'], directions)       # (nops, n, 3)
     weights = np.einsum('ij,onj->oni', invcorners, equiv)            # (nops, n, 3)
@@ -196,6 +247,11 @@ def reduce_to_fundamental(directions: np.ndarray, laue_group: str) -> Tuple[np.n
 
 def ipf_colors(directions: np.ndarray, laue_group: str) -> np.ndarray:
     """RGB colors (n, 3) in [0, 1] of crystal directions (n, 3). NaN for NaN directions"""
+    if 'pole' in LAUE_GROUPS[laue_group]:
+        _, info = reduce_to_fundamental(directions, laue_group)
+        rgb = _sector_colors(info[:, 0], info[:, 1], LAUE_GROUPS[laue_group])
+        rgb[~np.all(np.isfinite(info), axis=1)] = np.nan
+        return rgb
     _, weights = reduce_to_fundamental(directions, laue_group)
     weights = np.clip(weights, 0, None)
     with np.errstate(invalid='ignore', divide='ignore'):
@@ -240,6 +296,8 @@ def plot_ipf_key(laue_group: str, ax=None, directions: Optional[np.ndarray] = No
     directions: optional crystal directions (n, 3) (e.g. sample_directions_in_crystal()) plotted as points
     """
     group = LAUE_GROUPS[laue_group]
+    if 'pole' in group:
+        return _plot_sector_key(laue_group, ax, directions, resolution, markersize, markercolor, alpha, title)
     corners = group['corners'] / np.linalg.norm(group['corners'], axis=1, keepdims=True)
     if ax is None:
         _, ax = plt.subplots(figsize=(3.5, 3.5))
@@ -284,6 +342,114 @@ def plot_ipf_key(laue_group: str, ax=None, directions: Optional[np.ndarray] = No
     ax.axis('off')
     ax.set_title(title if title is not None else laue_group, fontsize=10)
     return ax
+
+
+def _plot_sector_key(laue_group: str, ax=None, directions=None, resolution: int = 400, markersize: float = 2,
+                     markercolor='k', alpha: float = 0.3, title: Optional[str] = None):
+    """color key of '2/m', '-1': stereographic projection from the pole (center), e1 to the right, e2 upwards"""
+    group = LAUE_GROUPS[laue_group]
+    if ax is None:
+        _, ax = plt.subplots(figsize=(3.5, 3.5))
+    X, Y = np.meshgrid(np.linspace(-1, 1, resolution), np.linspace(-1, 1, resolution))
+    r2 = X ** 2 + Y ** 2
+    local = np.stack([2 * X, 2 * Y, 1 - r2], axis=-1) / (1 + r2)[..., None]       # (e1, e2, pole) coordinates
+    polar = np.degrees(np.arccos(np.clip(local[..., 2], -1, 1)))
+    azimuth = np.degrees(np.arctan2(local[..., 1], local[..., 0])) % 360.
+    inside = (r2 <= 1) & (azimuth <= group['period'] + 1e-9)
+    rgba = np.ones(X.shape + (4,))
+    rgba[..., :3] = _sector_colors(polar, azimuth, group)
+    rgba[~inside, 3] = 0
+    ax.imshow(rgba, origin='lower', extent=(-1, 1, -1, 1), interpolation='bilinear')
+    t = np.linspace(0, np.radians(group['period']), 200)
+    border = np.c_[np.cos(t), np.sin(t)]
+    if group['period'] < 360:
+        border = np.vstack([border, [[0, 0]], border[:1]])
+    ax.plot(border[:, 0], border[:, 1], 'k-', lw=1)
+    if directions is not None:
+        reduced, _ = reduce_to_fundamental(directions, laue_group)
+        reduced = reduced[np.all(np.isfinite(reduced), axis=1)]
+        if len(reduced):
+            loc = np.c_[reduced @ group['e1'], reduced @ group['e2'], reduced @ group['pole']]
+            pts = _stereo(loc)
+            ax.plot(pts[:, 0], pts[:, 1], '.', ms=markersize, color=markercolor, alpha=alpha)
+    lpole, le1, le2 = group['labels']
+    ax.text(0, -0.08 if group['period'] < 360 else 0, lpole, ha='center', va='top', fontsize=9)
+    ax.text(1.04, 0, le1, ha='left', va='center', fontsize=9)
+    ax.text(0, 1.04, le2, ha='center', va='bottom', fontsize=9)
+    if group['period'] < 360:
+        ax.text(-1.04, 0, '-' + le1 if le1.startswith('[') else le1 + ' (-)', ha='right', va='center', fontsize=9)
+    ax.set_xlim(-1.45, 1.45)
+    ax.set_ylim(-1.15 if group['period'] == 360 else -0.3, 1.2)
+    ax.set_aspect('equal')
+    ax.axis('off')
+    ax.set_title(title if title is not None else laue_group, fontsize=10)
+    return ax
+
+
+def crystal_plane_normals(hkls, B0: np.ndarray, laue_group: Optional[str] = None) -> Tuple[np.ndarray, list]:
+    """unit normals (in the orthonormal crystal frame) of the planes hkl (and of their equivalents by the Laue group
+    if given: one vector per distinct plane, +n and -n being the same plane). Returns (vectors (m, 3), labels)"""
+    vecs, labels = [], []
+    for hkl in hkls:
+        n = np.asarray(B0, dtype=float) @ np.asarray(hkl, dtype=float)
+        n = n / np.linalg.norm(n)
+        family = [n] if laue_group is None else [op @ n for op in LAUE_GROUPS[laue_group]['ops']]
+        distinct = []
+        for v in family:
+            if not any(abs(abs(v @ d) - 1) < 1e-6 for d in distinct):
+                distinct.append(v)
+        vecs += distinct
+        labels += ['(%s)' % ' '.join(str(int(i)) for i in hkl)] * len(distinct)
+    return np.array(vecs), labels
+
+
+def plot_pole_figures(UB: np.ndarray, hkls, B0: np.ndarray, laue_group: Optional[str] = None,
+                      anglesample: float = 40., colors=None, axes=None, markersize: float = 3, alpha: float = 0.6,
+                      title_prefix: str = ''):
+    """pole figures: stereographic projection (upper hemisphere, sample frame: X right, Y up, Z = sample normal at
+    the center) of the normals of the planes {hkl} of the crystals of orientations UB (n, 3, 3) (.fit files, lab frame)
+
+    hkls: list of Miller indices, one pole figure each; B0: B matrix of the material (CrystalParameters.calc_B_RR)
+    laue_group: equivalent planes of each {hkl} are also plotted (None: only hkl itself)
+    colors: (n, 3) RGB colors of the points (e.g. ipf_colors() of the IPF-Z map, to relate poles to map points)
+    """
+    UB = np.asarray(UB, dtype=float).reshape(-1, 3, 3)
+    ok = np.all(np.isfinite(UB), axis=(1, 2))
+    rot = orthonormalize(UB[ok])
+    Rs = sample_rotation(anglesample)
+    cols = None if colors is None else np.asarray(colors)[ok]
+    if axes is None:
+        _, axes = plt.subplots(1, len(hkls), figsize=(4 * len(hkls), 4.2), squeeze=False)
+        axes = axes[0]
+    t = np.linspace(0, 2 * np.pi, 361)
+    for ax, hkl in zip(np.atleast_1d(axes), hkls):
+        normals, _ = crystal_plane_normals([hkl], B0, laue_group)
+        pts, pcols = [], []
+        for n in normals:
+            q = np.einsum('ij,njk,k->ni', Rs, rot, n)         # sample frame
+            q[q[:, 2] < 0] *= -1                             # upper hemisphere (+n and -n: same plane)
+            pts.append(_stereo(q))
+            if cols is not None:
+                pcols.append(cols)
+        pts = np.concatenate(pts) if pts else np.empty((0, 2))
+        ax.plot(np.cos(t), np.sin(t), 'k-', lw=1)
+        ax.plot([-1, 1], [0, 0], color='0.8', lw=0.5)
+        ax.plot([0, 0], [-1, 1], color='0.8', lw=0.5)
+        if cols is not None:
+            ax.scatter(pts[:, 0], pts[:, 1], s=markersize, c=np.clip(np.nan_to_num(np.concatenate(pcols)), 0, 1),
+                       alpha=alpha, linewidths=0)
+        else:
+            ax.plot(pts[:, 0], pts[:, 1], '.', ms=markersize, color='k', alpha=alpha)
+        ax.text(1.05, 0, 'X', va='center', fontsize=9)
+        ax.text(0, 1.05, 'Y', ha='center', fontsize=9)
+        ax.set_xlim(-1.15, 1.15)
+        ax.set_ylim(-1.15, 1.15)
+        ax.set_aspect('equal')
+        ax.axis('off')
+        hkltxt = ' '.join(str(int(i)) for i in hkl)
+        ax.set_title(f"{title_prefix}{{{hkltxt}}} pole figure ({len(normals)} poles" + (f', {laue_group})' if laue_group else ')'),
+                     fontsize=10)
+    return axes
 
 
 def plot_ipf_maps(UB: np.ndarray, invmapdims: Tuple[int, int], laue_group: str,

@@ -244,8 +244,40 @@ class parsed_fitfile:
             "#Number of indexed spots": self.__NumberIndexedSpots__, #self.NumberOfIndexedSpots
             "#Mean Deviation(pixel)": self.__MeanDev__, #self.MeanDevPixel
             "#Euler angles phi theta psi (deg)": self.__EulerAngles__, #self.EulerAngles
-            "#new lattice parameters": self.__NewParam__ # self.a, self.b, self.c, self.alpha, self.beta, self.gamma        
+            "#new lattice parameters": self.__NewParam__, # self.a, self.b, self.c, self.new_latticeparameters
+            # quantities added in Oct. 2026 (absolute values, i.e. 10-3 unit of the file * 1e-3, stress in MPa)
+            "#equivalent (von Mises) strain sqrt(2/3 dev:dev), frame independent (10-3 unit)":
+                lambda f, l: setattr(self, 'equivalent_strain', self._read_values(f, 1)[0] * 1e-3),
+            "#unstrained reference material of the strain":
+                lambda f, l: setattr(self, 'reference_material', f.readline().replace("#", "").strip()),
+            "#full strain in sample2 frame assuming stress_zz=0 (10-3 unit)":
+                lambda f, l: setattr(self, 'fullstrain_sample', self._read_values(f, 9).reshape(3, 3) * 1e-3),
+            "#hydrostatic strain (trace of full strain, relative volume change) assuming stress_zz=0 (10-3 unit)":
+                lambda f, l: setattr(self, 'hydrostatic_strain', self._read_values(f, 1)[0] * 1e-3),
+            "#lattice parameters from full strain assuming stress_zz=0: a b c (Angstrom) alpha beta gamma (deg)":
+                lambda f, l: setattr(self, 'latticeparameters_fullstrain', self._read_values(f, 6)),
+            "#stress in sample2 frame assuming stress_zz=0 (MPa)":
+                lambda f, l: setattr(self, 'stress_sample', self._read_values(f, 9).reshape(3, 3)),
+            # TEMPORARY-STRAINFIX: deviatoric strain in sample frame as computed before Oct. 2026 (kept apart from
+            # dev_sample, which is the corrected one) and its differences with the corrected one
+            "#[TEMPORARY] OLD deviatoric strain in LT sample frame as computed before Oct. 2026 (wrong for hexagonal, trigonal, monoclinic, triclinic) (10-3 unit)":
+                lambda f, l: setattr(self, 'dev_sample_old', self._read_values(f, 9).reshape(3, 3) * 1e-3),
+            "#[TEMPORARY] max abs difference OLD - corrected (10-3 unit)":
+                lambda f, l: setattr(self, 'dev_sample_old_maxdiff', float(l.split(":")[-1]) * 1e-3),
+            "#[TEMPORARY] equivalent strain of OLD - corrected (10-3 unit)":
+                lambda f, l: setattr(self, 'dev_sample_old_eqdiff', float(l.split(":")[-1].split()[0]) * 1e-3),
         }
+
+    @staticmethod
+    def _read_values(f, nb):
+        """the nb next numbers of the file (matrices printed by numpy can be written on several lines)"""
+        values = []
+        while len(values) < nb:
+            line = f.readline()
+            if not line:
+                raise ValueError("end of file while reading values")
+            values += [float(v) for v in line.replace("[", " ").replace("]", " ").replace("#", " ").split()]
+        return np.array(values[:nb], dtype=float)
 
     def __UB__(self, f, l):
         
@@ -378,12 +410,10 @@ class parsed_fitfile:
         self.EulerAngles = np.array([float(l1[0]), float(l1[1]), float(l1[2])])
         
     def __NewParam__(self, f, l):
-        
-        l = f.readline()
-        
-        l1 = (' '.join(l.split()).replace("[", "").replace("]", "").replace("\n", "").replace("#","").strip().split(" "))
-        
-        self.a, self.b, self.c = float(l1[0]), float(l1[1]), float(l1[2])
+        """refined lattice parameters a b c alpha beta gamma (the 6 values can be written on 2 lines)"""
+        self.new_latticeparameters = self._read_values(f, 6)
+        # (alpha, beta, gamma attributes are computed from UBB0 at the end of the reading)
+        self.a, self.b, self.c = self.new_latticeparameters[:3]
 
     def __Peaks__(self, f, l):
         
@@ -428,9 +458,10 @@ class parsed_fitfile:
 class parsed_fitfileseries:
 
     def __init__(self, folderpath: str, nb_cols: int, nb_rows: int, prefix = 'img_', suffix = '_g0.fit', use_multiprocessing = True, nbdigits=4,
-                 nbfiles_per_folder = None, subfolder_prefix = 'images_'):
+                 nbfiles_per_folder = None, subfolder_prefix = 'images_', nb_cpus = None):
         """nbfiles_per_folder: None: all .fit files in folderpath. n: files in subfolders <subfolder_prefix><start>_<end>
-        of n files (see generaltools.subfolder_name(), indexing_batch.fitfiles_layout())"""
+        of n files (see generaltools.subfolder_name(), indexing_batch.fitfiles_layout())
+        nb_cpus: nb of processes with use_multiprocessing (None: all cpus)"""
         
         
         self.folderpath = folderpath
@@ -444,8 +475,9 @@ class parsed_fitfileseries:
         # ----- create a list whose elements are the class parsed_fitfile, initialized for each file in the folder ------
         
         if use_multiprocessing:
-            self.nb_cpus = multiprocessing.cpu_count()
+            self.nb_cpus = nb_cpus or multiprocessing.cpu_count()
             print(f"Using {self.nb_cpus} cpus.")
+            chunksize = 1   # (larger chunks: slower with many processes on a network file system)
             
             create_fit_obj_args = zip(range(0,self.nb_files),
                                       itertools.repeat(self.nbdigits_filename),
@@ -458,7 +490,7 @@ class parsed_fitfileseries:
             with GT.mp_context(preload=('LaueTools.fitfilereader',)).Pool(self.nb_cpus) as pool:   # safe in a jupyter kernel
                 self.get_fitlist = pool.starmap(create_fit_obj,
                                                 tqdm(create_fit_obj_args, total = self.nb_files, desc = 'Parsing progress'),
-                                                chunksize = 1)
+                                                chunksize = chunksize)
                 
             if not multiprocessing.active_children():
                 GT.printgreen("Done!")
@@ -501,6 +533,10 @@ class parsed_fitfileseries:
         
         self.dev_sample = self.__collect_attribute__('dev_sample', (self.nb_files, 3, 3 ))
         self.deviatoric = self.__collect_attribute__('deviatoric', (self.nb_files, 3, 3 ))
+        # quantities of the .fit files written since Oct. 2026 (NaN for former files)
+        self.equivalent_strain = self.__collect_attribute__('equivalent_strain', (self.nb_files, 1,))
+        self.new_latticeparameters = self.__collect_attribute__('new_latticeparameters', (self.nb_files, 6,))
+        self.dev_sample_old = self.__collect_attribute__('dev_sample_old', (self.nb_files, 3, 3))   # TEMPORARY-STRAINFIX
         
         self.exx = self.deviatoric[:,0,0].reshape(self.nb_rows, self.nb_cols)
         self.eyy = self.deviatoric[:,1,1].reshape(self.nb_rows, self.nb_cols)
