@@ -1,0 +1,9 @@
+# LaueTools with the wxPython GUI: pip install -r requirements-gui.txt
+-r requirements.txt
+# wxPython: on Linux, pip may compile it (long, needs GTK headers) if no wheel fits your system;
+# then install it first from conda-forge (mamba install wxpython) or a wheel of https://extras.wxpython.org/wxPython4/extras/linux/
+wxpython>=4.0
+# ObjectListView2 (peaks list editor of PeakSearchGUI): pure-python wxPython widget, only for the GUI.
+# Its install does not need wx (wheel, no dependency declared) but it can only be imported once wxPython is installed.
+# Not on conda-forge: with conda/mamba, pip install --no-deps ObjectListView2 after mamba install wxpython
+ObjectListView2

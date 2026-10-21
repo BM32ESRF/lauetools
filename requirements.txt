@@ -1,3 +1,5 @@
+# LaueTools without the wxPython GUI (scripts, notebooks, GitHub CI): pip install -r requirements.txt
+# GUI: pip install -r requirements-gui.txt
 fabio
 h5py
 imageio
@@ -10,3 +12,6 @@ tqdm
 attrdict
 pyperclip
 astropy
+nbconvert
+nbformat
+PyYAML

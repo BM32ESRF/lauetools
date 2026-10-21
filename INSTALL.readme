@@ -1,9 +1,17 @@
 conda create -p /data/bm32/inhouse/SOFT/lauetools  python=3.12
 conda activate /data/bm32/inhouse/SOFT/lauetools
 mamba install --file conda_requirements.txt
+# wxPython GUI: ObjectListView2 is not on conda-forge, install it with pip once wxpython is installed (by the line above)
+python -m pip install --no-deps ObjectListView2
 python -m pip install --no-deps /data/bm32/inhouse/SOFT/lauetools/lauetools
 
 OR
 
 python -m pip install --no-deps -e /data/bm32/inhouse/SOFT/lauetoolsDEV/lauetools
 
+
+Notebooks only (no wxPython GUI, e.g. on jupyterhub / SLURM nodes):
+
+python -m pip install --no-deps lauetools
+python -m pip install -r requirements.txt pandas ipympl ipywidgets
+# or without the repository: python -m pip install numpy scipy matplotlib networkx tqdm h5py scikit-image astropy fabio PyYAML pandas ipympl ipywidgets nbconvert nbformat

@@ -35,14 +35,19 @@ dependencies = [
     "astropy>=3.0",
     "fabio>=0.11.0",
     "PyYAML>=6.0.1",
-    "ObjectListView2",  # peaks list editor in PeakSearchGUI (pure python, wxPython widget)
+    # peaks list editor in PeakSearchGUI, GUI only (pure python wxPython widget, wheel without declared dependency:
+    # installs in any order with wxpython, imported only once wx is there; optional: PeakSearchGUI works without it)
+    "ObjectListView2",
 ]
 
-# optional features: pip install "lauetools[daxm]", "lauetools[hdf5]" or "lauetools[all]"
+# optional features: pip install "lauetools[daxm]", "lauetools[hdf5]", "lauetools[notebook]" or "lauetools[all]"
 [project.optional-dependencies]
 daxm = ["numba", "photutils", "pypubsub"]  # depth-resolved Laue analysis (DAXM, daxmgui)
 hdf5 = ["tables"]  # .hdf5 summary files (Build_Summary, Lauehdf5), EIGER stacked hdf5 images
-all = ["lauetools[daxm,hdf5]"]
+# notebooks: tables (pandas), interactive figures (%matplotlib widget), export to HTML/PDF (lauetools-export-notebook)
+notebook = ["pandas", "ipympl", "ipywidgets", "nbconvert>=6.0", "nbformat>=5.0"]
+webpdf = ["nbconvert[webpdf]>=7.0"]  # PDF with a headless Chromium (then once: playwright install chromium)
+all = ["lauetools[daxm,hdf5,notebook]"]
 
 [project.scripts]
 lauetools = "LaueTools.GUI.mainGUI:start"
@@ -56,6 +61,7 @@ daxmgui = "LaueTools.daxmgui:start"
 lauetools-copy = "LaueTools.cli:copy_resources"
 lauetools-copy-materials = "LaueTools.cli:copy_materials"
 lauetools-add-material = "LaueTools.cli_add_material:main"
+lauetools-export-notebook = "LaueTools.notebook_export:main"
 
 # commands without terminal (on Windows: .exe without console window)
 [project.gui-scripts]
@@ -93,6 +99,9 @@ LaueTools = [
     "notebooks/daxm/*.ipynb",
     "notebooks/daxm/*.yaml",
     "notebooks/daxm/*.md",
+    # mosaic grain imaging notebook (intensities of detector ROIs over a map)
+    "notebooks/mosaicgrainimaging/*.ipynb",
+    "notebooks/mosaicgrainimaging/*.md",
     # quickstart notebook (scans of the experiment -> grain maps)
     "notebooks/quickstart/*.ipynb",
     "notebooks/quickstart/*.md",
@@ -103,10 +112,14 @@ LaueTools = [
 LaueTools = [
     "*.ipynb_checkpoints/*",  # Exclude checkpoint files
     # personal or temporary notebooks (working copies with outputs: see scripts/notebook_to_html.py --publish)
-    "notebooks/*.local.ipynb",
-    "notebooks/*/*.local.ipynb",
+    "notebooks/*.local*.ipynb",  # also copies like <name>.local-Copy1.ipynb, <name>.local.<proposal>.ipynb
+    "notebooks/*/*.local*.ipynb",
     "notebooks/Untitled*.ipynb",
     "notebooks/*/*_jsm.ipynb",
+    # notebooks kept out of the repository (see .gitignore): local tests and dev studies
+    "notebooks/pnCCD*.ipynb",
+    "notebooks/test_backreflectiongeometry.ipynb",
+    "notebooks/*/dev_*",
     "scripts/*.cor",  # not "*.cor": it would also exclude the default Examples/Ge/*.cor files listed above
     "notebooks/*.cor",
     "*.fit",
