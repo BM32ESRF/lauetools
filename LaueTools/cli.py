@@ -28,7 +28,8 @@ def load_config():
 RESOURCES = {
     "notebooks": [("notebooks/quickstart", "notebooks/quickstart", ["*.ipynb", "*.md"]),
                   ("notebooks/peaksearch", "notebooks/peaksearch", ["*.ipynb", "*.md", "*.yaml"]),
-                  ("notebooks/indexation", "notebooks/indexation", ["*.ipynb", "*.md", "*.yaml"])],
+                  ("notebooks/indexation", "notebooks/indexation", ["*.ipynb", "*.md", "*.yaml"]),
+                  ("notebooks/mosaicgrainimaging", "notebooks/mosaicgrainimaging", ["*.ipynb", "*.md"])],
     "tutorials": [("notebooks", "tutorials", ["*.ipynb"])],
     "scripts": [("scripts", "scripts", ["*.py"])],
     "images": [("LaueImages", "LaueImages", ["small_example_*"])],
@@ -188,7 +189,7 @@ def copy_resources(argv=None, gui=False):
     """Command lauetools-copy: copy notebooks, scripts and example images to a folder."""
     parser = argparse.ArgumentParser(
         description="Copy LaueTools notebooks (quickstart, peak search, indexation with their "
-                    "YAML configuration files), tutorials notebooks, scripts and example images "
+                    "YAML configuration files, mosaic grain imaging), tutorials notebooks, scripts and example images "
                     "to a folder of your choice.")
     parser.add_argument("-d", "--destination", default=None,
                         help="Destination folder (default: ./lauetools_examples, "
