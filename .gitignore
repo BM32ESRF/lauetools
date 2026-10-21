@@ -38,5 +38,9 @@ LaueTools/GUI/__pycache__/AutoindexationGUI.cpython-36.pyc
 .ipynb_checkpoints/
 
 # private copies of notebooks (real paths, outputs) and anonymization rules (see LaueTools/scripts/notebook_to_html.py)
-*.local.ipynb
+*.local*.ipynb
 *.local.yaml
+# notebooks kept out of the repository (local tests and dev studies)
+LaueTools/notebooks/pnCCD datacube readout and handling and tests.ipynb
+LaueTools/notebooks/test_backreflectiongeometry.ipynb
+LaueTools/notebooks/indexation/dev_*
