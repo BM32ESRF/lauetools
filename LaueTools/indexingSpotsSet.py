@@ -642,13 +642,11 @@ class spotsset:
         self.CCDcalibdict = CCDcalibdict
         self.CCDLabel = self.CCDcalibdict['CCDLabel']
 
-        if self.CCDLabel not in (None, 'None'):
-            self.pixelsize = DictLT.dict_CCD[self.CCDLabel][1]
-        else:
-            for key in ('pixelsize', 'xpixelsize', 'ypixelsize'):
-                if key in self.CCDcalibdict:
-                    self.pixelsize = self.CCDcalibdict[key]
-                    break
+        # pixel size written in the .cor file first (2theta, chi were computed with it),
+        # detector table value only if the file has none
+        self.pixelsize = IOLT.get_pixelsize(self.CCDcalibdict)
+        if self.pixelsize is None:
+            return 'pixel size missing in %s and no known CCDLabel' % fullpathfile
         if 'framedim' in self.CCDcalibdict:
             self.dim = self.CCDcalibdict["framedim"]
         else:
