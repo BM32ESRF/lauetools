@@ -3279,7 +3279,7 @@ class spotsset:
         """
 
         if corfilename is not None:
-            outputfilename = corfilename.split(".")[0] + ".res"
+            outputfilename = os.path.splitext(corfilename)[0] + ".res"
         if dirname is not None:
             outputfilename = os.path.join(dirname, outputfilename)
 
@@ -3395,9 +3395,9 @@ class spotsset:
         if corfilename is not None:
 
             if add_grainindex_in_outputfilename:
-                outputfilename = (corfilename.split(".")[0] + add_info_in_outputfilename + "_g%d" % grain_index + ".fit")
+                outputfilename = (os.path.splitext(corfilename)[0] + add_info_in_outputfilename + "_g%d" % grain_index + ".fit")
             else:
-                outputfilename = corfilename.split(".")[0] + add_info_in_outputfilename +".fit"
+                outputfilename = os.path.splitext(corfilename)[0] + add_info_in_outputfilename +".fit"
 
         if dirname is not None:
             outputfilename = os.path.join(dirname, outputfilename)
@@ -3724,7 +3724,7 @@ class spotsset:
         if nbgrains <= 0:
             return
 
-        prefix = corfilename.split(".")[0]
+        prefix = os.path.splitext(corfilename)[0]
         mergedfitfilename = prefix + ".fit"
 
         if verbose:
@@ -4007,7 +4007,7 @@ def writeEmptyFileSummary(filenamepattern, dirname=None):
     r"""
     write .res file in case of no results (no peaks to refine ...)
     """
-    outputfilename = filenamepattern.split(".")[0] + ".res"
+    outputfilename = os.path.splitext(filenamepattern)[0] + ".res"
     if dirname is not None:
         outputfilename = os.path.join(dirname, outputfilename)
 
@@ -5862,7 +5862,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
                                 CCDCalibdict=CCDCalibdict,
                                 add_props=True)
 
-            corfilename = datfilename.split(".")[0] + ".cor"
+            corfilename = os.path.splitext(datfilename)[0] + ".cor"
 
         # consider peaks from .cor file (that could have been created at the previous branch from .dat file)
         elif suffixfilename == ".cor":

@@ -1943,7 +1943,7 @@ class TableMap:
 
         comments = "New file from TableMap class"
 
-        prefixname = filename.split(".")[0]
+        prefixname = os.path.splitext(filename)[0]
 
         RMCCD.writepeaklist(tabpeaks,
                             prefixname,

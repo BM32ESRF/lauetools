@@ -942,7 +942,7 @@ class MainFrame_indexrefine(wx.Frame):
             abspath = folder.GetPath()
 
             filename = os.path.split(abspath)[-1]
-            intension, extension = filename.split(".")
+            intension, extension = filename.rsplit(".", 1)
 
             self.list_txtctrl[4].SetValue("." + extension)
 

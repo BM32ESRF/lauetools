@@ -258,14 +258,14 @@ def getIndex_fromfilename(imagefilename, nbdigits=4, CCDLabel=None, stackimagein
                 imageindex = int(imagefilename[-(lenext+3 + nbdigits) : -(lenext+3)])
         else:
             if imagefilename.endswith(ext):
-                prefix, _ = imagefilename.rsplit(".")
-                imageindex = int(prefix.rsplit("_")[1])
+                prefix = str(imagefilename).rsplit(".", 1)[0]
+                imageindex = int(prefix.rsplit("_", 1)[-1])
 
     # for stacked images we return the position of image data in the stack as imagefileindex
     elif CCDLabel in ("EIGER_4Mstack","MaxiPIXCdTe","EIGER_4MCdTe", 'EIGER_1M'):
         _filename = os.path.split(imagefilename)[-1]
         if _filename.startswith(('mpxcdte_','eiger1_', 'eiger4m_')):
-            imageindex= int(_filename.split('.')[0].split('_')[-1])
+            imageindex= int(os.path.splitext(_filename)[0].split('_')[-1])
         else:
             print('CCDLabel in getIndex_fromfilename',CCDLabel)
             imageindex = stackimageindex

@@ -2776,7 +2776,7 @@ class Plot_RefineFrame(wx.Frame):
             self.savedfileindex += 1
             suffix = "grain_%d" % self.savedfileindex
 
-        outputfilename = self.DataPlot_filename.split(".")[0] + suffix + ".fit"
+        outputfilename = os.path.splitext(self.DataPlot_filename)[0] + suffix + ".fit"
 
         # absolute exp spot index as found in .cor or .dat file
         indExp = np.array(self.linkedspots_fit[:, 0], dtype=np.int16)
