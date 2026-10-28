@@ -80,6 +80,9 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 	then make it executable: chmod +x ~/Desktop/LaueTools.command (error messages show in its Terminal window)
 
+	to give it the LaueTools icon: open conda/icon.png in Preview, copy it (cmd-A, cmd-C), select LaueTools.command
+	in Finder, Get Info (cmd-I), click the small icon at the top left of the Info window and paste (cmd-V)
+
 
 
 2a- Launch Graphical User Interfaces of LaueTools
