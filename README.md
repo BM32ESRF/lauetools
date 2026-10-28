@@ -40,6 +40,31 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 
 	Without them, LaueTools works normally; only these features are disabled (a message tells which package is missing).
 
+- install from a local clone (editable install: `git pull` or `git switch` take effect at the next launch, no reinstall needed
+  except when pyproject.toml changes or the clone folder is moved):
+
+	   git clone https://github.com/BM32ESRF/lauetools.git
+	   cd lauetools
+	   pip install -r requirements-gui.txt
+	   pip install -e .
+
+- macOS: the wxPython GUIs need a "framework" build of Python, i.e. one allowed to open windows
+  (otherwise: "This program needs access to the screen"). Python from python.org or Homebrew is a framework build:
+
+	   # install Python 3.12 from https://www.python.org/downloads/macos/ , then create and activate a venv with it
+	   /Library/Frameworks/Python.framework/Versions/3.12/bin/python3 -m venv ~/venvs/lauetools
+	   source ~/venvs/lauetools/bin/activate
+	   # (Homebrew: $(brew --prefix python@3.12)/bin/python3.12 -m venv ~/venvs/lauetools)
+
+	   # check: prints "Python" for a framework build (an empty line otherwise)
+	   python -c "import sysconfig; print(sysconfig.get_config_var('PYTHONFRAMEWORK'))"
+
+	   # then install from the local clone as above, and launch: lauetools
+
+	With conda, a plain environment is not a framework build: run "conda install python.app" in it
+	and start the GUI with: pythonw -m LaueTools.LaueToolsGUI
+	Avoid Apple's /usr/bin/python3 (old version, managed by the system).
+
 
 
 2a- Launch Graphical User Interfaces of LaueTools
