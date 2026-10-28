@@ -65,6 +65,21 @@ https://www.esrf.fr/UsersAndScience/Experiments/CRG/BM32/Microdiffraction
 	and start the GUI with: pythonw -m LaueTools.LaueToolsGUI
 	Avoid Apple's /usr/bin/python3 (old version, managed by the system).
 
+- launch in a single command, without activating the venv: the venv's own commands use its Python
+
+	   ~/venvs/lauetools/bin/lauetools
+
+	shorter: add an alias to ~/.zshrc (then open a new terminal), and type lauetools from anywhere
+
+	   alias lauetools='~/venvs/lauetools/bin/lauetools'
+
+	or, for a double-click launcher (Finder, Dock), create ~/Desktop/LaueTools.command containing
+
+	   #!/bin/zsh
+	   exec ~/venvs/lauetools/bin/lauetools
+
+	then make it executable: chmod +x ~/Desktop/LaueTools.command (error messages show in its Terminal window)
+
 
 
 2a- Launch Graphical User Interfaces of LaueTools
