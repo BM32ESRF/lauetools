@@ -5,7 +5,6 @@ r"""
 .. moduleauthor:: JS Micha, 2019,  micha 'at' esrf 'dot'fr
 """
 import copy
-import sys
 from numpy import array, where, amin, mean
 import numpy as np
 
@@ -17,32 +16,20 @@ except ImportError:
     SCIKITLEARN = False
 
 
-if sys.version_info.major == 3:
 
-    from . import lauecore as LAUE
-    from . import CrystalParameters as CP
-    from . import generaltools as GT
-    from . import LaueGeometry as LaueGeo
-    from . dict_LaueTools import CST_ENERGYKEV
-    from . dict_LaueTools import dict_Materials
-    from . import indexingSpotsSet as ISS
+from . import lauecore as LAUE
+from . import CrystalParameters as CP
+from . import generaltools as GT
+from . import LaueGeometry as LaueGeo
+from . dict_LaueTools import CST_ENERGYKEV
+from . dict_LaueTools import dict_Materials
+from . import indexingSpotsSet as ISS
 
-else:
-    import lauecore as LAUE
-    import CrystalParameters as CP
-    import generaltools as GT
-    import LaueGeometry as LaueGeo
-    from dict_LaueTools import CST_ENERGYKEV
-    from dict_LaueTools import dict_Materials
-    import indexingSpotsSet as ISS
 
 
 try:
-    if sys.version_info.major == 3:
-        from . import angulardist
-        #from . import angulardist2 as angulardist
-    else:
-        import angulardist
+    from . import angulardist
+    #from . import angulardist2 as angulardist
 
     USE_CYTHON = True
     print('Using cython angulardist2')

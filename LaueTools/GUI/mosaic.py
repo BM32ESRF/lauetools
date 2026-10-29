@@ -53,28 +53,17 @@ from pylab import cm as pcm
 import matplotlib.pyplot as plt
 
 # LaueTools modules
-if sys.version_info.major == 3:
-    from .. import tifffile as TIFF
-    from .. import dict_LaueTools as DictLT
-    from .. import generaltools as GT
-    from .. import readmccd as RMCCD
-    from .. import IOimagefile as IOimage
-    from .. import imageprocessing as ImProc
-    import LaueTools.blissdatafolderstructure as bf
-    if WXPYTHON:
-        from . import Plot1DFrame as PLOT1D
-        from .. import MessageCommand as MC
-        from .rangeslider import RangeSlider, EVT_RANGE_SLIDER
-else:
-    import dict_LaueTools as DictLT
-    import generaltools as GT
-    import readmccd as RMCCD
-    import IOimagefile as IOimage
-    import imageprocessing as ImProc
-    if WXPYTHON:
-        import Plot1DFrame as PLOT1D
-        import MessageCommand as MC
-        from rangeslider import RangeSlider, EVT_RANGE_SLIDER
+from .. import tifffile as TIFF
+from .. import dict_LaueTools as DictLT
+from .. import generaltools as GT
+from .. import readmccd as RMCCD
+from .. import IOimagefile as IOimage
+from .. import imageprocessing as ImProc
+import LaueTools.blissdatafolderstructure as bf
+if WXPYTHON:
+    from . import Plot1DFrame as PLOT1D
+    from .. import MessageCommand as MC
+    from .rangeslider import RangeSlider, EVT_RANGE_SLIDER
 
 if WXPYTHON:
     
