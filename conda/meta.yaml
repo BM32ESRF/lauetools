@@ -34,6 +34,7 @@ requirements:
     - matplotlib-base >=2.0.0
     - wxpython >=3.0
     - networkx >=2.1
+    - pandas
     - h5py >=3.1
     - tqdm >=4.60.0
     - scikit-image >=0.18.0

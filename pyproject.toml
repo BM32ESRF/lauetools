@@ -29,6 +29,7 @@ dependencies = [
     "matplotlib>=2.0.0",
     "wxpython>=3.0",
     "networkx>=2.1",
+    "pandas",
     "tqdm>=4.60.0",
     "h5py>=3.1",
     "scikit-image>=0.1.0",
@@ -44,8 +45,8 @@ dependencies = [
 [project.optional-dependencies]
 daxm = ["numba", "photutils", "pypubsub"]  # depth-resolved Laue analysis (DAXM, daxmgui)
 hdf5 = ["tables"]  # .hdf5 summary files (Build_Summary, Lauehdf5), EIGER stacked hdf5 images
-# notebooks: tables (pandas), interactive figures (%matplotlib widget), export to HTML/PDF (lauetools-export-notebook)
-notebook = ["pandas", "ipympl", "ipywidgets", "nbconvert>=6.0", "nbformat>=5.0"]
+# notebooks: interactive figures (%matplotlib widget), export to HTML/PDF (lauetools-export-notebook)
+notebook = ["ipympl", "ipywidgets", "nbconvert>=6.0", "nbformat>=5.0"]
 webpdf = ["nbconvert[webpdf]>=7.0"]  # PDF with a headless Chromium (then once: playwright install chromium)
 all = ["lauetools[daxm,hdf5,notebook]"]
 

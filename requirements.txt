@@ -5,6 +5,7 @@ h5py
 imageio
 matplotlib
 networkx
+pandas
 numpy
 scikit-image
 scipy
