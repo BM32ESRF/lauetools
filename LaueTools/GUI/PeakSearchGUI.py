@@ -1522,9 +1522,10 @@ class MosaicAndMonitor(ScrolledPagePanel):
         if resource is None:
             nbcpus = 1
         elif resource == "local":
+            # all the cpus of a small machine (e.g. VISA instance: cpus of the instance). Large machine:
             # no speed gain measured above ~64 cpus (reading of compressed images files dominates)
             # and machine may be shared
-            nbcpus = max(1, min(64, self.nbcpus_local - 4))
+            nbcpus = self.nbcpus_local if self.nbcpus_local <= 16 else min(64, self.nbcpus_local - 4)
         else:
             nbcpus = WL.COMPUTING_RESOURCES[resource].get("nbcpus", 32)
         self.nbcpusctrl.SetValue(nbcpus)
@@ -2844,7 +2845,8 @@ class FitParametersPanel(ScrolledPagePanel):
         pixdevtxt.SetToolTipString(pixdevtp)
         self.FitPixelDev.SetToolTipString(pixdevtp)
 
-        maxnbtp = "Maximum number of local maxima to be fitted"
+        maxnbtp = ("Maximum number of local maxima to be fitted: an image with more local maxima is not fitted at all "
+                   "(a message gives the number of local maxima found)")
         maxnbtxt.SetToolTipString(maxnbtp)
         self.NbMaxFits.SetToolTipString(maxnbtp)
 
@@ -2953,7 +2955,7 @@ class PeakListOLV(wx.Panel):
         self.methodnumber = 6
 
         self.listofdata = None
-        self.listoffields = LIST_OF_FIELDS_DATAPEAK
+        self.listoffields = list(LIST_OF_FIELDS_DATAPEAK)   # (copy: columns of the fit errors added below)
 
         self.focuseditem = None
 
@@ -3023,11 +3025,10 @@ class PeakListOLV(wx.Panel):
         if self.updatepeaklist.GetValue():
             # numpy array of datapeak
             self.listofdata = self.grangranparent.peaklistPixels
-            # list of spot objects
+            # list of spot objects (columns of the fit errors, once, if the peak list has them)
+            self.listoffields = list(LIST_OF_FIELDS_DATAPEAK)
             if self.listofdata.shape[1]==12:
-                self.listoffields.append('XfitErr')
-                self.listoffields.append('YfitErr')
-                self.listoffields.append('distfitErr')
+                self.listoffields += ['XfitErr', 'YfitErr', 'distfitErr']
                 coldistfierr = np.sqrt(self.listofdata[:,10]**2+self.listofdata[:,11]**2)
                 self.listofdata = np.c_[self.listofdata,coldistfierr]
             self.allspots = SpotModel.GetAllspots(self.listofdata, self.listoffields)
@@ -6257,11 +6258,21 @@ class MainPeakSearchFrame(wx.Frame):
             # self.page4.RemoveOneSpot(peakXY) # ??
             self.page4.OnRemoveAll(1)  # ??
 
+    def _PeakSearch_explained(self, *args, **kwargs):
+        """RMCCD.PeakSearch(); more local maxima than Max. Nb of Fits: message with the nb of local maxima found and
+        the value needed (instead of 'no peak'), None returned"""
+        try:
+            return RMCCD.PeakSearch(*args, raise_too_many=True, **kwargs)
+        except RMCCD.TooManyLocalMaximaError as err:
+            self._too_many_local_maxima = err
+            return None
+
     def OnPeakSearch(self, _):  # python & Lauetools
         """
         launch peak search by calling methods in readmccd.py
         """
         NB_MAX_FITS = int(self.fitparampanel.NbMaxFits.GetValue())
+        self._too_many_local_maxima = None   # (_PeakSearch_explained())
 
         currentLocalMaximaMethod = self.nb.GetCurrentPage()
         if currentLocalMaximaMethod.methodnumber in (5,6,):
@@ -6386,7 +6397,7 @@ class MainPeakSearchFrame(wx.Frame):
                   self.dict_param["IntensityThreshold"], self.dict_param["boxsize"], fit_peaks_gaussian,
                   self.dict_param["xtol"], self.dict_param["FitPixelDev"], self.dict_param["MinIntensity"], Data_for_localMaxima, Fit_with_Data_for_localMaxima, maxPixelDistanceRejection, formulaexpression)
             
-            ResPeakSearch = RMCCD.PeakSearch(imagefilename,
+            ResPeakSearch = self._PeakSearch_explained(imagefilename,
                             stackimageindex=self.stackimageindex,
                             CCDLabel=self.CCDLabel,
                             NumberMaxofFits=NB_MAX_FITS,
@@ -6422,7 +6433,7 @@ class MainPeakSearchFrame(wx.Frame):
             self.dict_param_LocalMaxima['use_skimage']=False
 
         if self.method == 2:  # shifted array maxima search
-            ResPeakSearch = RMCCD.PeakSearch(imagefilename,
+            ResPeakSearch = self._PeakSearch_explained(imagefilename,
                                     stackimageindex=self.stackimageindex,
                                     CCDLabel=self.CCDLabel,
                                     NumberMaxofFits=NB_MAX_FITS,
@@ -6467,7 +6478,7 @@ class MainPeakSearchFrame(wx.Frame):
             else:
                 peakposition_definition = "max"
 
-            ResPeakSearch = RMCCD.PeakSearch(imagefilename,
+            ResPeakSearch = self._PeakSearch_explained(imagefilename,
                                         stackimageindex=self.stackimageindex,
                                         CCDLabel=self.CCDLabel,
                                         NumberMaxofFits=NB_MAX_FITS,
@@ -6536,9 +6547,16 @@ class MainPeakSearchFrame(wx.Frame):
                 wx.MessageBox("No Peaks found !! \n(some local maxima may have been rejected "
                                                                         "after fitting)", "INFO")
                 return
+        elif self._too_many_local_maxima is not None:
+            err = self._too_many_local_maxima
+            wx.MessageBox(f"{err.nb_local_maxima} local maxima (blobs) found, more than 'Max. Nb of Fits' "
+                          f"({err.NumberMaxofFits}):\nno peak has been fitted (this is not 'no peak').\n\n"
+                          f"Set 'Max. Nb of Fits' to at least {err.nb_local_maxima + 1} (fits take longer),\n"
+                          f"or increase the intensity threshold to find fewer local maxima.",
+                          "Too many local maxima", wx.OK | wx.ICON_WARNING)
+            return
         else:
-            wx.MessageBox("Too many or two less Peaks to fit !! \nTry to change some thresholds\n "
-                                                                "or Max. Nb of Fits", "INFO")
+            wx.MessageBox("No local maxima found !! \nTry to lower the thresholds", "INFO")
             return
 
         # save peaklist
