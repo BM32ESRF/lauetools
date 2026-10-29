@@ -35,6 +35,7 @@ dependencies = [
     "astropy>=3.0",
     "fabio>=0.11.0",
     "PyYAML>=6.0.1",
+    "pyperclip",  # copy to clipboard in plotmeshspecGUI (plotmeshGUI command)
     # peaks list editor in PeakSearchGUI, GUI only (pure python wxPython widget, wheel without declared dependency:
     # installs in any order with wxpython, imported only once wx is there; optional: PeakSearchGUI works without it)
     "ObjectListView2",
@@ -54,6 +55,7 @@ lauetools = "LaueTools.GUI.mainGUI:start"
 peaksearch = "LaueTools.FileSeries.Peak_Search:start"
 indexrefine = "LaueTools.FileSeries.Index_Refine:start"
 plotmeshGUI = "LaueTools.GUI.plotmeshspecGUI:start"
+show2DmapGUI = "LaueTools.show2DmapGUI:start"  # replot results files of mosaic (PeakSearchGUI Mosaic & Monitor)
 buildsummary = "LaueTools.FileSeries.Build_Summary:start"
 plotmap = "LaueTools.FileSeries.Plot_Maps2:start"
 mapanalyzer = "LaueTools.FileSeries.mainFileSeriesGUI:start"

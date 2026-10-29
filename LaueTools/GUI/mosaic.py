@@ -7,6 +7,7 @@ mosaic.py belongs to the LaueTools Software
 October 2025 
 """
 import os
+import re
 import time
 import sys
 import copy
@@ -1165,48 +1166,41 @@ if WXPYTHON:
                     print("Image saved in tiff format ", fullpath)
             dlg.Destroy()
     
+        def map_header(self):
+            """header of the text file of the map (see map_file_header() and read_map_file())"""
+            return map_file_header(self.datatype, self.quantity, self.Imageindices, self.nb_columns, self.nb_lines,
+                                   self.boxsize_row, self.boxsize_line, self.imagename, self.dict_param,
+                                   self.mosaic, self.absolutecornerindices)
+
         def SaveData(self, _):
-            wx.MessageBox("To be implemented, but data are automatically saved in the same folder "
-                                                                    "than the images one", "INFO")
-    
+            """save the map (data before background removal and mask) in a text file with header,
+            opened again by File/Open Data or show2DmapGUI (see read_map_file())"""
+            name = "".join(c if c.isalnum() else "_" for c in self.GetTitle()).strip("_")
+            dlg = wx.FileDialog(self, "Save map data (text file with header)",
+                                defaultDir=self.dirname or os.getcwd(),
+                                defaultFile="%s_2D_%s" % (name, myformattime()),
+                                style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+            if dlg.ShowModal() == wx.ID_OK:
+                fullpath = dlg.GetPath()
+                self.dirname = os.path.dirname(fullpath)
+                np.savetxt(fullpath, np.ma.filled(np.ma.array(self.dataraw, dtype=float), np.nan),
+                           header=self.map_header(), comments="")
+                print("Map data saved in", fullpath)
+            dlg.Destroy()
+
         def OpenData(self, _):
-    
-            if self.askUserForFilename():
-                fpath = os.path.join(self.dirname, self.filename)
-                print("Read file ", fpath)
-    
-                with open(fpath, 'r') as f:
-                    d = np.loadtxt(f, skiprows=4)
-    
-                    dshape = (41,34)
-                    dshape = (34,41)
-    
-                    dataarray = d[:,-1].reshape(dshape)
-                    title ='test'
-                    Imageindices = d[:,0].reshape(dshape)
-                    imagename = 'test0006.mccd'
-    
-                    nb_col, nb_lines = dshape
-    
-                self.dataraw = copy.copy(dataarray)
-                # data to be displayed
-                self.data = dataarray
-                #self.datatype = datatype
-    
-                #self.absolutecornerindices = absolutecornerindices
-                self.title = title
-                self.Imageindices = Imageindices
-                self.nb_columns = nb_col
-                self.nb_lines = nb_lines
-                #self.boxsize_row = boxsize_row
-                #self.boxsize_line = boxsize_line
-                #print('nb_col  nb_lines', nb_col, nb_lines)
-                #print('boxsize_row  boxsize_line',boxsize_row, boxsize_line)
-                #self.stepindex = stepindex
-                self.imagename = imagename
-    
-                self._replot()
-    
+            """plot a results file of mosaic.py in new windows (see show_map_file())"""
+            dlg = wx.FileDialog(self, "Open results of mosaic (roicounters .h5 or text map file)",
+                                defaultDir=self.dirname or os.getcwd(), wildcard=MAPFILES_WILDCARD,
+                                style=wx.FD_OPEN)
+            if dlg.ShowModal() == wx.ID_OK:
+                self.dirname = os.path.dirname(dlg.GetPath())
+                try:
+                    show_map_file(dlg.GetPath(), parent=self.parent)
+                except (ValueError, KeyError, OSError) as exc:
+                    wx.MessageBox("Cannot plot %s:\n\n%s" % (dlg.GetPath(), exc), "Open Data")
+            dlg.Destroy()
+
         def askUserForFilename(self, **dialogOptions):
             dialog = wx.FileDialog(self, **dialogOptions)
             if dialog.ShowModal() == wx.ID_OK:
@@ -2618,7 +2612,7 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
                 # saving this format is worst than the next one ?!
                 outfilename = os.path.join(outputfolder, "%s" % (counter + "_2D"))
                 with open_w(outfilename + "_%s" % myformattime()) as f:
-                    savetxt(f, dat)
+                    savetxt(f, dat, header=plapla.map_header(), comments="")
 
                 parent.list_of_windows.append(plapla)
 
@@ -2822,7 +2816,8 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
                 plot2DX.Show()
 
-                savetxt(os.path.join(outputfolder, "%s_2D_X_" % counter + "_%s" % myformattime()), dataX_2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_X_" % counter + "_%s" % myformattime()), dataX_2D,
+                        header=plot2DX.map_header(), comments="")
 
                 parent.list_of_windows.append(plot2DX)
 
@@ -2843,7 +2838,8 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
                 plot2DY.Show()
 
-                savetxt(os.path.join(outputfolder, "%s_2D_Y_" % counter + "_%s" % myformattime()), dataY_2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_Y_" % counter + "_%s" % myformattime()), dataY_2D,
+                        header=plot2DY.map_header(), comments="")
 
                 parent.list_of_windows.append(plot2DY)
 
@@ -2873,7 +2869,8 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
                 plot2Dradial.Show()
 
-                savetxt(os.path.join(outputfolder, "%s_2D_radial_" % counter + "_%s" % myformattime()), radialdistance_2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_radial_" % counter + "_%s" % myformattime()), radialdistance_2D,
+                        header=plot2Dradial.map_header(), comments="")
 
                 parent.list_of_windows.append(plot2Dradial)
 
@@ -2898,7 +2895,8 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
                 plot2Dpeaksize.Show()
 
-                savetxt(os.path.join(outputfolder, "%s_2D_size_" % counter + "_%s" % myformattime()), maxpeaksize2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_size_" % counter + "_%s" % myformattime()), maxpeaksize2D,
+                        header=plot2Dpeaksize.map_header(), comments="")
 
                 savetxt(os.path.join(outputfolder, "%s_2Dshape_" % counter + "_%s" % myformattime()), FilteredfittedPeaksData[:, 3:6])
 
@@ -2925,7 +2923,8 @@ def buildMosaic3(dict_param, outputfolder:str, ccdlabel:str="sCMOS", plot:bool=T
 
                 plot2Dpeaksize.Show()
 
-                savetxt(os.path.join(outputfolder, "%s_2D_Amplitude_" % counter + "_%s" % myformattime()), PeakAmplitude2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_Amplitude_" % counter + "_%s" % myformattime()), PeakAmplitude2D,
+                        header=plot2Dpeaksize.map_header(), comments="")
 
                 parent.list_of_windows.append(plot2Dpeaksize)
 
@@ -3011,6 +3010,195 @@ def counter_quantity(counter, dict_param, component=None):
                                                                        "Amplitude"):
         quantity += " / monitor"
     return quantity
+
+
+# ============================================================================
+# RESULTS FILES: replot of maps and mosaics (show_map_file(), show2DmapGUI)
+# ============================================================================
+
+# keys of dict_param written in the header of text map files (see map_file_header())
+MAPFILE_DICT_PARAM_KEYS = ("pixelX_center", "pixelY_center", "pixelboxsize_X", "pixelboxsize_Y", "imagesfolder",
+                           "filename_representative", "CCDLabel", "nbdigits", "xlabel", "ylabel",
+                           "NormalizeWithMonitor")
+# text map files without header (before Oct. 2026): regex of file name -> datatype of ImshowFrame
+# (group 1: counter, group 2: X or Y component)
+LEGACY_MAPFILE_PATTERNS = ((r"^(mean|max|ptp)_2D_", "Intensity"),
+                           (r"^(Position XY|Position MAX|Position Centroid)_2D_([XY])_", "Position"),
+                           (r"^(Displacement)_2D_radial_", "scalar"),
+                           (r"^(Shape)_2D_size_", "scalar"),
+                           (r"^(Amplitude)_2D_Amplitude_", "scalar"))
+# GUI counters plotted from results of workflows.ROICountersWorkflow (see GUI_TO_WORKFLOW_COUNTERS)
+WORKFLOW_TO_GUI_COUNTERS = {"mosaic": ["mosaic"], "mean": ["mean"], "max": ["max"], "ptp": ["ptp"],
+                            "XYcentroid": ["Position Centroid"], "XYmax": ["Position MAX"],
+                            "fit": ["Position XY", "Displacement", "Amplitude", "Shape"]}
+MAPFILES_WILDCARD = ("Results of mosaic (roicounters*.h5;MOSAIC_image_Plot*;*_2D*)|roicounters*.h5;"
+                     "MOSAIC_image_Plot*;*_2D*|All files (*)|*")
+
+
+def map_file_header(datatype, quantity, Imageindices, nb_col, nb_lines, boxsize_col=0, boxsize_line=0,
+                    imagename="", dict_param=None, mosaic=0, absolutecornerindices=None):
+    """header ('# key: value' lines, title last) of text files of maps and mosaics plotted by ImshowFrame
+    (same arguments), read by read_map_file(). np.loadtxt() skips it."""
+    lines = ["datatype: %s" % ("MOSAIC" if mosaic else datatype),
+             "quantity: %s" % quantity,
+             "Imageindices: " + " ".join("%d" % index for index in np.ravel(Imageindices)),
+             "nb_col: %d" % nb_col, "nb_lines: %d" % nb_lines,
+             "boxsize_col: %d" % boxsize_col, "boxsize_line: %d" % boxsize_line]
+    if absolutecornerindices is not None:
+        lines.append("absolutecornerindices: %d %d" % tuple(absolutecornerindices))
+    for key in MAPFILE_DICT_PARAM_KEYS:
+        if (dict_param or {}).get(key) is not None:
+            lines.append("%s: %s" % (key, dict_param[key]))
+    lines.append("title: %s" % str(imagename).replace("\n", " "))
+    return "\n".join("# " + line for line in lines)
+
+
+def _header_value(text):
+    """int, float, bool or str of a header value"""
+    if text in ("True", "False"):
+        return text == "True"
+    for convert in (int, float):
+        try:
+            return convert(text)
+        except ValueError:
+            pass
+    return text
+
+
+def read_map_file(path):
+    """read a text map file of mosaic.py: MOSAIC_image_Plot_*, <counter>_2D_* or a file saved by
+    File/Save Data of a map window. Files without header (before Oct. 2026) are recognized by their name:
+    their image indices are read in the 1D file of the same date (e.g. max_1D_date_...), if any.
+
+    :return: dict of the arguments of ImshowFrame (title, dataarray, dict_param, datatype, ...)
+    """
+    folder, filename = os.path.split(path)
+    header = {}
+    with open(path) as f:
+        for line in f:
+            if not line.startswith("#"):
+                break
+            key, _, value = line[1:].partition(":")
+            header[key.strip()] = value.strip()
+    if "datatype" not in header:
+        for pattern, datatype in LEGACY_MAPFILE_PATTERNS:
+            match = re.match(pattern, filename)
+            if match:
+                break
+        else:
+            raise ValueError("%s is not a map file of mosaic.py (no header, unknown file name)" % filename)
+    data = np.loadtxt(path, ndmin=2)
+    nb_lines, nb_col = data.shape
+
+    if "datatype" in header:
+        mosaic = int(header["datatype"] == "MOSAIC")
+        datatype = "Intensity" if mosaic else header["datatype"]
+        dict_param = {key: _header_value(header[key]) for key in MAPFILE_DICT_PARAM_KEYS if key in header}
+        Imageindices = np.array(header["Imageindices"].split(), dtype=int)
+        quantity = header.get("quantity", counter_quantity("mosaic", {}) if mosaic else "")
+        corner = header.get("absolutecornerindices")
+        frameargs = dict(nb_col=int(header["nb_col"]), nb_lines=int(header["nb_lines"]),
+                         boxsize_row=int(header.get("boxsize_col", 0)),
+                         boxsize_line=int(header.get("boxsize_line", 0)),
+                         absolutecornerindices=tuple(int(v) for v in corner.split()) if corner else None)
+        imagename = header.get("title", filename)
+    else:
+        counter = match.group(1)
+        component = match.group(2) if match.re.groups > 1 else None
+        if datatype == "Position":
+            datatype += component
+        mosaic = 0
+        dict_param = {}
+        if component:  # ROI centre unknown: background level of ImshowFrame
+            dict_param["pixel%s_center" % component] = float(np.nanmean(data))
+        Imageindices = legacy_image_indices(folder, filename, data.size)
+        quantity = counter_quantity(counter, {}, component)
+        frameargs = dict(nb_col=nb_col, nb_lines=nb_lines, boxsize_row=int(datatype == "Intensity"),
+                         boxsize_line=int(datatype == "Intensity"))
+        imagename = filename
+    if datatype in ("RadialPosition", "Vector"):  # X and Y maps needed to change the centre are not in file
+        datatype = "scalar"
+    return dict(title=filename, dataarray=data, dict_param=dict_param, datatype=datatype, quantity=quantity,
+                Imageindices=Imageindices, imagename=imagename, mosaic=mosaic, stepindex=1, **frameargs)
+
+
+def legacy_image_indices(folder, filename, nbpoints):
+    """image indices of a map file without header (see read_map_file()), read in the first column of the
+    1D file of the same date (<counter>_1D_*, Position XYXpos_*, AmplitudeAmplitude_*), or 0 to nbpoints - 1"""
+    date = re.search(r"date_\d{8}_\d{6}", filename)
+    if date is not None:
+        for name in sorted(os.listdir(folder)):
+            if (date.group() not in name or "_2D" in name
+                    or not any(word in name for word in ("_1D_", "pos_", "Amplitude_"))):
+                continue
+            try:
+                values = np.loadtxt(os.path.join(folder, name), ndmin=2)
+            except ValueError:
+                continue
+            if values.shape[1] in (2, 4) and len(values) <= nbpoints:
+                return values[:, 0].astype(int)
+    return np.arange(nbpoints)
+
+
+def read_counters_results(path):
+    """results of workflows.ROICountersWorkflow (roicounters_*.h5 written by the parallel computation of
+    counters) and dict_param to plot them with plot_counters_results(). Only the first ROI is plotted.
+
+    :return: results, dict_param
+    """
+    import LaueTools.scripts.workflows as WF
+
+    results = WF.load_results(path)
+    params = results["params"]
+    xpic, ypic = params["roicenters"][0]
+    dict_param = {"imagesfolder": params["folder"],
+                  "filename_representative": params["filename_representative"],
+                  "CCDLabel": params["CCDLabel"],
+                  "nbdigits": params.get("nbdigits", 4),
+                  "pixelX_center": float(xpic), "pixelY_center": float(ypic),
+                  "pixelboxsize_X": params["boxsize_X"], "pixelboxsize_Y": params["boxsize_Y"],
+                  "NormalizeWithMonitor": params.get("NormalizeWithMonitor", False),
+                  "monitoroffset": params.get("monitoroffset", 0.0),
+                  "selectedcounters": [guicounter for counter in params["counters"]
+                                       for guicounter in WORKFLOW_TO_GUI_COUNTERS.get(counter, [])],
+                  # replot only: no results files
+                  "save_results": False, "save_plots": False}
+    return results, dict_param
+
+
+def counters_of_results_file(path):
+    """GUI counters that can be plotted from a roicounters_*.h5 file (its parameters only are read)"""
+    import json
+    import h5py
+
+    with h5py.File(path, "r") as f:
+        params = json.loads(f.attrs["params"])
+    return [guicounter for counter in params["counters"] for guicounter in WORKFLOW_TO_GUI_COUNTERS.get(counter, [])]
+
+
+def list_map_files(folder):
+    """results files of mosaic.py in folder (roicounters_*.h5 and text map files), most recent first"""
+    names = [name for name in os.listdir(folder)
+             if (name.startswith("roicounters_") and name.endswith(".h5")) or name.startswith("MOSAIC_image_Plot")
+             or any(re.match(pattern, name) for pattern, _ in LEGACY_MAPFILE_PATTERNS)]
+    return sorted((os.path.join(folder, name) for name in names), key=os.path.getmtime, reverse=True)
+
+
+def show_map_file(path, parent=None, counters=None):
+    """plot a results file of mosaic.py in the windows of the Mosaic & Monitor tools:
+    roicounters_*.h5 (counters of the file, or only those of counters, see plot_counters_results())
+    or text map file (see read_map_file())"""
+    if path.endswith((".h5", ".hdf5")):
+        results, dict_param = read_counters_results(path)
+        if counters is not None:
+            dict_param["selectedcounters"] = [c for c in dict_param["selectedcounters"] if c in counters]
+        plot_counters_results(results, dict_param, parent, None)
+        return
+    frame = ImshowFrame(parent, -1, **read_map_file(path))
+    frame.dirname = os.path.dirname(path)
+    frame.Show(True)
+    if hasattr(parent, "list_of_windows"):
+        parent.list_of_windows.append(frame)
 
 
 # GUI counters (see buildMosaic3()) -> counters of workflows.ROICountersWorkflow
@@ -3237,6 +3425,7 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
         windows.append(frame)
         if hasattr(parent, "list_of_windows"):
             parent.list_of_windows.append(frame)
+        return frame
 
     def map2D(values):
         return WF.counter_map2D(values, mapdimensions)
@@ -3249,7 +3438,7 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
         if counter == "mosaic":
             dat = WF.arrange_mosaic2D(results["mosaic"][:, 0], mapdimensions)["singleimage"]
             CountersData[counter + "2D"] = dat
-            show(ImshowFrame(parent, -1, "MOSAIC image Plot", dat,
+            frame = show(ImshowFrame(parent, -1, "MOSAIC image Plot", dat,
                              absolutecornerindices=(xpic - boxsize_col, ypic - boxsize_line),
                              Imageindices=tabindices,
                              nb_col=nb_col,
@@ -3261,19 +3450,14 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
                              mosaic=1,
                              dict_param=dict_param, quantity=counter_quantity("mosaic", dict_param)))
 
-            headerstr = "# datatype: MOSAIC\n# dims: %d %d\n" % dat.shape
-            headerstr += "# Imageindices: " + " ".join("%d" % elem for elem in tabindices) + "\n"
-            headerstr += "# nb_col: %d\n# nb_lines: %d\n" % (nb_col, nb_lines)
-            headerstr += "# boxsize_col: %d\n# boxsize_line: %d\n" % (boxsize_col, boxsize_line)
-            headerstr += "# title: %s" % title.replace("\n", " ")
             savetxt(os.path.join(outputfolder, "MOSAIC_image_Plot_%s" % timestamp), dat,
-                       header=headerstr, comments="")
+                       header=frame.map_header(), comments="")
 
         elif counter in ("mean", "max", "ptp"):
             Intens = results[counter][:, 0, 0]
             dat = map2D(Intens)
             CountersData[counter + "2D"] = dat
-            show(ImshowFrame(parent, -1, "image Plot %s" % counter, dat,
+            frame = show(ImshowFrame(parent, -1, "image Plot %s" % counter, dat,
                              Imageindices=tabindices,
                              nb_col=nb_col,
                              nb_lines=nb_lines,
@@ -3283,7 +3467,8 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
                              imagename=title,
                              mosaic=0,
                              dict_param=dict_param, quantity=counter_quantity(counter, dict_param)))
-            savetxt(os.path.join(outputfolder, "%s_2D_%s" % (counter, timestamp)), dat)
+            savetxt(os.path.join(outputfolder, "%s_2D_%s" % (counter, timestamp)), dat,
+                    header=frame.map_header(), comments="")
 
             XYdat = [tabindices, Intens]
             CountersData[counter + "1D"] = XYdat
@@ -3335,7 +3520,7 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
                                             title + "%spos" % comp, XYdat, logscale=0, xlabel="image index", ylabel=counter_quantity(counter, dict_param, comp)))
                     savetxt(os.path.join(outputfolder, "%s%spos_%s" % (counter, comp, timestamp)),
                                np.array(XYdat).T)
-                    show(ImshowFrame(parent, -1, "image 2D Plot %s %s" % (comp, counter), data2D,
+                    frame = show(ImshowFrame(parent, -1, "image 2D Plot %s %s" % (comp, counter), data2D,
                                      Imageindices=tabindices,
                                      nb_col=nb_col,
                                      nb_lines=nb_lines,
@@ -3347,13 +3532,13 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
                                      dict_param=dict_param, quantity=counter_quantity(counter, dict_param, comp),
                                      datatype=datatype))
                     savetxt(os.path.join(outputfolder, "%s_2D_%s_%s" % (counter, comp, timestamp)),
-                               data2D)
+                               data2D, header=frame.map_header(), comments="")
 
             elif counter == "Displacement":
                 pixelCenter = (np.nanmean(dataX_2D), np.nanmean(dataY_2D))
                 radialdistance_2D = np.hypot(dataX_2D - pixelCenter[0], dataY_2D - pixelCenter[1])
                 dict_param["dataRadialPosition"] = (dataX_2D, dataY_2D, pixelCenter)
-                show(ImshowFrame(parent, -1, "image 2D Plot radial %s" % counter, radialdistance_2D,
+                frame = show(ImshowFrame(parent, -1, "image 2D Plot radial %s" % counter, radialdistance_2D,
                                  Imageindices=tabindices,
                                  nb_col=nb_col,
                                  nb_lines=nb_lines,
@@ -3365,7 +3550,7 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
                                  dict_param=dict_param, quantity=counter_quantity(counter, dict_param),
                                  datatype="RadialPosition"))
                 savetxt(os.path.join(outputfolder, "%s_2D_radial_%s" % (counter, timestamp)),
-                           radialdistance_2D)
+                           radialdistance_2D, header=frame.map_header(), comments="")
 
                 VectorX = dataX_2D - pixelCenter[0]
                 VectorY = dataY_2D - pixelCenter[1]
@@ -3385,7 +3570,7 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
             elif counter == "Shape":
                 maxpeaksize2D = map2D(np.ma.filled(np.ma.amax(FilteredfittedPeaksData[:, 3:5], axis=1)
                                                    .astype(float), np.nan))
-                show(ImshowFrame(parent, -1, "image 2D Plot peak size %s" % counter, maxpeaksize2D,
+                frame = show(ImshowFrame(parent, -1, "image 2D Plot peak size %s" % counter, maxpeaksize2D,
                                  Imageindices=tabindices,
                                  nb_col=nb_col,
                                  nb_lines=nb_lines,
@@ -3396,7 +3581,8 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
                                  mosaic=0,
                                  dict_param=dict_param, quantity=counter_quantity(counter, dict_param),
                                  datatype="PositionX"))
-                savetxt(os.path.join(outputfolder, "%s_2D_size_%s" % (counter, timestamp)), maxpeaksize2D)
+                savetxt(os.path.join(outputfolder, "%s_2D_size_%s" % (counter, timestamp)), maxpeaksize2D,
+                        header=frame.map_header(), comments="")
                 savetxt(os.path.join(outputfolder, "%s_2Dshape_%s" % (counter, timestamp)),
                            np.ma.filled(FilteredfittedPeaksData[:, 3:6].astype(float), np.nan))
 
@@ -3404,7 +3590,7 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
                 PeakAmplitude = np.ma.filled((FilteredfittedPeaksData[:, 2]
                                               - FilteredfittedPeaksData[:, 8]).astype(float), np.nan)
                 PeakAmplitude2D = map2D(PeakAmplitude)
-                show(ImshowFrame(parent, -1, "image 2D Plot peak amplitude %s" % counter, PeakAmplitude2D,
+                frame = show(ImshowFrame(parent, -1, "image 2D Plot peak amplitude %s" % counter, PeakAmplitude2D,
                                  Imageindices=tabindices,
                                  nb_col=nb_col,
                                  nb_lines=nb_lines,
@@ -3416,7 +3602,7 @@ def plot_counters_results(results, dict_param, parent, outputfolder,
                                  dict_param=dict_param, quantity=counter_quantity(counter, dict_param),
                                  datatype="PositionX"))
                 savetxt(os.path.join(outputfolder, "%s_2D_Amplitude_%s" % (counter, timestamp)),
-                           PeakAmplitude2D)
+                           PeakAmplitude2D, header=frame.map_header(), comments="")
                 dataamplitude = [tabindices, PeakAmplitude]
                 show(PLOT1D.Plot1DFrame(parent, -1, counter + "Amplitude", title + "Amplitude",
                                         dataamplitude, logscale=0, xlabel="image index", ylabel=counter_quantity(counter, dict_param)))
