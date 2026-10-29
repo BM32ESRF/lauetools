@@ -15,5 +15,6 @@ exclude LaueTools/notebooks/testZrO2_*
 global-exclude *.pyc
 prune */__pycache__
 exclude LaueTools/Diamond/*.ipynb
+exclude LaueTools/parabolmirror.py
 # small example images needed by tests and tutorials
 include LaueTools/LaueImages/small_example_*

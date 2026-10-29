@@ -53,7 +53,7 @@ all = ["lauetools[daxm,hdf5,notebook]"]
 lauetools = "LaueTools.GUI.mainGUI:start"
 peaksearch = "LaueTools.FileSeries.Peak_Search:start"
 indexrefine = "LaueTools.FileSeries.Index_Refine:start"
-plotmeshGUI = "LaueTools.plotmeshspecGUI:start"
+plotmeshGUI = "LaueTools.GUI.plotmeshspecGUI:start"
 buildsummary = "LaueTools.FileSeries.Build_Summary:start"
 plotmap = "LaueTools.FileSeries.Plot_Maps2:start"
 mapanalyzer = "LaueTools.FileSeries.mainFileSeriesGUI:start"
@@ -128,4 +128,5 @@ LaueTools = [
     "*.out",
     "*.sh",
     "Documentation/*",        # Exclude documentation (host externally)
+    "parabolmirror.py",  # KrakenOS ray tracing study of mirrors, not a LaueTools module
 ]
