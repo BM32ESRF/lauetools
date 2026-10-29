@@ -10,14 +10,15 @@ monitored over all the images of a map
 - mosaic: pixels of a ROI in every image of the map, arranged as the map (one big image)
 - grain imaging: map of the intensity of each Laue spot (a grain lights its spots where it is), overview of the
   ROIs lit at each map point
+- grains without indexation: groups of ROIs lit at the same map points (find_grains(), plot_grains(),
+  plot_grain_segmentation(), grains_table(), brightest_rois(), GrainBrowser: map of a grain, its ROIs on the Laue pattern and in gnomonic
+  coordinates), spots of a grain fitted in one image and written as a .dat/.cor file to index it (grain_peaks())
 
 Used by notebooks/mosaicgrainimaging/mosaic_grainimaging.ipynb and notebooks/quickstart/laue_maps_quickstart.ipynb
 
 ROI centers (X, Y) are pixel indices of the image array, image[Y, X] (first pixel at (0, 0)), as in
 LaueTools.scripts.workflows.read_rois(). Peak positions of the peak search start at (1, 1): X - 1, Y - 1
 """
-import contextlib
-import io
 import os
 import time
 from pathlib import Path
@@ -351,14 +352,10 @@ def peaksearch(params: Dict[str, Any], imageindex: Optional[int] = None, verbose
                                    nbdigits=params['nbdigits'], dat_folder=tempfile.gettempdir(), peaksearch=ps,
                                    writefiles=False, write_dat=False)
     kwargs = psparams.peaksearch_kwargs()
-    kwargs['verbose'] = 1   # message of PeakSearch() when it gives up (too many local maxima), captured
-    out = io.StringIO()
-    with contextlib.redirect_stdout(out):
-        res = RMCCD.PeakSearch(path, stackimageindex=frame, **kwargs)
-    if res is None and 'TOO MUCH peaks' in out.getvalue():
-        raise TooManyPeaksError(f"image {imageindex}: more local maxima than NumberMaxofFits "
-                                f"({ps['NumberMaxofFits']}), no peak fitted: increase IntensityThreshold "
-                                f"({ps['IntensityThreshold']}) or NumberMaxofFits")
+    try:
+        res = RMCCD.PeakSearch(path, stackimageindex=frame, raise_too_many=True, **kwargs)
+    except RMCCD.TooManyLocalMaximaError as err:
+        raise TooManyPeaksError(f'image {imageindex}: {err}') from None
     peaks = None if res is None else res[0]
     if verbose:
         print(f"peak search done: image {imageindex}, {0 if peaks is None else len(peaks)} peaks "
@@ -731,7 +728,7 @@ def run(params: Dict[str, Any], roicenters, counters=('max',), boxsize=(8, 8), o
 
     output: results folder (see results_folder())
     resource: 'kernel' (in this notebook, blocking), or a computing resource of
-        workflowlauncher.COMPUTING_RESOURCES: 'local' (background process on this machine), 'magnifix', 'magnifix3'
+        workflowlauncher.COMPUTING_RESOURCES: 'local' (background process on this machine), 'magnifix', 'magnifix2', 'magnifix3'
         (3 nodes), 'nice-hpc7' ... (SLURM job, the notebook waits for its end)
     extra: other parameters of the workflow, e.g. fitparameters={'peaksizeStart': 2.} for the counter 'fit'"""
     import LaueTools.scripts.workflowlauncher as WL
@@ -856,3 +853,820 @@ def plot_grain_overview(results: Dict[str, Any], counter: str = 'max', threshold
         ax.format_coord = format_coord
     fig.tight_layout()
     return fig, axes
+
+
+# --------------------------------------------------------------------------------------
+#  GRAINS: groups of ROIs lit at the same map points (no indexation)
+# --------------------------------------------------------------------------------------
+def select_rois(results: Dict[str, Any], xlim=None, ylim=None, every: int = 1) -> np.ndarray:
+    """indices of a subset of the ROIs of grain imaging results (e.g. for find_grains(rois=...)): ROI centers with
+    xlim[0] <= X <= xlim[1] and ylim[0] <= Y <= ylim[1] (pixel), and for a grid of ROIs one grid line out of every
+    along X and Y (every=2: 4 times fewer ROIs, e.g. step 30 instead of 15 pixels: ROIs no longer overlapping)"""
+    centers = np.asarray(results['params']['roicenters'])
+    keep = np.ones(len(centers), bool)
+    if xlim is not None:
+        keep &= (centers[:, 0] >= xlim[0]) & (centers[:, 0] <= xlim[1])
+    if ylim is not None:
+        keep &= (centers[:, 1] >= ylim[0]) & (centers[:, 1] <= ylim[1])
+    if every > 1:
+        for axis in (0, 1):
+            levels = np.unique(centers[:, axis])
+            keep &= np.isin(centers[:, axis], levels[::every])
+    return np.flatnonzero(keep)
+
+
+def find_grains(results: Dict[str, Any], counter: str = 'max', method: str = 'regions', min_jaccard: float = 0.5,
+                min_rois: int = 5, min_points: int = 2, nsigma: float = 10., min_level: float = 0.15,
+                merge_correlation: float = 0.8, threshold: float = 0.5, max_fraction: float = 0.8,
+                percentiles=(5, 99.5), max_rois: Optional[int] = None, min_area: int = 1,
+                max_area: Optional[int] = None, rois=None, max_dense: int = 4000,
+                progress: bool = True) -> Dict[str, Any]:
+    """grains of the map from grain imaging results: groups of ROIs (Laue spots) lit at the same map points
+
+    method 'regions' (default): a ROI map may show several grains, at different places and intensity levels
+    1. points of a ROI lit: intensity above its background by nsigma x its noise (median, robust spread over the
+       map) and by min_level x its range (5th to 99.5th percentile): weak grains are kept. ROIs without signal are
+       left out
+    2. regions: connected groups (8 neighbours) of at least min_points lit points of each ROI map: a ROI lighting
+       two places of the map gives two regions, which may belong to two grains
+    3. similarity of two regions: Jaccard index of their points (common points / points of either); hierarchical
+       clustering (average linkage) cut at min_jaccard (computed only between overlapping regions: sparse, fast);
+       grains: groups of regions of at least min_rois different ROIs
+    4. merge of two grains with nested regions (90 % of the points of one in the other) and intensity maps
+       correlated (Pearson >= merge_correlation on their points): one grain split by the size of its weak and strong
+       spots (uncorrelated nested grains: different grains, e.g. in depth)
+    5. map of a grain: mean scaled intensity (normalized_maps()) of its ROIs, each ROI only in its regions of the
+       grain; grain lit at a point: at least half of its ROIs have a region there; segmentation: at each lit point
+       the grain of highest value
+    6. grains lit at fewer than min_area points or more than max_area points of the map (area: nb of points, each
+       point = 1 image) left out. With max_area, regions of more than max_area / min_jaccard points are left out
+       before step 3 (they cannot be similar enough to the regions of such a grain): faster with many ROIs
+    Size of the problem (memory, time; large sets of ROIs, e.g. a grid of 20000 ROIs): rois: indices of the ROIs used
+    (None: all); max_rois: only the max_rois ROIs of strongest signal (peak above background / noise); min_points
+    or nsigma larger: fewer regions (small regions of noise). A group of more than max_dense overlapping regions is
+    split by increasing similarity before its clustering (approximation; memory 4 bytes x max_dense^2).
+    progress: steps and progress bars
+    method 'rois': one level per ROI (scaled intensity > threshold), Jaccard of the lit points of the ROIs, a ROI
+       belongs to one grain at most (ROIs lit at more than max_fraction of the map left out; max_rois: largest nb
+       of ROIs clustered (default 15000), memory ~ 12 bytes x nb ROIs^2); grain lit where its map > threshold
+
+    Returns dict: 'grains' (list of dicts sorted by decreasing nb of ROIs: 'rois' indices of the ROIs,
+    'roicenters', 'nbrois', 'regions' {ROI: indices of its points (map order) in the grain}, 'area' nb of points
+    where the grain is lit, 'centroid' (fast, slow) index, 'best_image' image index where it is brightest),
+    'score' (nb images, nb grains), 'lit' (nb images, nb grains) bool, 'label' (grain index at each point, -1:
+    none), 'nblit' (nb of grains lit at each point), 'imageindices', 'settings'
+    """
+    if method not in ('regions', 'rois'):
+        raise ValueError("method must be 'regions' or 'rois'")
+    norm = normalized_maps(results, counter, percentiles)   # (nb images, nb ROIs) in [0, 1]
+    nbimages = norm.shape[0]
+    roicenters = np.asarray(results['params']['roicenters'])
+    settings = dict(counter=counter, method=method, min_jaccard=min_jaccard, min_rois=min_rois,
+                    min_points=min_points, percentiles=percentiles, min_area=min_area, max_area=max_area,
+                    max_rois=max_rois,
+                    rois=None if rois is None else len(rois))
+    if method == 'regions':
+        settings.update(nsigma=nsigma, min_level=min_level, merge_correlation=merge_correlation)
+        members, nbregions, nblitrois, nsplit = _grains_from_regions(
+            results, counter, min_jaccard, min_rois, min_points, nsigma, min_level, percentiles, rois=rois,
+            max_rois=max_rois, max_dense=max_dense, progress=progress,
+            max_region=None if max_area is None else int(max_area / min_jaccard))
+        t0 = time.time()
+        score, lit = _grain_maps(norm, members)
+        members, score, lit, nmerged = _merge_grains(members, score, lit, norm, merge_correlation)
+        if progress:
+            print(f'maps of {len(members)} grains, {nmerged} merges ({time.time() - t0:.1f} s)')
+        origin = (f"{nbregions} regions of {nblitrois} ROIs with signal ({norm.shape[1]} in all), "
+                  f"{nmerged} merges" + (f", {nsplit} large groups split" if nsplit else ''))
+    else:
+        settings.update(threshold=threshold, max_fraction=max_fraction)
+        if rois is not None:   # only these ROIs: the others never lit
+            mask = np.zeros(norm.shape[1], bool)
+            mask[np.asarray(rois, dtype=int)] = True
+            norm = np.where(mask, norm, 0.)
+        members, ncandidates = _grains_from_rois(norm, min_jaccard, min_rois, min_points, threshold, max_fraction,
+                                                 15000 if max_rois is None else max_rois)
+        score = np.stack([norm[:, list(m)].mean(axis=1) for m in members], axis=1) if members \
+            else np.zeros((nbimages, 0))
+        lit = score > threshold
+        origin = f"{ncandidates} ROIs ({norm.shape[1]} in all)"
+    if (min_area > 1 or max_area is not None) and members:   # small (and large) grains left out
+        area = lit.sum(axis=0)
+        keep = (area >= min_area) & (area <= (max_area if max_area is not None else np.inf))
+        origin += (f", {int(np.sum(~keep))} grains of fewer than {min_area}"
+                   + (f" or more than {max_area}" if max_area is not None else '') + " points left out")
+        members =[m for m, k in zip(members, keep) if k]
+        score, lit = score[:, keep], lit[:, keep]
+    nblit = lit.sum(axis=1)
+    label = np.where(nblit > 0, np.argmax(np.where(lit, score, -1.), axis=1), -1) if members \
+        else -np.ones(nbimages, int)
+    imageindices = np.asarray(results['imageindices'])
+    dimfast = results['params']['mapdimensions'][0]
+    grains = []
+    for k, m in enumerate(members):
+        rois = np.array(sorted(m), dtype=int)
+        points = np.flatnonzero(lit[:, k])
+        grains.append({'rois': rois, 'roicenters': roicenters[rois].tolist(), 'nbrois': len(rois),
+                       'regions': {int(roi): np.asarray(m[roi], dtype=int) for roi in rois},
+                       'area': len(points),
+                       'centroid': ((float(np.mean(points % dimfast)), float(np.mean(points // dimfast)))
+                                    if len(points) else (np.nan, np.nan)),
+                       'best_image': int(imageindices[np.argmax(score[:, k])])})
+    print(f"{len(grains)} grains (method '{method}': >= {min_rois} ROIs lit together, Jaccard >= {min_jaccard}) from "
+          f"{origin}; {np.sum(label >= 0)} / {nbimages} points with a grain, {np.sum(nblit > 1)} with several")
+    return {'grains': grains, 'score': score, 'lit': lit, 'label': label, 'nblit': nblit,
+            'imageindices': imageindices, 'settings': settings}
+
+
+def _grains_from_rois(norm: np.ndarray, min_jaccard, min_rois, min_points, threshold, max_fraction, max_rois):
+    """method 'rois' of find_grains(): ([{ROI: indices of all the points}, ...] sorted by decreasing nb of ROIs,
+    nb of ROIs clustered)"""
+    from scipy.cluster.hierarchy import linkage, fcluster
+    from scipy.spatial.distance import squareform
+    nbimages = len(norm)
+    lit = norm > threshold
+    nlit = lit.sum(axis=0)
+    candidates = np.flatnonzero((nlit >= min_points) & (nlit <= max_fraction * nbimages))
+    if len(candidates) > max_rois:   # memory: the ROIs lit at the most points
+        candidates = np.sort(candidates[np.argsort(-nlit[candidates], kind='stable')[:max_rois]])
+        GT.printyellow(f'{max_rois} ROIs clustered (max_rois), the most often lit')
+    members = []
+    if len(candidates) >= max(2, min_rois):
+        L = lit[:, candidates].astype(np.float32)
+        inter = L.T @ L                                            # common lit points of each pair of ROIs
+        n = nlit[candidates].astype(np.float32)
+        dist = 1. - inter / np.maximum(n[:, None] + n[None, :] - inter, 1.)   # 1 - Jaccard
+        del inter, L
+        np.fill_diagonal(dist, 0.)
+        groups = fcluster(linkage(squareform(dist, checks=False), 'average'), 1. - min_jaccard, 'distance')
+        del dist
+        ids, counts = np.unique(groups, return_counts=True)
+        allpoints = np.arange(nbimages)
+        for gid in ids[np.argsort(-counts, kind='stable')]:
+            rois = candidates[groups == gid]
+            if len(rois) < min_rois:
+                break
+            members.append({int(roi): allpoints for roi in rois})
+    return members, len(candidates)
+
+
+def _split_large_group(graph, nodes, threshold: float, max_dense: int, step: float = 0.05):
+    """pieces of at most max_dense nodes of a group of connected regions: groups connected by pairs of similarity >=
+    threshold, threshold raised by step until the pieces are small enough (approximation of the clustering of the
+    whole group). Returns [(nodes, too_large)] (too_large: still larger than max_dense with similarities ~1)"""
+    from scipy.sparse.csgraph import connected_components
+    pieces, stack = [], [(np.asarray(nodes), threshold)]
+    while stack:
+        part, thr = stack.pop()
+        if len(part) <= max_dense:
+            pieces.append((part, False))
+            continue
+        if thr >= 0.99:   # nearly identical regions: one cluster
+            pieces.append((part, True))
+            continue
+        sub = graph[part][:, part]
+        sub.data[sub.data < thr + step] = 0.
+        sub.eliminate_zeros()
+        ncomp, comp = connected_components(sub, directed=False)
+        order = np.argsort(comp, kind='stable')
+        bounds = np.flatnonzero(np.diff(comp[order])) + 1
+        stack += [(part[g], thr + step) for g in np.split(order, bounds)]
+    return pieces
+
+
+def _grains_from_regions(results, counter, min_jaccard, min_rois, min_points, nsigma, min_level, percentiles,
+                         rois=None, max_rois=None, max_dense=4000, progress=True, max_region=None):
+    """steps 1-3 of method 'regions' of find_grains(): ([{ROI: indices of the points of its regions in the grain},
+    ...] sorted by decreasing nb of ROIs, nb of regions, nb of ROIs with signal, nb of groups split)"""
+    from scipy import ndimage, sparse
+    from scipy.sparse.csgraph import connected_components
+    from scipy.cluster.hierarchy import linkage, fcluster
+    from scipy.spatial.distance import squareform
+    from LaueTools.scripts import roicountersplot as RCP
+    tqdm = _progressbar(progress)
+    t0 = time.time()
+    values = RCP.counter_values(results, counter, 0)   # (nb images, nb ROIs)
+    nbimages, nbrois = values.shape
+    selected = np.arange(nbrois) if rois is None else np.unique(np.asarray(rois, dtype=int))
+    values = values[:, selected]
+    dimfast, dimslow = results['params']['mapdimensions']
+    med = np.nanmedian(values, axis=0)
+    noise = np.maximum(1.4826 * np.nanmedian(np.abs(values - med), axis=0), 1e-9)   # robust std (MAD)
+    top = np.nanpercentile(values, percentiles[1], axis=0)
+    level = np.maximum(med + nsigma * noise, med + min_level * (top - med))
+    lit = np.nan_to_num(values, nan=-np.inf) > level
+    withsignal = np.flatnonzero(lit.sum(axis=0) >= min_points)
+    if max_rois is not None and len(withsignal) > max_rois:   # strongest signal: peak above background / noise
+        snr = (top - med)[withsignal] / noise[withsignal]
+        withsignal = np.sort(withsignal[np.argsort(-snr, kind='stable')[:max_rois]])
+        if progress:
+            print(f'{max_rois} ROIs of strongest signal kept (max_rois)')
+    if progress:
+        print(f'1/4 noise levels of {len(selected)} ROIs: {len(withsignal)} with signal ({time.time() - t0:.1f} s)')
+    region_roi, region_points = [], []
+    padded = dimfast * dimslow
+    for j in tqdm(withsignal, desc='2/4 regions of the ROI maps', unit='ROI'):
+        mask = np.zeros(padded, bool)
+        mask[:nbimages] = lit[:, j]
+        labels, nbl = ndimage.label(mask.reshape(dimslow, dimfast), structure=np.ones((3, 3)))
+        labels = labels.ravel()[:nbimages]
+        sizes = np.bincount(labels, minlength=nbl + 1)
+        order = np.argsort(labels, kind='stable')
+        bounds = np.cumsum(sizes)
+        large = np.inf if max_region is None else max_region
+        for k in np.flatnonzero((sizes[1:] >= min_points) & (sizes[1:] <= large)) + 1:
+            region_roi.append(int(selected[j]))
+            region_points.append(order[bounds[k - 1]:bounds[k]])
+    del lit, values
+    nregions = len(region_roi)
+    if nregions == 0:
+        return [], 0, 0, 0
+    t1 = time.time()
+    region_roi = np.asarray(region_roi)
+    sizes = np.array([len(p) for p in region_points], dtype=np.float32)
+    U = sparse.csr_matrix((np.ones(int(sizes.sum()), np.float32),
+                           (np.repeat(np.arange(nregions), sizes.astype(int)), np.concatenate(region_points))),
+                          shape=(nregions, nbimages))
+    inter = (U @ U.T).tocoo()   # common points of the overlapping regions only
+    jac = inter.data / (sizes[inter.row] + sizes[inter.col] - inter.data)
+    # pairs with Jaccard < min_jaccard / 2 cannot be in the same cluster (average linkage cut at min_jaccard):
+    # clustering of each group of connected regions separately
+    keep = (jac >= min_jaccard / 2) & (inter.row != inter.col)
+    graph = sparse.csr_matrix((jac[keep], (inter.row[keep], inter.col[keep])), shape=(nregions, nregions))
+    del inter, jac, keep, U
+    _, component = connected_components(graph, directed=False)
+    order = np.argsort(component, kind='stable')
+    groups = np.split(order, np.flatnonzero(np.diff(component[order])) + 1)
+    groups = [g for g in groups if len(np.unique(region_roi[g])) >= min_rois]
+    if progress:
+        print(f'3/4 similarity of {nregions} regions: {len(groups)} groups of overlapping regions, largest '
+              f'{max((len(g) for g in groups), default=0)} regions ({time.time() - t1:.1f} s)')
+    members, nsplit = [], 0
+    for idx in tqdm(sorted(groups, key=len, reverse=True), desc='4/4 clustering of the groups', unit='group'):
+        pieces = [(idx, False)]
+        if len(idx) > max_dense:   # dense similarity matrix too large: pieces of more similar regions
+            pieces = _split_large_group(graph, idx, min_jaccard / 2, max_dense)
+            nsplit += 1
+        for part, too_large in pieces:
+            if len(np.unique(region_roi[part])) < min_rois:
+                continue
+            if too_large or len(part) == 1:
+                clusters = np.ones(len(part), int)
+            else:
+                sim = graph[part][:, part].toarray()
+                np.fill_diagonal(sim, 1.)
+                clusters = fcluster(linkage(squareform(1. - sim, checks=False), 'average'), 1. - min_jaccard,
+                                    'distance')
+            for cl in np.unique(clusters):
+                regs = part[clusters == cl]
+                if len(np.unique(region_roi[regs])) < min_rois:
+                    continue
+                m = {}
+                for reg in regs:
+                    roi = int(region_roi[reg])
+                    m[roi] = np.union1d(m.get(roi, []), region_points[reg]).astype(int)
+                members.append(m)
+    if nsplit and progress:
+        GT.printyellow(f'{nsplit} group(s) of more than {max_dense} overlapping regions split by increasing '
+                       f'similarity before the clustering (approximation; fewer regions: increase min_points or '
+                       f'nsigma, decrease max_rois)')
+    members.sort(key=lambda m: -len(m))
+    return members, nregions, len(np.unique(region_roi)), nsplit
+
+
+def _progressbar(progress: bool):
+    """tqdm (notebook or text progress bar) if progress, else an iterable without bar"""
+    if progress:
+        try:
+            from tqdm.auto import tqdm
+            return tqdm
+        except ImportError:
+            pass
+    return lambda iterable, **kwargs: iterable
+
+
+def _grain_maps(norm: np.ndarray, members):
+    """(score, lit) of grains {ROI: points}: mean scaled intensity of the ROIs, each only at its points; lit where
+    at least half of the ROIs have a point"""
+    nbimages = len(norm)
+    score = np.zeros((nbimages, len(members)))
+    lit = np.zeros((nbimages, len(members)), bool)
+    for k, m in enumerate(members):
+        count = np.zeros(nbimages)
+        for roi, points in m.items():
+            score[points, k] += norm[points, roi]
+            count[points] += 1
+        score[:, k] /= len(m)
+        lit[:, k] = count >= len(m) / 2.
+    return score, lit
+
+
+def _merge_grains(members, score, lit, norm, merge_correlation):
+    """merge grains with nested regions (90 %) and correlated intensity maps (one grain split by the size of the
+    regions of its weak and strong spots). Returns (members, score, lit, nb of merges)"""
+    if len(members) < 2 or merge_correlation is None:
+        return members, score, lit, 0
+    support = np.stack([np.isin(np.arange(len(norm)), np.concatenate(list(m.values()))) for m in members], axis=1)
+    s = support.astype(np.float32)
+    inter = s.T @ s
+    n = s.sum(axis=0)
+    nested = inter / np.maximum(np.minimum(n[:, None], n[None, :]), 1.) >= 0.9
+    parent = list(range(len(members)))
+
+    def root(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    nmerged = 0
+    for i, j in zip(*np.nonzero(np.triu(nested, 1))):
+        common = support[:, i] | support[:, j]
+        if common.sum() < 4 or np.std(score[common, i]) == 0 or np.std(score[common, j]) == 0:
+            continue
+        if np.corrcoef(score[common, i], score[common, j])[0, 1] >= merge_correlation and root(i) != root(j):
+            parent[root(j)] = root(i)
+            nmerged += 1
+    if not nmerged:
+        return members, score, lit, 0
+    groups = {}
+    for k in range(len(members)):
+        groups.setdefault(root(k), []).append(k)
+    merged = []
+    for ks in groups.values():
+        m = {}
+        for k in ks:
+            for roi, points in members[k].items():
+                m[roi] = np.union1d(m.get(roi, []), points).astype(int)
+        merged.append(m)
+    merged.sort(key=lambda m: -len(m))
+    score, lit = _grain_maps(norm, merged)
+    return merged, score, lit, nmerged
+
+
+def grain_colors(n: int, seed: int = 1):
+    """n distinct colors (RGB in [0, 1]): hues spread over the circle with 3 levels of lightness, shuffled so that
+    grains of close indices have different colors"""
+    import colorsys
+    rng = np.random.default_rng(seed)
+    golden = 0.618033988749895
+    colors = [colorsys.hls_to_rgb((k * golden) % 1., (0.42, 0.62, 0.30)[k % 3], (0.85, 0.75, 0.9)[k % 3])
+              for k in range(n)]
+    return np.array(colors)[rng.permutation(n)] if n else np.zeros((0, 3))
+
+
+def plot_grain_segmentation(grains: Dict[str, Any], results: Dict[str, Any], boundaries: bool = True,
+                            figsize=(8, 8)):
+    """map of the grain of highest value at each point (find_grains()), one distinct color per grain, boundaries
+    between grains (white lines), black: no grain. Hover: grain, its value, other grains lit at this point, image
+    index. Returns fig, ax"""
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+    from LaueTools.scripts import roicountersplot as RCP
+    display = RCP.MapDisplay(results)
+    label, score, lit = grains['label'], grains['score'], grains['lit']
+    ngrains = max(len(grains['grains']), 1)
+    cmap = ListedColormap(grain_colors(ngrains))
+    cmap.set_bad('black')
+    fig, ax = plt.subplots(figsize=figsize)
+    shown = display.data(np.where(label >= 0, label, np.nan).astype(float))
+    ax.imshow(shown, origin='lower', cmap=cmap, vmin=-0.5, vmax=ngrains - 0.5, interpolation='nearest')
+    if boundaries:   # segments between neighbouring points of different grains
+        lab = np.nan_to_num(shown, nan=-1)
+        ny, nx = lab.shape
+        segments = [[(j + 0.5, i - 0.5), (j + 0.5, i + 0.5)] for i in range(ny) for j in range(nx - 1)
+                    if lab[i, j] != lab[i, j + 1]]
+        segments += [[(j - 0.5, i + 0.5), (j + 0.5, i + 0.5)] for i in range(ny - 1) for j in range(nx)
+                     if lab[i, j] != lab[i + 1, j]]
+        from matplotlib.collections import LineCollection
+        ax.add_collection(LineCollection(segments, colors='white', linewidths=0.6))
+    ax.set_xlabel(display.xlabel)
+    ax.set_ylabel(display.ylabel)
+    nwith = int(np.sum(label >= 0))
+    ax.set_title(f"grain of highest value: {len(grains['grains'])} grains, {nwith} / {len(label)} points with a "
+                 f"grain (black: none)", fontsize=10)
+
+    def format_coord(x, y):
+        pos = display.position(x, y)
+        if pos is None or pos[0] is None:
+            return ''
+        k, ifast, islow = pos
+        g = label[k]
+        others = [str(o) for o in np.flatnonzero(lit[k]) if o != g]
+        head = f'grain {g} (value {score[k, g]:.2f})' if g >= 0 else 'no grain'
+        return (f"image {int(display.imageindices[k])} (fast {ifast}, slow {islow}) | {head} | also lit: "
+                f"{', '.join(others) or '-'}")
+    ax.format_coord = format_coord
+    fig.tight_layout()
+    return fig, ax
+
+
+def grains_table(grains: Dict[str, Any]):
+    """table (pandas DataFrame) of the grains of find_grains(): nb of ROIs, area (nb of points), centroid (fast,
+    slow indices), image where the grain is brightest"""
+    import pandas as pd
+    rows = [{'grain': k, 'nb ROIs': g['nbrois'], 'area (points)': g['area'],
+             'centroid fast': round(g['centroid'][0], 1), 'centroid slow': round(g['centroid'][1], 1),
+             'brightest image': g['best_image']} for k, g in enumerate(grains['grains'])]
+    return pd.DataFrame(rows).set_index('grain') if rows else pd.DataFrame(rows)
+
+
+def plot_grains(grains: Dict[str, Any], results: Dict[str, Any], nbgrains: int = 6, figsize=(15, 9)):
+    """grains of find_grains(): top: segmentation (grain of highest value at each point), nb of grains lit, ROIs
+    (Laue spots) of the grains on the detector; bottom: maps of the first nbgrains grains. Hover: image index,
+    grain(s). Returns fig"""
+    import matplotlib.pyplot as plt
+    from LaueTools.scripts import roicountersplot as RCP
+    display = RCP.MapDisplay(results)
+    score, label, nblit = grains['score'], grains['label'], grains['nblit']
+    nbgrains = min(nbgrains, len(grains['grains']))
+    ncols = max(nbgrains, 4)
+    fig = plt.figure(figsize=figsize)
+    gs = fig.add_gridspec(2, ncols)
+    seg, lit = fig.add_subplot(gs[0, 0]), fig.add_subplot(gs[0, 1])
+    det = fig.add_subplot(gs[0, 2:])
+    maps = [seg, lit] + [fig.add_subplot(gs[1, k]) for k in range(nbgrains)]
+    cmap = plt.get_cmap('tab20')
+    display.imshow(seg, np.where(label >= 0, label % 20, np.nan).astype(float), cmap=cmap, vmin=-0.5, vmax=19.5,
+                   interpolation='nearest')
+    seg.set_title('grain of highest value', fontsize=9)
+    im = display.imshow(lit, nblit.astype(float), cmap='viridis', interpolation='nearest')
+    fig.colorbar(im, ax=lit, fraction=0.08, pad=0.02)
+    lit.set_title('nb of grains lit', fontsize=9)
+    for k in range(nbgrains):
+        display.imshow(maps[2 + k], score[:, k], cmap='magma', vmin=0, vmax=1, interpolation='nearest')
+        maps[2 + k].set_title(f"grain {k} ({grains['grains'][k]['nbrois']} ROIs)", fontsize=9, color=cmap(k % 20))
+    for ax in maps:
+        ax.set_xlabel(display.xlabel, fontsize=7)
+        ax.set_ylabel(display.ylabel, fontsize=7)
+        ax.tick_params(labelsize=7)
+
+    def format_coord(x, y):
+        pos = display.position(x, y)
+        if pos is None or pos[0] is None:
+            return ''
+        k, ifast, islow = pos
+        lit_here = [f'{g} ({score[k, g]:.2f})' for g in np.flatnonzero(grains['lit'][k])]
+        return (f"image {int(display.imageindices[k])} (fast {ifast}, slow {islow}) | grain "
+                f"{label[k] if label[k] >= 0 else '-'} | lit: {', '.join(lit_here) or '-'}")
+    for ax in maps:
+        ax.format_coord = format_coord
+    det.scatter(*np.asarray(results['params']['roicenters']).T, s=1, c='0.88')
+    for k in range(min(len(grains['grains']), 20)):
+        det.scatter(*np.asarray(grains['grains'][k]['roicenters']).T, s=14, color=cmap(k % 20), label=f'grain {k}')
+    det.set_aspect('equal')
+    det.invert_yaxis()
+    det.set_xlabel('X (pixel)', fontsize=8)
+    det.set_ylabel('Y (pixel)', fontsize=8)
+    det.set_title('ROIs (Laue spots) of the grains on the detector', fontsize=9)
+    det.legend(fontsize=7, markerscale=1.5, ncol=2, loc='center left', bbox_to_anchor=(1.01, 0.5), frameon=False)
+    fig.tight_layout()
+    return fig
+
+
+def grain_peaks(results: Dict[str, Any], grains: Dict[str, Any], grain: int, imageindex: Optional[int] = None,
+                detfile: Optional[Union[str, Path]] = None, outputfolder: Optional[Union[str, Path]] = None,
+                fitpixeldev: Optional[float] = None, verbose: bool = True):
+    """Laue spots of a grain of find_grains() in one image (default: the image where it is brightest): 2D gaussian
+    fit of the brightest pixel of each of its ROIs (rejection as in the peak search), written as a peak list
+    <outputfolder>/<prefix><imageindex>_grain<grain>.dat (with detfile: .cor file, 2theta and chi, to be indexed,
+    e.g. with IB.index_refine()). outputfolder: default the folder of the grain imaging results.
+    Returns (peak list array (X, Y, I, ... as readmccd.PeakSearch(), most intense first), path of the file)"""
+    from LaueTools import readmccd as RMCCD
+    params = results['params']
+    g = grains['grains'][grain]
+    imageindex = g['best_image'] if imageindex is None else int(imageindex)
+    path, frame, imageindex = image_path(params, imageindex)
+    box = int(max(params['boxsize_X'], params['boxsize_Y']))
+    res = RMCCD.fitoneimage_manypeaks(path, np.asarray(g['roicenters'], dtype=float), box, stackimageindex=frame,
+                                      CCDLabel=params['CCDLabel'], position_start='max',
+                                      FitPixelDev=fitpixeldev if fitpixeldev is not None else 1.5 * box,
+                                      PeakSizeRange=(0.4, box), NumberMaxofFits=len(g['roicenters']) + 1,
+                                      purgeDuplicates=True)
+    peaks = None if res is None else res[0]
+    if peaks is None or len(peaks) == 0:
+        GT.printyellow(f'grain {grain}: no spot fitted in image {imageindex}')
+        return None, None
+    folder = Path(outputfolder) if outputfolder is not None else Path(results.get('resultsfile', '.')).parent
+    folder.mkdir(parents=True, exist_ok=True)
+    stem = f"{params['prefix']}{imageindex:0{params.get('nbdigits', 4)}d}_grain{grain}"
+    comments = f"grain {grain} of the grain imaging {results.get('resultsfile', '')}: {g['nbrois']} ROIs"
+    if detfile is not None:
+        from LaueTools import LaueGeometry as LaueGeo
+        from LaueTools import IOLaueTools as IOLT
+        written, _ = LaueGeo.peaklist_to_corfile(peaks, stem, str(folder), IOLT.readCalib_det_file(str(detfile)),
+                                                 initialfilename=path, comments=comments)
+    else:
+        written = RMCCD.writepeaklist(peaks, stem, outputfolder=str(folder), initialfilename=path, comments=comments)
+    if verbose:
+        print(f'grain {grain}: {len(peaks)} spots fitted in image {imageindex} (of {g["nbrois"]} ROIs) -> {written}')
+    return peaks, written
+
+
+def brightest_rois(results: Dict[str, Any], grains: Optional[Dict[str, Any]] = None, nb: int = 20,
+                   counter: str = 'max'):
+    """table (pandas DataFrame) of the nb ROIs of highest intensity (counter) over the map, brightest first: ROI
+    index, center X, Y, highest value, image and map point (fast, slow) where it is, grains of find_grains() it
+    belongs to ('-': none; method 'regions': several if the ROI lights several places) and grains lit at this
+    point"""
+    import pandas as pd
+    from LaueTools.scripts import roicountersplot as RCP
+    values = RCP.counter_values(results, counter, 0)   # (nb images, nb ROIs)
+    highest = np.nanmax(np.where(np.isfinite(values), values, -np.inf), axis=0)
+    roicenters = np.asarray(results['params']['roicenters'])
+    imageindices = np.asarray(results['imageindices'])
+    dimfast = results['params']['mapdimensions'][0]
+    grains_of = {}
+    if grains is not None:
+        for g, grain in enumerate(grains['grains']):
+            for i in grain['rois']:
+                grains_of.setdefault(int(i), []).append(g)
+    rows = []
+    for roi in np.argsort(-highest, kind='stable')[:nb]:
+        k = int(np.nanargmax(np.where(np.isfinite(values[:, roi]), values[:, roi], -np.inf)))
+        row = {'ROI': int(roi), 'X': int(roicenters[roi][0]), 'Y': int(roicenters[roi][1]),
+               f'highest {counter}': float(highest[roi]), 'image': int(imageindices[k]), 'fast': k % dimfast,
+               'slow': k // dimfast}
+        if grains is not None:
+            row['grains of the ROI'] = ', '.join(map(str, grains_of.get(int(roi), []))) or '-'
+            lit = np.flatnonzero(grains['lit'][k])
+            row['grains lit at this point'] = ', '.join(map(str, lit)) or '-'
+        rows.append(row)
+    return pd.DataFrame(rows).set_index('ROI')
+
+
+def gnomonic_coordinates(roicenters, detfile: Union[str, Path]) -> np.ndarray:
+    """gnomonic coordinates (nb ROIs, 2) of ROI centers (X, Y pixel indices of the image array) with the detector
+    calibration of a .det file (spots of a grain lie on lines: zone axes)"""
+    from LaueTools import IOLaueTools as IOLT
+    from LaueTools import LaueGeometry as LaueGeo
+    from LaueTools import indexingImageMatching as IIM
+    calib = IOLT.readCalib_det_file(str(detfile))
+    xy = np.asarray(roicenters, dtype=float) + 1.   # peak positions start at (1, 1)
+    tth, chi = LaueGeo.calc_uflab(xy[:, 0], xy[:, 1], calib['CCDCalibParameters'], pixelsize=calib['pixelsize'],
+                                  kf_direction=calib.get('kf_direction', 'Z>0'))
+    return np.array(IIM.ComputeGnomon_2([np.asarray(tth), np.asarray(chi)])).T
+
+
+class GrainBrowser:
+    """browser of the grains of find_grains() (interactive backend %matplotlib widget and ipywidgets):
+    - left: map of the current grain (mean scaled intensity of its ROIs); hover: image index, grains lit;
+      click: Laue pattern of this map point on the right (white +: point shown)
+    - right: Laue pattern (default: image where the grain is brightest) with the ROIs of the grain (boxes of the
+      ROI size) and the centers of the other ROIs (grey dots)
+    - grain: slider and previous / next buttons; contrast of the Laue pattern; checkbox: Laue pattern (else the
+      ROIs only, faster)
+    - with detfile (calibration): ROIs in gnomonic coordinates (spots of a grain on lines: zone axes)
+    - spots of the peak search of the image shown (its .cor file in corfolder, default: corfiles folder of the map
+      in PROCESSED_DATA) inside the ROI boxes of the grain: green circles, and their indices in the .cor file (from
+      0, as in the LaueTools GUI) listed to be copied (text box); spot_margin: pixels added around the ROI boxes for
+      this search. .cor file of an image: in corfolder if given, else in the folder corfiles of the map in
+      PROCESSED_DATA, else in a subfolder of the map folder in PROCESSED_DATA or RAW_DATA (e.g. img_CORfiles) with
+      this file (the most recent)
+    - info: nb of ROIs, area, centroid, brightest image, ROIs of the grain (index and center X, Y)
+    Methods without the widgets: show_grain(k), show_image(imageindex), grain_spots()"""
+
+    def __init__(self, grains: Dict[str, Any], results: Dict[str, Any], grain: int = 0, show_image: bool = True,
+                 detfile: Optional[Union[str, Path]] = None, corfolder: Optional[Union[str, Path]] = None,
+                 spot_margin: float = 0., figsize=None):
+        import matplotlib.pyplot as plt
+        from matplotlib.collections import PatchCollection
+        from matplotlib.patches import Rectangle
+        from LaueTools.scripts import roicountersplot as RCP
+        self._Rectangle, self._PatchCollection = Rectangle, PatchCollection
+        if not grains['grains']:
+            raise ValueError('no grain: change the settings of find_grains()')
+        self.grains, self.results, self.params = grains, results, results['params']
+        self.display = RCP.MapDisplay(results)
+        self.roicenters = np.asarray(self.params['roicenters'])
+        self.box = (int(self.params['boxsize_X']), int(self.params['boxsize_Y']))
+        self.grain, self.imageindex, self.boxes = None, None, None
+        self.with_image = show_image
+        self.corfolder = Path(corfolder) if corfolder is not None else None   # None: searched (_corfile_path())
+        self._peaklists = {}   # image index: (path of the .cor file, peak list) read
+        self.spot_margin = float(spot_margin)
+        try:
+            import ipywidgets as widgets
+            from IPython.display import display
+            interactive = 'inline' not in plt.get_backend().lower()
+        except ImportError:
+            interactive = False
+        self.gnomonic = gnomonic_coordinates(self.roicenters, detfile) if detfile is not None else None
+        ncols = 2 if self.gnomonic is None else 3
+        with plt.ioff() if interactive else _nullcontext():
+            self.fig, axes = plt.subplots(1, ncols, figsize=figsize or ((10.5, 5.2) if ncols == 2 else (13.5, 5.2)),
+                                          gridspec_kw={'width_ratios': [1, 1.6, 1.3][:ncols]})
+        if interactive:   # widgets only with an interactive figure (ipympl canvas is a widget)
+            interactive = isinstance(self.fig.canvas, widgets.DOMWidget)
+        self.axmap, self.axdet = axes[0], axes[1]
+        self.axgno, self.gnodots = (axes[2], None) if self.gnomonic is not None else (None, None)
+        if self.axgno is not None:
+            self.axgno.scatter(*self.gnomonic.T, s=1, c='tab:blue', alpha=0.25)
+            self.axgno.set_aspect('equal')
+            self.axgno.set_xlabel('gnomonic X', fontsize=8)
+            self.axgno.set_ylabel('gnomonic Y', fontsize=8)
+            self.axgno.set_title(f'gnomonic projection ({Path(detfile).name})', fontsize=10)
+        score = grains['score']
+        self.immap = self.axmap.imshow(self.display.data(score[:, 0]), origin='lower', cmap='magma', vmin=0, vmax=1,
+                                       interpolation='nearest')
+        self.fig.colorbar(self.immap, ax=self.axmap, fraction=0.05, pad=0.02, label='mean scaled intensity')
+        self.axmap.set_xlabel(self.display.xlabel, fontsize=8)
+        self.axmap.set_ylabel(self.display.ylabel, fontsize=8)
+        self.mark, = self.axmap.plot([], [], '+', color='w', ms=12, mew=2)
+        self.axmap.format_coord = self._format_coord
+        # detector: Laue pattern (if shown) under the ROIs
+        nx, ny = self._detector_size()
+        self.imdet = self.axdet.imshow(np.zeros((ny, nx)), cmap='gray_r', interpolation='nearest',
+                                       extent=(-0.5, nx - 0.5, ny - 0.5, -0.5))
+        self.axdet.scatter(*self.roicenters.T, s=0.5, c='tab:blue', alpha=0.12)   # all the ROI centers
+        self.corspots = self.axdet.scatter([], [], s=70, facecolor='none', edgecolor='lime', lw=1.3)
+        self.axdet.set_xlim(-0.5, nx - 0.5)
+        self.axdet.set_ylim(ny - 0.5, -0.5)
+        self.axdet.set_xlabel('X (pixel)', fontsize=8)
+        self.axdet.set_ylabel('Y (pixel)', fontsize=8)
+        self.fig.tight_layout()
+        self.interactive = interactive
+        if interactive:
+            ngrains = len(grains['grains'])
+            self.w_grain = widgets.IntSlider(value=grain, min=0, max=ngrains - 1, description='grain',
+                                             continuous_update=False, layout=widgets.Layout(width='45%'))
+            self.w_prev = widgets.Button(description='◀', layout=widgets.Layout(width='40px'))
+            self.w_next = widgets.Button(description='▶', layout=widgets.Layout(width='40px'))
+            self.w_image = widgets.Checkbox(value=show_image, description='Laue pattern', indent=False)
+            self.w_contrast = widgets.FloatRangeSlider(value=[0, 1], min=0, max=1, step=0.001,
+                                                       description='contrast', readout_format='.0f',
+                                                       continuous_update=False, layout=widgets.Layout(width='45%'))
+            self.w_info = widgets.HTML()
+            self.w_spots = widgets.Textarea(value='', description='.cor spots', placeholder='spot indices',
+                                            layout=widgets.Layout(width='98%', height='60px'))
+            self.w_grain.observe(lambda change: self.show_grain(change['new']), names='value')
+            self.w_prev.on_click(lambda _: setattr(self.w_grain, 'value', max(self.w_grain.value - 1, 0)))
+            self.w_next.on_click(lambda _: setattr(self.w_grain, 'value', min(self.w_grain.value + 1, ngrains - 1)))
+            self.w_image.observe(self._on_image_checkbox, names='value')
+            self.w_contrast.observe(lambda change: self.imdet.set_clim(*change['new']) or self.fig.canvas.draw_idle(),
+                                    names='value')
+            self.fig.canvas.mpl_connect('button_press_event', self._on_click)
+            self.fig.canvas.header_visible = False
+            display(widgets.VBox([widgets.HBox([self.w_prev, self.w_grain, self.w_next, self.w_image]),
+                                  self.fig.canvas, self.w_contrast, self.w_spots, self.w_info]))
+        self.show_grain(grain)
+
+    def _detector_size(self):
+        """(nb pixels X, Y) of the detector (from an image, else from the ROI centers)"""
+        try:
+            from LaueTools import dict_LaueTools as DictLT
+            ny, nx = DictLT.dict_CCD[self.params['CCDLabel']][0][:2]
+            return int(nx), int(ny)
+        except (KeyError, IndexError, TypeError, ValueError):
+            return int(self.roicenters[:, 0].max()) + 1, int(self.roicenters[:, 1].max()) + 1
+
+    def _format_coord(self, x, y):
+        pos = self.display.position(x, y)
+        if pos is None or pos[0] is None:
+            return ''
+        k, ifast, islow = pos
+        score = self.grains['score']
+        lit = [f'{g}' for g in np.flatnonzero(self.grains['lit'][k])]
+        return (f'image {int(self.display.imageindices[k])} (fast {ifast}, slow {islow}) | grain {self.grain}: '
+                f'{score[k, self.grain]:.2f} | grains lit: {", ".join(lit) or "-"} (click: its Laue pattern)')
+
+    def _on_click(self, event):
+        if event.inaxes is self.axmap and event.button == 1 and self.fig.canvas.toolbar.mode == '':
+            imageindex = self.display.imageindex(event.xdata, event.ydata)
+            if imageindex is not None:
+                self.show_image(imageindex)
+
+    def _on_image_checkbox(self, change):
+        self.with_image = change['new']
+        self.show_image(self.imageindex)
+
+    def show_grain(self, k: int):
+        """map and ROIs of grain k, Laue pattern of the image where it is brightest"""
+        self.grain = int(k)
+        g = self.grains['grains'][self.grain]
+        self.immap.set_data(self.display.data(self.grains['score'][:, self.grain]))
+        self.axmap.set_title(f"grain {self.grain}: {g['nbrois']} ROIs, {g['area']} points", fontsize=10)
+        if self.boxes is not None:
+            self.boxes.remove()
+        bx, by = self.box
+        self.boxes = self._PatchCollection([self._Rectangle((x - bx - 0.5, y - by - 0.5), 2 * bx + 1, 2 * by + 1)
+                                            for x, y in g['roicenters']], facecolor='none', edgecolor='red', lw=1.2)
+        self.axdet.add_collection(self.boxes)
+        if self.axgno is not None:
+            if self.gnodots is not None:
+                self.gnodots.remove()
+            self.gnodots = self.axgno.scatter(*self.gnomonic[g['rois']].T, s=30, facecolor='none', edgecolor='red',
+                                              lw=1.5)
+        self.show_image(g['best_image'])
+
+    def show_image(self, imageindex: int):
+        """Laue pattern of an image of the map (if shown) with the ROIs of the current grain, info"""
+        self.imageindex = int(imageindex)
+        g = self.grains['grains'][self.grain]
+        if self.with_image:
+            image = np.asarray(read_image(self.params, self.imageindex), dtype=float)
+            self.imdet.set_data(image)
+            lo, hi = (float(v) for v in np.percentile(image, (1, 99.8)))
+            self.imdet.set_clim(lo, hi)
+            if self.interactive:
+                top = float(max(np.percentile(image, 99.99), hi + 1))
+                with self.w_contrast.hold_trait_notifications():
+                    self.w_contrast.max = top
+                    self.w_contrast.step = max(top / 2000, 0.01)
+                    self.w_contrast.value = [lo, hi]
+            title = f'image {self.imageindex}'
+        else:
+            self.imdet.set_data(np.zeros(self.imdet.get_array().shape))
+            title = 'ROIs'
+        k = int(np.flatnonzero(self.display.imageindices == self.imageindex)[0]) \
+            if np.any(self.display.imageindices == self.imageindex) else None
+        if k is not None:
+            dimfast = self.display.mapdimensions[0]
+            ifast, islow = k % dimfast, k // dimfast
+            self.mark.set_data([islow], [ifast]) if self.display.transposed else self.mark.set_data([ifast], [islow])
+            value = f", grain value {self.grains['score'][k, self.grain]:.2f}"
+        else:
+            value = ''
+        spots, per_roi, corfile = self.grain_spots()
+        xy = np.array([self._peaklists[self.imageindex][1][i, :2] - 1 for i in spots]) if spots else np.zeros((0, 2))
+        self.corspots.set_offsets(xy)   # (.cor positions start at (1, 1))
+        best = ' (brightest)' if self.imageindex == g['best_image'] else ''
+        self.axdet.set_title(f"{title}{best}{value}: {g['nbrois']} ROIs of grain {self.grain} (red boxes)", fontsize=10)
+        self.fig.canvas.draw_idle()
+        if self.interactive:
+            rois = ', '.join(f'{int(i)} ({x}, {y})' for i, (x, y) in zip(g['rois'], g['roicenters']))
+            self.w_spots.value = str(spots) if corfile is not None else ''
+            if corfile is None:
+                spotinfo = (f'no .cor file of image {self.imageindex} found (folder corfiles of the map, or a '
+                            f'subfolder of the map in PROCESSED_DATA or RAW_DATA; else give corfolder=...)')
+            else:
+                withspot = sum(1 for v in per_roi.values() if v)
+                details = ', '.join(f'{roi}: {v}' for roi, v in per_roi.items() if v)
+                spotinfo = (f"spots of <b>{corfile}</b> in the {g['nbrois']} ROIs of grain {self.grain} "
+                            f"({withspot} ROIs with a spot, green circles, list in the box above), indices in the "
+                            f".cor file:<br>"
+                            f"<code style='user-select: all'>{spots}</code><br>spots of each ROI: {details or '-'}")
+            self.w_info.value = (f"<b>grain {self.grain}</b> / {len(self.grains['grains'])}: <b>{g['nbrois']} ROIs</b>, "
+                                 f"area {g['area']} points, centroid (fast, slow) ({g['centroid'][0]:.1f}, "
+                                 f"{g['centroid'][1]:.1f}), brightest image {g['best_image']}, image shown "
+                                 f"{self.imageindex}<br>{spotinfo}<br>ROIs (index (X, Y)): {rois}")
+
+    def _peaklist(self, imageindex: int):
+        """(path, peak list (X, Y ... in the order of the file)) of the .cor file of an image, (None, None) if none"""
+        if imageindex not in self._peaklists:
+            found = self._corfile_path(imageindex)
+            peaklist = None
+            if found is not None:
+                from LaueTools import map_workflow as MW
+                _, nbpeaks, peaklist = MW._read_peaklist_file((imageindex, str(found)))
+                peaklist = peaklist if nbpeaks > 0 else np.zeros((0, 2))
+            self._peaklists[imageindex] = (found, peaklist)
+        return self._peaklists[imageindex]
+
+    def _corfile_path(self, imageindex: int) -> Optional[Path]:
+        """.cor file of an image: corfolder (or its subfolders) if given, else folder corfiles of the map in
+        PROCESSED_DATA (or its subfolders), else the most recent one in the subfolders of the map folders in
+        PROCESSED_DATA and RAW_DATA (e.g. img_CORfiles, datfiles_notebook)"""
+        name = f"{self.params['prefix']}{imageindex:0{self.params.get('nbdigits', 4)}d}.cor"
+        if self.corfolder is not None:
+            roots = [self.corfolder]
+        else:
+            roots = []
+            try:
+                from LaueTools import map_workflow as MW
+                processed = MW.processed_folder(self.params['folder'])
+                roots = [processed / 'corfiles']
+            except (ValueError, KeyError):
+                processed = None
+        for root in roots:
+            for candidate in [root / name] + sorted(root.glob(f'*/{name}')):
+                if candidate.exists():
+                    return candidate
+        if self.corfolder is not None:
+            return None
+        if not hasattr(self, '_corfolders'):   # subfolders of the map with .cor files (searched once)
+            folders = []
+            for base in [processed, Path(self.params['folder'])]:
+                if base is not None and base.is_dir():
+                    folders += [d for d in base.iterdir() if d.is_dir() and '_previous_' not in d.name]
+            self._corfolders = folders
+        found = [d / name for d in self._corfolders if (d / name).exists()]
+        return max(found, key=lambda path: path.stat().st_mtime) if found else None
+
+    def grain_spots(self, imageindex: Optional[int] = None, grain: Optional[int] = None):
+        """spots of the .cor file of an image (default: image shown) inside the ROI boxes of a grain (default: grain
+        shown). Returns (sorted list of their indices in the .cor file (from 0, as in the LaueTools GUI), {ROI index:
+        indices of its spots, nearest to the ROI center first}, path of the .cor file (None: no file))"""
+        imageindex = self.imageindex if imageindex is None else int(imageindex)
+        g = self.grains['grains'][self.grain if grain is None else int(grain)]
+        corfile, peaklist = self._peaklist(imageindex)
+        if corfile is None:
+            return [], {}, None
+        xy = peaklist[:, :2] - 1. if len(peaklist) else np.zeros((0, 2))   # .cor positions start at (1, 1)
+        bx, by = self.box[0] + 0.5 + self.spot_margin, self.box[1] + 0.5 + self.spot_margin
+        per_roi = {}
+        for roi, (xc, yc) in zip(g['rois'], g['roicenters']):
+            inside = np.flatnonzero((np.abs(xy[:, 0] - xc) <= bx) & (np.abs(xy[:, 1] - yc) <= by))
+            dist = np.hypot(xy[inside, 0] - xc, xy[inside, 1] - yc)
+            per_roi[int(roi)] = [int(i) for i in inside[np.argsort(dist)]]
+        spots = sorted({i for v in per_roi.values() for i in v})
+        return spots, per_roi, str(corfile)

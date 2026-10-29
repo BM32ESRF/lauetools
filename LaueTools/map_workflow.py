@@ -10,6 +10,8 @@ Steps (each one uses the dedicated modules, with YAML configuration files writte
 3. peak search (images -> .cor files, .dat files without calibration) run_step('peaksearch', ...)   (peaksearch_batch)
 4. indexation & refinement (.cor -> .fit files)                run_step('indexing', ...)     (indexing_batch)
 5. maps: quality, orientation (IPF), grains (segmentation)     load_fitfiles(), quality_maps(), segmentation()
+   figures saved next to the results (and in GALLERY)          savefigresults()
+   all maps: peak search, browser of the saved figures         peaksearch_maps(), FigureBrowser
 
 Each step runs on this machine (multiprocessing) or as a job on the ESRF cluster (SLURM, e.g. magnifix partition).
 Steps already done are skipped (results are reloaded), unless redo=True: running the notebook again is safe.
@@ -43,6 +45,9 @@ DETECTOR_FILES = {'EIGER_4MCdTe': ('eiger4m_', '.h5'), 'sCMOS': ('img_', '.tif')
 DETECTOR_PEAKSEARCH = {'EIGER_4MCdTe': {'boxsize': 15, 'PixelNearRadius': 10, 'npixels': 5}}
 # cpu time per image (s) to estimate the time limit of the cluster jobs (generous: the time limit is not a cost)
 SEC_CPU_PER_IMAGE = {'peaksearch': 3., 'indexing': 15.}
+# seconds between two updates of the progress of a cluster job (run_step(..., poll=...)), e.g. MW.SLURM_POLL = 10
+SLURM_POLL = 30.
+_GALLERY_NOT_WRITABLE = set()   # GALLERY folders without write permission (warned once, see savefigresults())
 
 
 # --------------------------------------------------------------------------------------
@@ -132,37 +137,139 @@ def _count_files(folder: Path, prefix: str, suffix: str) -> int:
         return 0
 
 
-def _status(workdir: Path) -> str:
-    """results already in workdir: 'peaks' (corfiles), 'fit:<material>' (fitfiles_<material>)"""
+def _count_results(folder: Path, suffix: str) -> int:
+    """nb of files ending with suffix in folder and in its subfolders (layout with nbfiles_per_folder)"""
+    n = 0
+    try:
+        with os.scandir(folder) as entries:
+            for e in entries:
+                if e.name.endswith(suffix):
+                    n += 1
+                elif '_previous_' not in e.name and e.is_dir(follow_symlinks=False):
+                    n += _count_files(Path(e.path), '', suffix)
+    except OSError:
+        pass
+    return n
+
+
+def _status(workdir: Path, count_files: bool = False) -> str:
+    """results already in workdir: 'peaks' (corfiles), 'fit:<material>' (fitfiles_<material>)
+    count_files: with the nb of .cor files and of indexed images (_g0.fit files), e.g. 'peaks (22801 .cor)'"""
     status = []
     if (workdir / 'corfiles').is_dir():
-        status.append('peaks')
+        status.append(f"peaks ({_count_results(workdir / 'corfiles', '.cor')} .cor)" if count_files else 'peaks')
     if workdir.is_dir():
-        status += [f"fit:{p.name[len('fitfiles_'):]}" for p in sorted(workdir.glob('fitfiles_*'))
-                   if p.is_dir() and '_previous_' not in p.name]
+        for p in sorted(workdir.glob('fitfiles_*')):
+            if p.is_dir() and '_previous_' not in p.name:
+                fit = f"fit:{p.name[len('fitfiles_'):]}"
+                status.append(f'{fit} ({_count_results(p, "_g0.fit")} _g0.fit)' if count_files else fit)
     return ', '.join(status)
 
 
-def list_maps(logfile: Union[str, Path], contains: Optional[str] = None, only_success: bool = False,
+def raw_data_folder(exp_id: Optional[str] = None, parent: Union[str, Path] = '/data/visitor',
+                    date: Optional[str] = None, beamline: str = 'bm32',
+                    raw_data_folder: Optional[Union[str, Path]] = None, verbose: bool = True) -> Path:
+    """RAW_DATA folder of an experiment: <parent>/<exp_id>/<beamline>/<date>/RAW_DATA (ESRF), e.g. parent
+    '/data/visitor' (user experiments) or '/data/bm32/inhouse'. date: None: the only date folder of the experiment,
+    or the most recent one if there are several (printed: set the date to choose another one).
+    raw_data_folder: given folder (other organisation of the data), returned as is"""
+    if raw_data_folder:
+        return Path(raw_data_folder)
+    if not exp_id:
+        raise ValueError('set EXP_ID (experiment, e.g. a321220) or RAW_DATA_FOLDER')
+    base = Path(parent) / exp_id / beamline
+    if not base.is_dir() and (Path(parent) / exp_id.lower() / beamline).is_dir():
+        base = Path(parent) / exp_id.lower() / beamline
+    if not base.is_dir():
+        raise FileNotFoundError(f'no folder {base}: check EXP_ID and PARENT_PATH')
+    dates = sorted(d.name for d in base.iterdir() if (d / 'RAW_DATA').is_dir())
+    if not dates:
+        raise FileNotFoundError(f'no <date>/RAW_DATA folder in {base}')
+    if date is not None and str(date) not in dates:
+        raise FileNotFoundError(f'no RAW_DATA folder for the date {date} in {base}: dates {dates}')
+    chosen = str(date) if date is not None else dates[-1]
+    if verbose:
+        if date is None and len(dates) > 1:
+            GT.printyellow(f'several dates in {base}: {dates}, the most recent one is used (EXP_DATE to choose)')
+        print(f'RAW_DATA_FOLDER = {base / chosen / "RAW_DATA"}')
+    return base / chosen / 'RAW_DATA'
+
+
+# keys of a scan filter (SCAN_FILTER of the quickstart notebook, see scan_filter())
+SCAN_FILTER_KEYS = {'contains': '', 'include': [], 'logic': 'AND', 'exclude': [], 'prefix': None,
+                    'only_success': False, 'min_points': None, 'max_points': None, 'last': None}
+
+
+def _words_match(text: str, pattern: Optional[str]) -> bool:
+    """all the words of pattern are in text (case insensitive); a word starting with '-' must not be in it"""
+    text = text.lower()
+    for word in (pattern or '').lower().split():
+        if word.startswith('-') and len(word) > 1:
+            if word[1:] in text:
+                return False
+        elif word not in text:
+            return False
+    return True
+
+
+def scan_filter(spec=None) -> dict:
+    """filter of the scans of list_maps() from a text or a dict (keys of SCAN_FILTER_KEYS):
+    - text: words of the dataset name (case insensitive), a word starting with '-': without it, e.g. 'map2D -align'
+    - dict:
+        'contains': text as above
+        'include': text or list of texts of the scan name in the .h5 file (case sensitive), 'logic': 'AND' (all of
+            them, default) or 'OR' (at least one)
+        'exclude': text or list of texts: scans whose name contains one of them are not listed (case sensitive)
+        'prefix': scan name starting with this text (e.g. the sample name)
+        'only_success': True: only the scans ended with SUCCESS (not aborted, not failed)
+        'min_points', 'max_points': nb of map points (e.g. min_points 100: no small alignment maps)
+        'last': only the last scans of the experiment (nb of scans)
+    All the conditions except 'min_points', 'max_points' are applied while reading the .h5 file (faster for large
+    experiments)"""
+    if spec is None or isinstance(spec, str):
+        spec = {'contains': spec or ''}
+    if not isinstance(spec, dict):
+        raise TypeError(f'SCAN_FILTER must be a text or a dict, not {type(spec).__name__}')
+    unknown = set(spec) - set(SCAN_FILTER_KEYS)
+    if unknown:
+        raise KeyError(f'unknown keys {sorted(unknown)} of SCAN_FILTER: {list(SCAN_FILTER_KEYS)}')
+    flt = {**SCAN_FILTER_KEYS, **spec}
+    for key in ('include', 'exclude'):
+        flt[key] = [flt[key]] if isinstance(flt[key], str) else list(flt[key] or [])
+    if str(flt['logic']).upper() not in ('AND', 'OR'):
+        raise ValueError(f"SCAN_FILTER 'logic' must be 'AND' or 'OR', not {flt['logic']!r}")
+    flt['logic'] = str(flt['logic']).upper()
+    return flt
+
+
+def list_maps(logfile: Union[str, Path], contains=None, only_success: bool = False,
               output_root: Optional[Union[str, Path]] = None, count_images: bool = True, verbose: int = 1):
     """table (pandas DataFrame) of the 2D maps (amesh, dmesh, fscan2d) of the experiment
 
-    contains: keep the maps whose dataset name contains this text (case insensitive)
+    contains: filter of the maps (SCAN_FILTER): text (words of the dataset name, case insensitive, '-word': without
+        it) or dict of conditions, see scan_filter()
+    only_success: only the maps ended with SUCCESS (also 'only_success' of the filter)
     count_images: count the image files of each map (column 'images': found / expected)
     Column 'done': results already in PROCESSED_DATA (peaks: peak search, fit:<material>: indexation)
-    index of the table: scan index in the hdf5 file (used by scan_info())
+    index of the table: scan index in the hdf5 file (used by scan_info()); it depends on the filter: the dataset
+    name (column 'dataset') can be used instead (see scan_index())
     """
     import pandas as pd
     from LaueTools import logfile_reader as iohdf5
     t0 = time.time()
+    flt = scan_filter(contains)
+    only_success = only_success or bool(flt['only_success'])
     lf = iohdf5.H5file(str(logfile))
-    lf.getscans(verbose=0)
+    lf.getscans(verbose=0, n_last=int(flt['last']) if flt['last'] else 100000, node_prefix=flt['prefix'],
+                node_substrings=flt['include'] or None, substrings_logic=flt['logic'],
+                exclude_substrings=flt['exclude'] or None, only_endreason_SUCCESS=only_success,
+                node_filter=(lambda name: _words_match(name, flt['contains'])) if flt['contains'] else None)
     df = lf.dfallscans
     df = df[df['scantype'].isin(MAP_COMMANDS)]
     if only_success:
         df = df[df['endreason'] == 'SUCCESS']
-    if contains:
-        df = df[df['sample_dataset_scanindex'].str.contains(contains, case=False, regex=False)]
+    if flt['contains']:
+        df = df[[_words_match(name, flt['contains']) for name in df['sample_dataset_scanindex']]]
 
     rows = []
     for idx, row in df.iterrows():
@@ -171,6 +278,9 @@ def list_maps(logfile: Union[str, Path], contains: Optional[str] = None, only_su
         except ValueError:
             continue
         nfast, nslow = dc['npts_fast'], dc['npts_slow']
+        if (flt['min_points'] and nfast * nslow < flt['min_points']) or (
+                flt['max_points'] and nfast * nslow > flt['max_points']):
+            continue
         image_folder = Path(row['imagefolder'])
         ccdlabel, prefix, suffix = guess_detector(image_folder)
         nbimages = _count_files(image_folder, prefix, suffix) if (count_images and prefix) else None
@@ -193,50 +303,272 @@ def list_maps(logfile: Union[str, Path], contains: Optional[str] = None, only_su
     maps = pd.DataFrame(rows)
     if len(maps):
         maps = maps.set_index('index')
+    maps.attrs['output_root'] = output_root   # (refresh_done())
     if verbose:
         print(f'{len(maps)} maps found in {Path(logfile).name} ({time.time() - t0:.0f} s)')
     return maps
+
+
+def refresh_done(maps, output_root: Optional[Union[str, Path]] = None, count_files: bool = False,
+                 nb_threads: int = 16, verbose: bool = True):
+    """update the column 'done' of the table of list_maps() (results in PROCESSED_DATA: peaks, fit:<material>),
+    e.g. after analyses done since the table was made. output_root: None: that of list_maps()
+    Without count_files: only 1 or 2 folders read per map (fast, also for hundreds of maps).
+    count_files: also the nb of .cor files and of indexed images (_g0.fit files): all the files of the results
+    folders are listed (nb_threads folders at a time), e.g. ~0.1 s for 20000 files"""
+    if not len(maps):
+        return maps
+    from concurrent.futures import ThreadPoolExecutor
+    t0 = time.time()
+    output_root = maps.attrs.get('output_root') if output_root is None else output_root
+
+    def status(index):
+        try:
+            return _status(processed_folder(maps.at[index, 'image_folder'], output_root), count_files)
+        except ValueError:
+            return maps.at[index, 'done']
+    with ThreadPoolExecutor(nb_threads if count_files else 1) as pool:
+        maps['done'] = list(pool.map(status, maps.index))
+    if verbose and time.time() - t0 > 2:
+        print(f"column 'done' of {len(maps)} maps updated ({time.time() - t0:.0f} s)")
+    return maps
+
+
+def scan_index(maps, index) -> Optional[int]:
+    """index of a map in the table of list_maps(): index of the table (int), or dataset name (str, e.g.
+    'MH73_HT_p5_fishing_1': does not depend on the filter of the table). None: None"""
+    if index is None or isinstance(index, (int, np.integer)):
+        return None if index is None else int(index)
+    found = [int(i) for i in maps.index if maps.loc[i, 'dataset'] == str(index)]
+    if not found:
+        raise KeyError(f'no map {index!r} in the table (filter SCAN_FILTER?)')
+    return found[-1]
 
 
 def show_maps(maps, nmax: Optional[int] = None):
     """display the table of maps (main columns)"""
     from IPython.display import display
     import pandas as pd
+    if not len(maps):
+        GT.printred('no map: change SCAN_FILTER (or EXP_ID, EXP_DATE)')
+        return
     with pd.option_context('display.max_rows', nmax or len(maps), 'display.max_colwidth', 70, 'display.width', 250):
         display(maps[['dataset', 'start', 'hours', 'map', 'images', 'detector', 'end', 'done', 'command']])
 
 
 class ScanSelector:
-    """menu to choose a map in the table of list_maps(). The selected scan index is ScanSelector.index"""
+    """menu to choose a map in the table of list_maps(), with a filter (words of the menu lines, '-word': without
+    it) and a checkbox 'only SUCCESS' (maps not aborted). The selected scan index is ScanSelector.index
+    index: index of the table or dataset name (see scan_index())
+    refresh: column 'done' of the table updated first (refresh_done())
+    count_files (also checkbox 'count files'): column 'done' with the nb of .cor files and of indexed images"""
 
-    def __init__(self, maps, index: Optional[int] = None):
-        self.maps = maps
+    def __init__(self, maps, index=None, only_success: bool = False, refresh: bool = True,
+                 count_files: bool = False):
+        self.maps = refresh_done(maps, count_files=count_files) if refresh else maps   # column 'done' up to date
+        index = scan_index(maps, index)
         self.index = index if index is not None else (int(maps.index[-1]) if len(maps) else None)
+        if not len(maps):
+            GT.printred('no map in the table: change SCAN_FILTER')
+            return
         try:
             import ipywidgets as widgets
             from IPython.display import display
         except ImportError:
-            print('ipywidgets not installed: set SCAN_INDEX in SETTINGS (index of the table)')
+            print('ipywidgets not installed: set SCAN_INDEX in SETTINGS (index of the table or dataset name)')
             return
-        options = [(f"{i:5d} | {r['dataset']} | {r['map']} | images {r['images']} | {r['end']}"
-                    + (f" | done: {r['done']}" if r['done'] else ''), int(i)) for i, r in maps.iterrows()]
-        self.menu = widgets.Dropdown(options=options, value=self.index, description='map:',
-                                     layout=widgets.Layout(width='95%'))
+        self._make_labels()
+        self.filter = widgets.Text(description='filter:', placeholder="words of the menu lines, '-word': without it",
+                                   continuous_update=False, layout=widgets.Layout(width='50%'))
+        self.success = widgets.Checkbox(value=bool(only_success), description='only SUCCESS (not aborted)',
+                                        indent=False)
+        self.count_files = widgets.Checkbox(value=bool(count_files), description='count files (.cor, _g0.fit)',
+                                            indent=False)
+        self.count = widgets.HTML()
+        self.menu = widgets.Select(options=[], rows=min(max(len(self.labels), 3), 12),
+                                   layout=widgets.Layout(width='98%'))
+        self.menu.add_class('lt-scan-menu')
+        style = widgets.HTML('<style>.lt-scan-menu select {font-family: monospace; font-size: 12px}</style>')
         self.info = widgets.HTML()
         self.menu.observe(self._on_change, names='value')
-        self._on_change(None)
-        display(widgets.VBox([self.menu, self.info]))
+        self.filter.observe(self._apply_filter, names='value')
+        self.success.observe(self._apply_filter, names='value')
+        self.count_files.observe(self._on_count_files, names='value')
+        self._apply_filter(None)
+        display(widgets.VBox([style, widgets.HBox([self.filter, self.success, self.count_files, self.count]),
+                              self.menu, self.info]))
+
+    def _make_labels(self):
+        self.labels = [(f"{i:5d} | {r['dataset']} | {r['map']} | images {r['images']} | {r['end']}"
+                        + (f" | done: {r['done']}" if r['done'] else ''), int(i)) for i, r in self.maps.iterrows()]
+
+    def _on_count_files(self, change):
+        self.count.value = '&nbsp;counting the files ...'
+        t0 = time.time()
+        refresh_done(self.maps, count_files=self.count_files.value, verbose=False)
+        self._make_labels()
+        self._apply_filter(None)
+        if self.count_files.value:
+            self.count.value += f' (files counted in {time.time() - t0:.1f} s)'
+
+    def _apply_filter(self, change):
+        options = [o for o in self.labels if _words_match(o[0], self.filter.value)
+                   and (not self.success.value or self.maps.loc[o[1], 'end'] == 'SUCCESS')]
+        self.count.value = f'&nbsp;{len(options)} / {len(self.labels)} maps'
+        current = self.index   # (new options select their first one)
+        self.menu.options = options
+        if current in [o[1] for o in options]:
+            self.menu.value = current
+        elif options:
+            self.menu.value = options[-1][1]
 
     def _on_change(self, change):
+        if self.menu.value is None:
+            return
         self.index = int(self.menu.value)
         r = self.maps.loc[self.index]
-        self.info.value = (f"<b>{r['dataset']}</b>: <code>{r['command']}</code><br>{r['image_folder']}"
+        self.info.value = (f"<b>{r['dataset']}</b> (SCAN_INDEX = {self.index} or '{r['dataset']}'): "
+                           f"<code>{r['command']}</code><br>{r['image_folder']}<br>then run the next cells")
+
+
+def find_configs(exp_id: Optional[str] = None, parent: Union[str, Path] = '/data/visitor', beamline: str = 'bm32',
+                 dates=None, pattern: str = 'indexing*.yaml', root: Optional[Union[str, Path]] = None,
+                 max_depth: int = 3, verbose: bool = True):
+    """configuration files of the maps of an experiment: <configs folder>/<pattern> in the folders of
+    <parent>/<exp_id>/<beamline>/<date>/PROCESSED_DATA/ (e.g. <sample>/<dataset>/scan0001/configs/indexing.yaml)
+
+    dates: None: all the dates (session folders) of the experiment, or a date / list of dates ('20261007')
+    root: search in this folder instead (e.g. another PROCESSED_DATA folder); exp_id, parent, beamline not used
+    max_depth: depth of the folders (below PROCESSED_DATA) containing a 'configs' folder; the deeper folders (.cor,
+        .fit files) are never listed
+    Returns a table (pandas DataFrame, most recently modified first) with the columns 'date', 'dataset' (folder
+    relative to PROCESSED_DATA), 'file', 'material', 'map', 'fit' (nb of .fit files in fit_folder), 'modified',
+    'path', 'fit_folder', for ConfigSelector()"""
+    import datetime
+    import pandas as pd
+    import yaml
+    t0 = time.time()
+    if root is not None:
+        roots = [(None, Path(root))]
+    else:
+        if not exp_id:
+            raise ValueError('exp_id (experiment, e.g. ma7342) or root is needed')
+        base = Path(parent) / exp_id / beamline
+        if not base.is_dir() and (Path(parent) / exp_id.lower() / beamline).is_dir():
+            base = Path(parent) / exp_id.lower() / beamline
+        if not base.is_dir():
+            raise FileNotFoundError(f'no folder {base}')
+        dates = [dates] if isinstance(dates, (str, int)) else dates
+        sessions = sorted(d for d in base.iterdir() if d.is_dir() and (dates is None or d.name in map(str, dates)))
+        roots = [(d.name, d / 'PROCESSED_DATA') for d in sessions if (d / 'PROCESSED_DATA').is_dir()]
+        if dates is not None and len(roots) < len(dates):
+            GT.printyellow(f"date(s) without PROCESSED_DATA in {base}: "
+                           f"{sorted(set(map(str, dates)) - {r[0] for r in roots})}")
+
+    def configs_folders(folder: Path, depth: int):
+        """'configs' folders below folder (depth: levels of folders listed)"""
+        try:
+            with os.scandir(folder) as entries:
+                subdirs = [Path(e.path) for e in entries if e.is_dir()]
+        except OSError:
+            return
+        for sub in sorted(subdirs):
+            if sub.name == 'configs':
+                yield sub
+            elif depth > 0 and not sub.name.startswith('.'):
+                yield from configs_folders(sub, depth - 1)
+
+    rows = []
+    for date, processed in roots:
+        for cfgdir in configs_folders(processed, max_depth):
+            for path in sorted(cfgdir.glob(pattern)):
+                try:
+                    with open(path, 'r') as f:
+                        usercfg = yaml.safe_load(f) or {}
+                except (OSError, yaml.YAMLError):
+                    continue
+                if not isinstance(usercfg, dict) or 'indexing' not in usercfg and 'output' not in usercfg:
+                    continue
+                fit_folder = (usercfg.get('output') or {}).get('fit_folder')
+                if fit_folder:
+                    fit_folder = Path(os.path.expandvars(os.path.expanduser(str(fit_folder))))
+                    fit_folder = fit_folder if fit_folder.is_absolute() else (path.parent / fit_folder).resolve()
+                nbfit = None
+                if fit_folder and fit_folder.is_dir():
+                    with os.scandir(fit_folder) as entries:
+                        nbfit = sum(1 for e in entries if e.name.endswith('.fit'))
+                mapdims = (usercfg.get('scan') or {}).get('mapdims')
+                rows.append({'date': date or '',
+                             'dataset': str(cfgdir.parent.relative_to(processed)),
+                             'file': path.name,
+                             'material': (usercfg.get('material') or {}).get('key_material') or '',
+                             'map': f'{mapdims[0]} x {mapdims[1]}' if mapdims else '?',
+                             'fit': nbfit if nbfit is not None else '-',
+                             'modified': datetime.datetime.fromtimestamp(path.stat().st_mtime).strftime('%Y-%m-%d %H:%M'),
+                             'path': str(path), 'fit_folder': str(fit_folder) if fit_folder else ''})
+    configs = pd.DataFrame(rows, columns=['date', 'dataset', 'file', 'material', 'map', 'fit', 'modified', 'path',
+                                          'fit_folder'])
+    configs = configs.sort_values('modified', ascending=False).reset_index(drop=True)
+    if verbose:
+        where = root if root is not None else f"{base}/{{{', '.join(r[0] for r in roots)}}}/PROCESSED_DATA"
+        print(f'{len(configs)} configuration files {pattern} in {where} ({time.time() - t0:.1f} s)')
+    return configs
+
+
+class ConfigSelector:
+    """menu to choose a configuration file in the table of find_configs() (most recently modified first, with a
+    filter on the text of the menu). The selected file is ConfigSelector.path (use it as CONFIG)"""
+
+    def __init__(self, configs, path: Optional[str] = None):
+        self.configs = configs
+        self.path = path if path is not None else (configs['path'].iloc[0] if len(configs) else None)
+        try:
+            import ipywidgets as widgets
+            from IPython.display import display
+        except ImportError:
+            print('ipywidgets not installed: copy the path of the table into CONFIG')
+            return
+        w_date = max([len(str(d)) for d in configs['date']] + [4])
+        w_data = max([len(d) for d in configs['dataset']] + [7])
+        w_file = max([len(f) for f in configs['file']] + [4])
+        self.labels = [(f"{r['date']:<{w_date}} | {r['dataset']:<{w_data}} | {r['file']:<{w_file}} | {r['material']}"
+                        f" | {r['map']} | .fit {r['fit']} | {r['modified']}", r['path']) for _, r in configs.iterrows()]
+        self.filter = widgets.Text(description='filter:', placeholder='text of the menu (date, dataset, file ...)',
+                                   layout=widgets.Layout(width='60%'))
+        self.menu = widgets.Select(options=self.labels, rows=min(max(len(self.labels), 3), 15),
+                                   layout=widgets.Layout(width='98%', font_family='monospace'))
+        self.menu.add_class('lt-config-menu')
+        if self.path in configs['path'].values:
+            self.menu.value = self.path
+        self.info = widgets.HTML()
+        self.menu.observe(self._on_change, names='value')
+        self.filter.observe(self._on_filter, names='value')
+        self._on_change(None)
+        style = widgets.HTML('<style>.lt-config-menu select {font-family: monospace; font-size: 12px}</style>')
+        display(widgets.VBox([style, self.filter, self.menu, self.info]))
+
+    def _on_filter(self, change):
+        text = change['new'].lower()
+        options = [o for o in self.labels if text in o[0].lower()] if text else self.labels
+        current = self.menu.value
+        self.menu.options = options
+        if current in [o[1] for o in options]:
+            self.menu.value = current
+
+    def _on_change(self, change):
+        if self.menu.value is None:
+            return
+        self.path = self.menu.value
+        r = self.configs[self.configs['path'] == self.path].iloc[0]
+        self.info.value = (f"<b>CONFIG = '{self.path}'</b><br>.fit files ({r['fit']}): {r['fit_folder']}"
                            f"<br>then run the next cells")
 
 
 def scan_info(maps, index: int, output_root: Optional[Union[str, Path]] = None) -> dict:
-    """all information of a map needed by the analysis (from the table of list_maps())"""
+    """all information of a map needed by the analysis (from the table of list_maps()). index: index of the table
+    or dataset name (see scan_index())"""
     from LaueTools import logfile_reader as iohdf5
+    index = scan_index(maps, index)
     if index not in maps.index:
         raise KeyError(f'scan index {index} is not in the table of maps')
     row = maps.loc[index]
@@ -261,9 +593,15 @@ def scan_info(maps, index: int, output_root: Optional[Union[str, Path]] = None) 
             'workdir': str(processed_folder(row['image_folder'], output_root))}
 
 
-@functools.lru_cache(maxsize=8)
-def _experiment_files(raw_data_folder: str, max_depth: int = 4) -> tuple:
-    """.det files of the experiment (RAW_DATA and PROCESSED_DATA, up to max_depth subfolders)"""
+_EXPERIMENT_FILES = {}   # (raw_data_folder, max_depth): (time, files), see _experiment_files()
+
+
+def _experiment_files(raw_data_folder: str, max_depth: int = 4, max_age: float = 60.) -> tuple:
+    """.det files of the experiment (RAW_DATA and PROCESSED_DATA, up to max_depth subfolders)
+    (kept max_age seconds: the folders of the images are long to list, and new .det files are found after max_age)"""
+    key = (raw_data_folder, max_depth)
+    if key in _EXPERIMENT_FILES and time.time() - _EXPERIMENT_FILES[key][0] < max_age:
+        return _EXPERIMENT_FILES[key][1]
     found = []
     roots = [Path(raw_data_folder)]
     if Path(raw_data_folder).name == 'RAW_DATA':
@@ -274,6 +612,7 @@ def _experiment_files(raw_data_folder: str, max_depth: int = 4) -> tuple:
             if len(Path(dirpath).parts) - root_depth >= max_depth:
                 dirnames[:] = []
             found += [Path(dirpath) / f for f in filenames if f.endswith('.det')]
+    _EXPERIMENT_FILES[key] = (time.time(), tuple(found))
     return tuple(found)
 
 
@@ -281,9 +620,99 @@ def _most_recent_first(files) -> List[Path]:
     return sorted(files, key=lambda p: p.stat().st_mtime, reverse=True)
 
 
-def find_detfiles(raw_data_folder: Union[str, Path], max_depth: int = 4) -> List[Path]:
-    """calibration .det files of the experiment (RAW_DATA and PROCESSED_DATA), most recent first"""
-    return _most_recent_first(f for f in _experiment_files(str(raw_data_folder), max_depth) if f.suffix == '.det')
+@functools.lru_cache(maxsize=256)
+def _dataset_start(dataset_folder: str):
+    """start of the acquisition of a BLISS dataset (datetime): earliest start_time of the scans of the .h5 files of
+    the dataset folder RAW_DATA/<sample>/<dataset>/. None if unknown"""
+    import datetime
+    import h5py
+    times = []
+    for h5file in Path(dataset_folder).glob('*.h5'):
+        try:
+            with h5py.File(h5file, 'r', locking=False) as f:
+                for entry in f.values():
+                    if isinstance(entry, h5py.Group) and 'start_time' in entry:
+                        value = entry['start_time'][()]
+                        times.append(datetime.datetime.fromisoformat(
+                            value.decode() if isinstance(value, bytes) else str(value)))
+        except (OSError, ValueError):
+            continue
+    return min(times) if times else None
+
+
+def acquisition_time(path: Union[str, Path]):
+    """date of the acquisition of the data a file (e.g. a .det calibration file) or folder belongs to: start of its
+    BLISS dataset (RAW_DATA/<sample>/<dataset>/<dataset>.h5, start_time), for a path in RAW_DATA or in the same
+    folders of PROCESSED_DATA (or GALLERY). Independent of the dates of the files (restored data, file written
+    later). None if the path is not in a dataset folder"""
+    parts = Path(path).parts
+    roots = [i for i, part in enumerate(parts) if part in ('RAW_DATA', 'PROCESSED_DATA', 'GALLERY')]
+    if not roots or len(parts) < roots[-1] + 3:   # <root>/<sample>/<dataset>/...
+        return None
+    k = roots[-1]
+    return _dataset_start(str(Path(*parts[:k], 'RAW_DATA', *parts[k + 1:k + 3])))
+
+
+def find_detfiles(raw_data_folder: Union[str, Path], max_depth: int = 4, order: str = 'acquisition',
+                  before=None, verbose: bool = False, max_age: float = 60.) -> List[Path]:
+    """calibration .det files of the experiment (RAW_DATA and PROCESSED_DATA), most recent first
+
+    order 'acquisition': by date of the acquisition of the calibration dataset they belong to (acquisition_time():
+        .det file in the folder of the calibration scan, in RAW_DATA or PROCESSED_DATA), not by date of the file
+        (restored data, or calibration refined later). Files outside dataset folders come after, by file date.
+    order 'file': by date of the files (modification)
+    before: date (datetime or 'YYYY-mm-dd HH:MM') of a map: calibrations acquired before it first (most recent
+        first), then the ones acquired after it (closest first)
+    verbose: print the files with their dates
+    max_age: the list of files of the experiment is kept max_age seconds (new files found after)
+    """
+    import datetime
+    files = [f for f in _experiment_files(str(raw_data_folder), max_depth, max_age) if f.suffix == '.det']
+    if order == 'file':
+        ordered = _most_recent_first(files)
+        dates = {f: datetime.datetime.fromtimestamp(f.stat().st_mtime) for f in ordered}
+    elif order == 'acquisition':
+        dates = {f: acquisition_time(f) for f in files}
+        dated = [f for f in files if dates[f] is not None]
+        undated = _most_recent_first(f for f in files if dates[f] is None)
+        if before is not None:
+            if isinstance(before, str):
+                before = datetime.datetime.fromisoformat(before)
+
+            def naive(d):   # comparison with a date without time zone
+                return d.replace(tzinfo=None) if before.tzinfo is None else d
+            previous = sorted((f for f in dated if naive(dates[f]) <= before), key=dates.get, reverse=True)
+            later = sorted((f for f in dated if naive(dates[f]) > before), key=dates.get)
+            dated = previous + later
+        else:
+            dated = sorted(dated, key=dates.get, reverse=True)
+        ordered = dated + undated
+    else:
+        raise ValueError(f"order {order!r}: 'acquisition' or 'file'")
+    if verbose:
+        for f in ordered:
+            d = dates.get(f)
+            print(f"{d.strftime('%Y-%m-%d %H:%M') if d else 'no dataset      '}  {f}")
+    return ordered
+
+
+def detfile_for_map(maps, index, max_age: float = 60., verbose: bool = True) -> Optional[Path]:
+    """calibration .det file of a map of the table of list_maps(): the last one acquired before the map (start of
+    the map, see find_detfiles(before=...)), else the closest one acquired after it, else the most recent file
+    without dataset. None if the experiment has no .det file"""
+    folder = Path(maps.at[index, 'image_folder'])
+    parts = folder.parts
+    raw = Path(*parts[:len(parts) - parts[::-1].index('RAW_DATA')]) if 'RAW_DATA' in parts else folder.parent
+    start = str(maps.at[index, 'start']).strip() or None
+    files = find_detfiles(raw, before=start, max_age=max_age)
+    if verbose:
+        if files:
+            when = acquisition_time(files[0])
+            print(f"calibration: {files[0]} (acquired {when.strftime('%Y-%m-%d %H:%M') if when else '?'}"
+                  f"{', map started ' + start if start else ''})")
+        else:
+            GT.printyellow(f'no .det calibration file in {raw}')
+    return files[0] if files else None
 
 
 def find_pspfiles(image_folder: Union[str, Path]) -> List[Path]:
@@ -335,6 +764,8 @@ def make_configs(info: dict, key_material: str, detfile: Union[str, Path], pspfi
         reference of the parameters)
     """
     paths = config_paths(info)
+    if detfile is not None:   # (spaces around a path copied in the notebook)
+        detfile = Path(str(detfile).strip())
     if not update:
         missing = [str(p) for p in paths.values() if not p.exists()]
         if missing:
@@ -503,7 +934,7 @@ def _forget_ended_job(pointer: Path) -> bool:
         return False   # still running or pending: waited for
     GT.printyellow(f"job {job.get('job_id')} submitted before ended without all its results ({len(parts)}/"
                    f"{job.get('nchunks', 1)} parts: cancelled, time limit or failure, see {job['jobdir']}/logs): "
-                   f"computing again (the results of this job are archived with the results folder)")
+                   f"computing again (peak search: only the images not done, if the parameters are the same)")
     pointer.unlink()
     return True
 
@@ -517,26 +948,36 @@ def _slurm_states(job_id: str) -> List[str]:
     return [s.strip() for s in out.splitlines() if s.strip()]
 
 
-def wait_slurm_job(job: Union[dict, str, Path], poll: float = 30, verbose: bool = True) -> bool:
-    """wait for the end of a SLURM job (status updated every poll seconds). True if all its results are written
+def wait_slurm_job(job: Union[dict, str, Path], poll: Optional[float] = None, verbose: bool = True) -> bool:
+    """wait for the end of a SLURM job (status updated every poll seconds, None: SLURM_POLL, at least 2 s). True if
+    all its results are written
 
     Interrupting the wait (kernel interrupt button) does not stop the job: run the cell again to wait again.
     """
     from IPython.display import display, HTML
     job = IB.load_slurm_job(job)
+    poll = max(2., SLURM_POLL if poll is None else float(poll))
     handle = display(HTML(f"<pre>job {job.get('job_id')}: submitted</pre>"), display_id=True) if verbose else None
     t0 = time.time()
     try:
         while True:
             nparts = len(list(Path(job['jobdir']).glob('allresults_part*.pickle')))
             states = _slurm_states(job['job_id']) if job.get('job_id') else []
-            progress = ''
-            for logfile in sorted((Path(job['jobdir']) / 'logs').glob('*.out')):
-                found = re.findall(r'(\d+)/(\d+) \[', logfile.read_text(errors='replace'))
-                if found:
-                    progress += f' {found[-1][0]}/{found[-1][1]}'
+            # progress: files written in the results folder (the progress bars of the logs are written rarely)
+            if job.get('dat_folder'):
+                progress = f"peak lists (.cor) in {Path(job['dat_folder']).name}: " \
+                           f"{_count_results(Path(job['dat_folder']), '.cor')}"
+            elif job.get('fit_folder') and job.get('kind') != 'grains':
+                progress = f"indexed images (_g0.fit) in {Path(job['fit_folder']).name}: " \
+                           f"{_count_results(Path(job['fit_folder']), '_g0.fit')}"
+            else:
+                progress = 'images done:'
+                for logfile in sorted((Path(job['jobdir']) / 'logs').glob('*.out')):
+                    found = re.findall(r'(\d+)/(\d+) \[', logfile.read_text(errors='replace'))
+                    if found:
+                        progress += f' {found[-1][0]}/{found[-1][1]}'
             text = (f"job {job.get('job_id')} on {job['machine']}: {', '.join(sorted(set(states))) or 'finished'}"
-                    f" | results {nparts}/{job['nchunks']} | images done:{progress or ' -'}"
+                    f" | results {nparts}/{job['nchunks']} | {progress} ({job.get('nfiles', '?')} to do)"
                     f" | waiting for {int(time.time() - t0)} s")
             if handle is not None:
                 handle.update(HTML(f'<pre>{text}</pre>'))
@@ -555,20 +996,198 @@ def wait_slurm_job(job: Union[dict, str, Path], poll: float = 30, verbose: bool 
         return False
 
 
+def _inprogress_file(cfg: dict) -> Path:
+    """marker of a peak search started and not finished (its fingerprint), in dat_folder"""
+    return Path(cfg['output']['dat_folder']) / 'peaksearch_inprogress.fingerprint'
+
+
+def _image_index(cfg: dict, imagefile: Union[str, Path]) -> Optional[int]:
+    scan = cfg['scan']
+    m = re.match(rf"^{re.escape(scan['prefix'])}(\d+){re.escape(scan['suffix'])}$", Path(imagefile).name)
+    return int(m.group(1)) if m else None
+
+
+def _resume_peaksearch(cfg: dict, listfiles: List[str], nb_recent: int) -> List[str]:
+    """images of listfiles still to search after an unfinished peak search (same parameters): those without a
+    readable .cor file, and the nb_recent last written ones (possibly cut when the job or process was killed)"""
+    files = _peaklist_files(cfg)
+    recent = set(sorted(files, key=lambda i: os.path.getmtime(files[i]))[-nb_recent:]) if nb_recent else set()
+    tasks = [(i, f) for i, f in files.items() if i not in recent and f.endswith('.cor')]
+    readable = {i for i, n, _ in _read_peaklists(tasks) if n >= 0}
+    todo = [f for f in listfiles if _image_index(cfg, f) not in readable]
+    GT.printgreen(f'peak search resumed (unfinished before, same parameters): {len(listfiles) - len(todo)} images '
+                  f'already done (.cor files kept), {len(todo)} to search')
+    return todo
+
+
+def _slurm_seconds(text: str) -> Optional[float]:
+    """seconds of a SLURM time: 'days-hh:mm:ss', 'hh:mm:ss', 'mm:ss', 'minutes'; None: 'infinite', 'UNLIMITED' ..."""
+    text = text.strip()
+    days, _, rest = text.rpartition('-') if '-' in text else ('0', '', text)
+    try:
+        parts = [float(x) for x in rest.split(':')]
+        days = float(days)
+    except ValueError:
+        return None
+    if len(parts) == 1:
+        parts = [0., parts[0], 0.]   # minutes
+    elif len(parts) == 2:
+        parts = [0.] + parts         # mm:ss
+    return days * 86400 + parts[0] * 3600 + parts[1] * 60 + parts[2]
+
+
+def _hms(seconds: float) -> str:
+    hours, rest = divmod(int(np.ceil(seconds)), 3600)
+    return f'{hours:02d}:{rest // 60:02d}:{rest % 60:02d}'
+
+
+@functools.lru_cache(maxsize=16)
+def partition_max_time(partition: str) -> Optional[float]:
+    """largest time limit (s) of the jobs of a SLURM partition (sinfo), None if unknown (no sinfo) or infinite"""
+    try:
+        out = IB._run(['sinfo', '-h', '-p', partition, '-o', '%l']).stdout
+    except (FileNotFoundError, OSError):
+        return None
+    limits = [_slurm_seconds(line) for line in out.split() if line.strip()]
+    return None if not limits or None in limits else max(limits)
+
+
+def measure_peaksearch_time(cfg: dict, nb_images: int = 2) -> Optional[float]:
+    """cpu seconds of the peak search of one image (1 process, the parameters of cfg): nb_images images around the
+    test image (run: test_image_index), the slowest one. None if failed"""
+    params = PB.params_from_config(cfg, writefiles=False)
+    first = int(cfg['run']['test_image_index'])
+    times = []
+    for index in range(first, first + nb_images):
+        try:
+            imagefile = PB.image_path(cfg, index)
+            t0 = time.time()
+            PB.peaksearch_image(imagefile, params)
+            times.append(time.time() - t0)
+        except Exception:   # image missing (end of the map ...)
+            continue
+    return max(times) if times else None
+
+
+def _fit_nodes(machine: str, nbfiles: int) -> str:
+    """machine of several nodes (e.g. magnifix3): the same machine with fewer nodes so that each node has at least as
+    many files as cpus (nbfiles // cpus per node nodes, at least 1): a job of several nodes waits in the queue until
+    all its nodes are free, which is not worth it for nodes not fully used"""
+    mach = IB.SLURM_MACHINES[machine]
+    nodes = mach.get('nodes', 1)
+    needed = max(1, nbfiles // mach['cpus'])
+    if needed >= nodes:
+        return machine
+    same = [(m.get('nodes', 1), name) for name, m in IB.SLURM_MACHINES.items()
+            if m['partition'] == mach['partition'] and m['constraint'] == mach['constraint'] and m['cpus'] == mach['cpus']
+            and m.get('nodes', 1) >= needed]
+    newnodes, newmachine = min(same)
+    if newmachine != machine:
+        GT.printyellow(f"{nbfiles} files for {nodes} nodes of {mach['cpus']} cpus ({machine}): {newnodes} node(s) "
+                       f"used ({newmachine})")
+    return newmachine
+
+
+def _timing_file(cfg: dict) -> Path:
+    """time of the peak search of a configuration (measured on the test image, or of the last job), see
+    _job_time_limit(): configs/<configuration>_timing.json"""
+    return Path(cfg['configfile']).with_name(Path(cfg['configfile']).stem + '_timing.json')
+
+
+def _save_job_timing(cfg: dict, job: dict):
+    """cpu seconds per image of a finished peak search job (all its processes busy: real speed of the node), from
+    its log ('It took ... to search peaks in ... images with ... cpus'), for the next time limits"""
+    total_s, total_images = 0., 0
+    for logfile in (Path(job['jobdir']) / 'logs').glob('*.out'):
+        for mins, secs, nimages, ncpus in re.findall(r'It took (\d+) min (\d+) s to search peaks in (\d+) images '
+                                                    r'with (\d+)', logfile.read_text(errors='replace')):
+            total_s += (int(mins) * 60 + int(secs)) * int(ncpus)
+            total_images += int(nimages)
+    if total_images:
+        _timing_file(cfg).write_text(json.dumps({'fingerprint': _fingerprint('peaksearch', cfg),
+                                                 'sec_per_image': total_s / total_images, 'source': 'last job'}))
+
+
+def _job_time_limit(step: str, cfg: dict, nbfiles: int, nb_cpus: int, machine: str, nchunks: int,
+                    time_limit: Union[str, float, None], sec_per_image: Optional[float], verbose: bool = True):
+    """(time limit 'hh:mm:ss', nchunks) of the SLURM job of a step
+
+    time_limit None (estimate) or a number (factor applied to the estimate): estimate = safety x nb of images per
+    job x cpu seconds per image / nb_cpus (min 20 min). Cpu seconds per image: sec_per_image if given, else for the
+    peak search: the real speed of the last job with the same parameters (safety 1.5), or measured on the test image
+    (safety 3: slower with all cpus busy; saved, not measured again), else SEC_CPU_PER_IMAGE (safety 2).
+    time_limit 'hh:mm:ss' (or 'days-hh:mm:ss'): used as is.
+    The time is capped at the largest time of the partition (sinfo): if more is needed, the map is split in more
+    jobs (job array, nchunks increased)"""
+    nbjobs = max(nchunks, IB.SLURM_MACHINES[machine].get('nodes', 1))
+    if isinstance(time_limit, str):
+        seconds = _slurm_seconds(time_limit)
+        if seconds is None:
+            raise ValueError(f"time_limit {time_limit!r}: 'hh:mm:ss', 'days-hh:mm:ss', a factor or None")
+        origin = 'given'
+    else:
+        safety, origin = 2., f'{SEC_CPU_PER_IMAGE[step]} s/image (default)'
+        if sec_per_image is None and step == 'peaksearch':
+            timing, fingerprint = {}, _fingerprint(step, cfg)
+            try:   # time measured before for these parameters (test image, or speed of the last job)
+                timing = json.loads(_timing_file(cfg).read_text())
+            except (OSError, ValueError):
+                pass
+            if timing.get('fingerprint') == fingerprint and timing.get('sec_per_image'):
+                sec_per_image = timing['sec_per_image']
+                safety = 1.5 if timing.get('source') == 'last job' else 3.
+                origin = f"{sec_per_image:.2f} s/image ({timing.get('source')}, saved)"
+            else:
+                sec_per_image = measure_peaksearch_time(cfg)
+                if sec_per_image is not None:
+                    safety, origin = 3., f'{sec_per_image:.2f} s/image measured on the test image'
+                    _timing_file(cfg).write_text(json.dumps({'fingerprint': fingerprint, 'sec_per_image': sec_per_image,
+                                                             'source': 'test image'}))
+        elif sec_per_image is not None:
+            safety, origin = 3., f'{sec_per_image:.2f} s/image'
+        if sec_per_image is None:
+            sec_per_image = SEC_CPU_PER_IMAGE[step]
+        grains = cfg['indexing']['nbGrainstoFind'] if step == 'indexing' else 1
+        seconds = max(20 * 60, safety * nbfiles / nbjobs * sec_per_image * grains / nb_cpus)
+        if time_limit is not None:   # factor
+            seconds *= float(time_limit)
+            origin += f' x {time_limit}'
+    maxtime = partition_max_time(IB.SLURM_MACHINES[machine]['partition'])
+    if maxtime is not None and seconds > maxtime:
+        needed = int(np.ceil(seconds * nbjobs / maxtime))
+        GT.printyellow(f"time needed {_hms(seconds)} > largest time of the partition "
+                       f"{IB.SLURM_MACHINES[machine]['partition']} ({_hms(maxtime)}): {needed} jobs instead of {nbjobs}")
+        nbjobs, seconds = needed, maxtime
+    if verbose:
+        print(f'time limit {_hms(seconds)} per job ({nbjobs} job(s), {origin})')
+    return _hms(seconds), nbjobs
+
+
 def run_step(step: str, cfg: dict, execution: str = 'local', nb_cpus: Optional[int] = None,
-             machine: str = 'auto', time_limit: Optional[str] = None, mem_per_cpu: str = '2000M',
-             nchunks: int = 1, redo: bool = False, show_only: bool = False):
+             machine: str = 'auto', time_limit: Union[str, float, None] = None, mem_per_cpu: str = '2000M',
+             nchunks: int = 1, redo: bool = False, show_only: bool = False, wait: bool = True,
+             sec_per_image: Optional[float] = None, resume: bool = True, poll: Optional[float] = None):
     """run 'peaksearch' (images -> .cor) or 'indexing' (.cor -> .fit) on all images of a map
 
     Already done with the same parameters (results file and its fingerprint): results are reloaded, nothing is
     computed, unless redo=True. Done with other parameters (configuration file changed): computed again.
     Before computing again, the folder of the previous results is renamed <folder>_previous_<date> (not deleted).
+    resume (peak search): a peak search not finished (job killed: time limit, cancelled; interrupted) with the same
+    parameters goes on: only the images without .cor file are searched (and the last written ones, possibly cut),
+    the others are read from their .cor files. resume=False: all images searched again (previous folder archived).
     show_only=True: never compute, only reload the results (error if there are none)
     execution 'local': on this machine with nb_cpus processes (None: all available cpus)
     execution 'slurm': job on the cluster, machine 'auto' or key of IB.SLURM_MACHINES ('magnifix', 'hpc6' ...),
-        nb_cpus per job (None: 192 on magnifix, 96 on other machines), time_limit 'hh:mm:ss' (None: estimated).
+        nb_cpus per job (None: 96 on machines other than magnifix; magnifix: always whole nodes of 192 cpus).
+        time_limit of each job: None: estimated from the nb of images and the time of the peak search of the test
+        image (indexation: sec_per_image or SEC_CPU_PER_IMAGE); a number: factor applied to the estimate (e.g. 2:
+        twice the estimate, for heavy images); 'hh:mm:ss' or 'days-hh:mm:ss': fixed. Capped at the largest time of
+        the partition: the map is then split in more jobs. sec_per_image: cpu seconds per image (not measured).
         The notebook waits for the end of the job; if the wait is interrupted, running the cell again waits for the
-        same job (it is not submitted again).
+        same job (it is not submitted again). poll: seconds between two updates of the progress of the job
+        (None: SLURM_POLL, 30 s; e.g. MW.SLURM_POLL = 10 for all the jobs of the notebook). wait=False: the job is submitted (or found running) and None returned
+        at once: call run_step() again to wait for it and get its results (e.g. jobs of several maps submitted
+        together, see peaksearch_maps())
     Returns allresults (list of results of the images)
     """
     if step not in ('peaksearch', 'indexing'):
@@ -613,31 +1232,39 @@ def run_step(step: str, cfg: dict, execution: str = 'local', nb_cpus: Optional[i
     outfolder = Path(cfg['output']['dat_folder'] if step == 'peaksearch' else cfg['output']['fit_folder'])
     if pointer.exists():
         _forget_ended_job(pointer)
-    if not pointer.exists() and (redo or resfile.exists() or (outfolder.is_dir() and any(outfolder.iterdir()))):
+    resuming = (step == 'peaksearch' and resume and not redo and not resfile.exists() and not pointer.exists()
+                and _inprogress_file(cfg).exists() and _inprogress_file(cfg).read_text().strip() == fingerprint)
+    if resuming:
+        listfiles = _resume_peaksearch(cfg, listfiles, nb_recent=2 * (nb_cpus or IB.available_cpus()))
+    elif not pointer.exists() and (redo or resfile.exists() or (outfolder.is_dir() and any(outfolder.iterdir()))):
         archived = _archive_previous(outfolder)   # (not while waiting for a job submitted before: it writes there)
         if (step == 'indexing' and archived is not None and not cfg['run'].get('previous_fit_folder')
                 and (cfg['run']['usepreviousUB'] == 'fromfitfile' or not cfg['run']['ignorefitfileresults'])):
             params.previous_fit_folder = str(archived)   # previous .fit files read from the archived folder
             print(f'previous .fit files read from {archived}')
 
+    if step == 'peaksearch':   # marker of an unfinished peak search (resume), removed when the results are saved
+        outfolder.mkdir(parents=True, exist_ok=True)
+        _inprogress_file(cfg).write_text(fingerprint)
+
     job = None
     if execution == 'slurm' and pointer.exists():   # job submitted before (e.g. wait interrupted): wait again
         job = IB.load_slurm_job(json.loads(pointer.read_text())['jobdir'])
         if job.get('job_id') and (_slurm_states(job['job_id'])
                                   or len(list(Path(job['jobdir']).glob('allresults_part*.pickle'))) >= job['nchunks']):
-            print(f"job {job['job_id']} submitted before: waiting for it (not submitted again)")
+            print(f"job {job['job_id']} submitted before: {'waiting for it ' if wait else ''}(not submitted again)")
         else:
             job = None
-    if execution == 'slurm' and job is None:
+    if execution == 'slurm' and job is None and not listfiles:
+        pass   # resumed: all images already done
+    elif execution == 'slurm' and job is None:
         if machine == 'auto':
             machine, nb_cpus = IB.choose_slurm_machine(nb_cpus or 192)
         else:
+            machine = _fit_nodes(machine, len(listfiles))
             nb_cpus = nb_cpus or IB.SLURM_MACHINES[machine]['cpus']
-        nbjobs = max(nchunks, IB.SLURM_MACHINES[machine].get('nodes', 1))
-        if time_limit is None:
-            grains = cfg['indexing']['nbGrainstoFind'] if step == 'indexing' else 1
-            time_limit = IB.walltime_estimate(len(listfiles) / nbjobs, nb_cpus, SEC_CPU_PER_IMAGE[step] * grains,
-                                              safety=2., minimum_minutes=20)
+        time_limit, nchunks = _job_time_limit(step, cfg, len(listfiles), nb_cpus, machine, nchunks, time_limit,
+                                              sec_per_image)
         job = module.prepare_slurm_job(cfg, params, listfiles, machine=machine, nb_cpus=nb_cpus, time=time_limit,
                                        mem_per_cpu=mem_per_cpu, nchunks=nchunks,
                                        job_name=f"{step}_{Path(cfg['configfile']).parent.parent.parent.name}"[:60])
@@ -645,18 +1272,33 @@ def run_step(step: str, cfg: dict, execution: str = 'local', nb_cpus: Optional[i
             raise RuntimeError('the job could not be submitted (see above)')
         pointer.write_text(json.dumps({'jobdir': job['jobdir']}))
 
-    if execution == 'slurm':
-        if not wait_slurm_job(job):
+    if execution == 'slurm' and not wait and job is not None:
+        print(f"job {job.get('job_id')} on {job['machine']}: not waited for (run_step() again to get its results)")
+        return None
+    if not listfiles and job is None:   # resumed: all images already done
+        allresults = []
+    elif execution == 'slurm':
+        if not wait_slurm_job(job, poll=poll):
             return None
         allresults = IB.load_slurm_results(job)
         nb_cpus = job['nb_cpus']
+        if step == 'peaksearch':
+            _save_job_timing(cfg, job)
     else:
         allresults = module.run_multiprocessing(listfiles, params, nb_cpus=nb_cpus)
 
     mapdims = cfg['scan']['mapdims']
     if step == 'peaksearch':
+        # images not searched here (resumed peak search): results read from their .cor files
+        computed = {r[0] for r in allresults}
+        selected = {_image_index(cfg, f) for f in PB.select_images(cfg)}
+        kept = [(i, f) for i, f in _peaklist_files(cfg).items() if i in selected and i not in computed]
+        if kept:
+            allresults = sorted(list(allresults) + _read_peaklists(kept, nb_cpus), key=lambda r: r[0])
+            print(f'{len(kept)} peak lists of the images done before read from their .cor files')
         PB.save_results(cfg, params, allresults, PB.summarize_results(allresults, mapdims), filepath=resfile,
                         overwrite=True, nb_cpus=nb_cpus)
+        _inprogress_file(cfg).unlink(missing_ok=True)
     else:
         IB.save_allresults(cfg, params, allresults, IB.summarize_results(allresults, mapdims), filepath=resfile,
                            overwrite=True, nb_cpus=nb_cpus)
@@ -769,6 +1411,29 @@ def _read_peaklist_file(args) -> tuple:
     return imageindex, len(peaklist), peaklist
 
 
+def _peaklist_files(pcfg: dict) -> Dict[int, str]:
+    """{image index: peak list file} of the .cor files (or .dat files if there is no .cor file) in dat_folder"""
+    scan, out = pcfg['scan'], pcfg['output']
+    stem = f"{scan['prefix']}{out['added_string']}"
+    folder = Path(out['dat_folder'])
+    files = {}
+    for ext in ('.dat', '.cor'):   # .cor files preferred
+        pattern = re.compile(rf"^{re.escape(stem)}(\d{{{scan['nbdigits']},}})\{ext}$")
+        found = folder.glob(f"{out['subfolder_prefix']}*/{stem}*{ext}") if out['nbfiles_per_folder'] \
+            else folder.glob(f'{stem}*{ext}')
+        files.update({int(m.group(1)): str(f) for f in found if (m := pattern.match(f.name))})
+    return files
+
+
+def _read_peaklists(tasks, nb_cpus: Optional[int] = None, min_files_pool: int = 2000, max_cpus_pool: int = 32) -> list:
+    """_read_peaklist_file() of the (imageindex, path) tasks, with a pool of processes if there are many"""
+    nb_cpus = nb_cpus or min(IB.available_cpus(), max_cpus_pool)
+    if len(tasks) >= min_files_pool and nb_cpus > 1:
+        with IB.mp_context().Pool(processes=nb_cpus) as pool:
+            return pool.map(_read_peaklist_file, tasks, chunksize=16)
+    return [_read_peaklist_file(t) for t in tasks]
+
+
 def load_corfiles(pcfg: dict, nb_cpus: Optional[int] = None, min_files_pool: int = 2000,
                   max_cpus_pool: int = 32) -> list:
     """peak search results read from the .cor files (or .dat files if there is no .cor file) already written in
@@ -782,23 +1447,11 @@ def load_corfiles(pcfg: dict, nb_cpus: Optional[int] = None, min_files_pool: int
     Read with a pool of nb_cpus processes (None: cpus available, at most max_cpus_pool) if there are at least
     min_files_pool files, else in this process
     """
-    scan, out = pcfg['scan'], pcfg['output']
-    stem = f"{scan['prefix']}{out['added_string']}"
-    folder = Path(out['dat_folder'])
-    files = {}
-    for ext in ('.dat', '.cor'):   # .cor files preferred
-        pattern = re.compile(rf"^{re.escape(stem)}(\d{{{scan['nbdigits']},}})\{ext}$")
-        found = folder.glob(f"{out['subfolder_prefix']}*/{stem}*{ext}") if out['nbfiles_per_folder'] \
-            else folder.glob(f'{stem}*{ext}')
-        files.update({int(m.group(1)): str(f) for f in found if (m := pattern.match(f.name))})
-    tasks = sorted(files.items())
+    scan = pcfg['scan']
+    folder = Path(pcfg['output']['dat_folder'])
+    tasks = sorted(_peaklist_files(pcfg).items())
     t0 = time.time()
-    nb_cpus = nb_cpus or min(IB.available_cpus(), max_cpus_pool)
-    if len(tasks) >= min_files_pool and nb_cpus > 1:
-        with IB.mp_context().Pool(processes=nb_cpus) as pool:
-            allresults = pool.map(_read_peaklist_file, tasks, chunksize=16)
-    else:
-        allresults = [_read_peaklist_file(t) for t in tasks]
+    allresults = _read_peaklists(tasks, nb_cpus, min_files_pool, max_cpus_pool)
     nfast, nslow = scan['mapdims']
     nbcor = sum(1 for _, f in tasks if f.endswith('.cor'))
     print(f"{len(allresults)} peak lists read ({nbcor} .cor, {len(tasks) - nbcor} .dat files) / {nfast * nslow} map "
@@ -881,6 +1534,157 @@ def plot_map(data: np.ndarray, cfg: dict, title: str = '', ax=None, cmap='viridi
     return ax
 
 
+def gallery_folder(folder: Union[str, Path]) -> Optional[Path]:
+    """folder mirrored in GALLERY (ESRF data policy, images shown in the data portal): PROCESSED_DATA replaced by
+    GALLERY. None if folder is not in a PROCESSED_DATA folder (e.g. OUTPUT_ROOT elsewhere)"""
+    parts = Path(folder).parts
+    if 'PROCESSED_DATA' not in parts:
+        return None
+    k = len(parts) - 1 - parts[::-1].index('PROCESSED_DATA')
+    return Path(*parts[:k], 'GALLERY', *parts[k + 1:])
+
+
+def _path_two_lines(folder: Union[str, Path]) -> str:
+    """folder on 2 lines: up to PROCESSED_DATA/ (or RAW_DATA/, GALLERY/), then the rest (else cut at the middle)"""
+    parts = Path(folder).parts
+    k = next((i for i in range(len(parts) - 1, -1, -1) if parts[i] in ('PROCESSED_DATA', 'RAW_DATA', 'GALLERY')),
+             len(parts) // 2)
+    first, rest = Path(*parts[:k + 1]), Path(*parts[k + 1:]) if k + 1 < len(parts) else ''
+    return f'{first}/\n    {rest}/' if rest else f'{first}/'
+
+
+def add_data_path(fig, folder: Union[str, Path], fontsize: float = 6.):
+    """write folder (on 2 lines, see _path_two_lines()) above the figure. The figure is made taller by the height
+    of the text and its contents moved down: titles and axes keep their size and position relative to each other.
+    Called again: the text is only updated"""
+    text = _path_two_lines(folder)
+    existing = getattr(fig, '_lauetools_datapath', None)
+    if existing is not None:
+        existing.set_text(text)
+        return existing
+    width, height = fig.get_size_inches()
+    extra = 3 * fontsize / 72   # inches: 2 lines and margins
+    ratio = height / (height + extra)
+    for ax in fig.axes:
+        x0, y0, w, h = ax.get_position(original=True).bounds
+        ax.set_position([x0, y0 * ratio, w, h * ratio])
+    for txt in fig.texts:   # e.g. suptitle
+        txt.set_y(txt.get_position()[1] * ratio)
+    fig.set_size_inches(width, height + extra)
+    fig._lauetools_datapath = fig.text(0.01, 1 - 0.4 * fontsize / 72 / (height + extra), text, ha='left', va='top',
+                                       fontsize=fontsize, family='monospace', color='0.35')
+    return fig._lauetools_datapath
+
+
+def _wait_interactive_figure(fig, timeout: float = 2.):
+    """interactive figure (ipympl): wait until JupyterLab has initialised it (first image sent). Its messages are
+    handled in another thread of the kernel (subshell) while the cell runs: a figure drawn (or saved) meanwhile may
+    be black or cut. Without front-end (e.g. notebook executed by nbconvert): returns after timeout (s)"""
+    canvas = fig.canvas
+    if not hasattr(canvas, 'syncing_data_url'):   # not ipympl
+        return
+    t0 = time.time()
+    while (canvas.syncing_data_url or canvas._png_is_old) and time.time() - t0 < timeout:
+        time.sleep(0.02)
+
+
+def _detached_copy(fig):
+    """copy of figure fig, not attached to its canvas nor to pyplot (pickled and unpickled): saving the copy does not
+    touch the interactive figure. Local functions (e.g. format_coord of plot_map()) are None in the copy"""
+    import io
+    import pickle
+    import types
+    from matplotlib.figure import Figure
+
+    class DetachedFigure(Figure):
+        def __setstate__(self, state):
+            state.pop('_restore_to_pylab', None)   # no new pyplot figure (new widget in the notebook)
+            super().__setstate__(state)
+
+    class Pickler(pickle.Pickler):
+        def reducer_override(self, obj):
+            if isinstance(obj, types.FunctionType) and '<' in obj.__qualname__:   # <locals>, <lambda>
+                return type(None), ()
+            return NotImplemented
+
+    class Unpickler(pickle.Unpickler):
+        def find_class(self, module, name):
+            if (module, name) == ('matplotlib.figure', 'Figure'):
+                return DetachedFigure
+            return super().find_class(module, name)
+
+    buf = io.BytesIO()
+    Pickler(buf, protocol=pickle.HIGHEST_PROTOCOL).dump(fig)
+    buf.seek(0)
+    return Unpickler(buf).load()
+
+
+def savefigresults(fig, cfg: dict, name: str, where: Optional[str] = 'results', fmt: str = 'png',
+                   dpi: int = 150, datapath: bool = True, verbose: bool = True) -> List[Path]:
+    """save a figure of the results of a step as <name>.<fmt> next to its results file (results_folder of cfg:
+    peaksearch_<stamp>.pickle of the peak search, allresults_<stamp>.pickle of the indexation)
+
+    fig: matplotlib Figure or Axes (e.g. returned by plot_map())
+    where: 'results' (results folder only), 'gallery' (also in the same folder of GALLERY instead of PROCESSED_DATA),
+        None or False: not saved
+    datapath: results folder written above the figure (add_data_path(), also on the figure shown in the notebook
+        with %matplotlib widget)
+    Returns the paths of the written files
+
+    Call it after plt.show(): with %matplotlib widget (ipympl), JupyterLab initialises the figure with messages
+    handled in another thread of the kernel while the cell runs; a figure saved before being shown may stay black
+    or be cut. For the same reason a copy of the figure is saved (savefig() of the interactive figure removes its
+    figure manager while saving, and the messages received meanwhile are lost).
+    """
+    if not where:
+        return []
+    if where not in ('results', 'gallery'):
+        raise ValueError(f"where={where!r}: 'results', 'gallery' or None")
+    fig = getattr(fig, 'figure', fig)   # Axes -> Figure
+    folders = [Path(cfg['output']['results_folder'])]
+    if where == 'gallery':
+        gallery = gallery_folder(folders[0])
+        if gallery is None:
+            GT.printyellow(f'{folders[0]} is not in PROCESSED_DATA: figure {name} not saved in GALLERY')
+        else:
+            folders.append(gallery)
+    _wait_interactive_figure(fig)
+    if datapath:
+        add_data_path(fig, folders[0])
+        fig.canvas.draw_idle()
+    tosave = None
+    for _ in range(3):   # copy may fail if the figure is drawn meanwhile (other thread)
+        try:
+            tosave = _detached_copy(fig)
+            break
+        except Exception as err:
+            error = err
+            time.sleep(0.2)
+    if tosave is None:   # e.g. figure that cannot be pickled: saved directly
+        GT.printyellow(f'figure {name} saved directly (no copy: {error!r}): an interactive figure may stay black')
+        tosave = fig
+    written = []
+    for folder in folders:
+        filepath = folder / f'{name}.{fmt}'
+        try:
+            folder.mkdir(parents=True, exist_ok=True)
+            tosave.savefig(filepath, dpi=dpi, bbox_inches='tight')
+        except PermissionError:
+            if folder == folders[0]:   # results folder: error
+                raise
+            root = gallery_folder(folders[0])   # GALLERY not writable (e.g. restored data): warned once
+            root = Path(*root.parts[:root.parts.index('GALLERY') + 1])
+            if root not in _GALLERY_NOT_WRITABLE:
+                _GALLERY_NOT_WRITABLE.add(root)
+                GT.printyellow(f"no permission to write in {root}: figures saved only next to the results "
+                               f"(SAVE_FIGURES = 'results' to avoid this message)")
+            continue
+        written.append(filepath)
+    if verbose:
+        print('figure saved:', ', '.join(str(f) for f in written))
+    return written
+
+
 def print_parameters(cfg: dict, step: str):
     """parameters of a step (peak search or indexation) with their names, usable in the dicts PEAKSEARCH and
     INDEXING of the quickstart notebook (e.g. PEAKSEARCH = {'IntensityThreshold': 300})"""
@@ -900,6 +1704,26 @@ def print_parameters(cfg: dict, step: str):
         if isinstance(value, list) and len(value) > 12:
             value = f'{value[:6]} ... ({len(value)} values)'
         print(f'   {key!r:34s}: {value}')
+
+
+def set_parameters(cfg: dict, step: str, changes: Optional[dict], verbose: bool = True) -> dict:
+    """set parameters of a step ('peaksearch' or 'indexing') given by their names (as printed by print_parameters(),
+    e.g. {'IntensityThreshold': 300}) and write them in the configuration file (peaksearch.yaml, indexing.yaml):
+    the test on one image and the analysis of the whole map use them. Unknown names: error with the close names.
+    Returns the configuration (read again from its file): use it, e.g. pcfg = MW.set_parameters(pcfg, ...)"""
+    if step not in ('peaksearch', 'indexing'):
+        raise ValueError("step must be 'peaksearch' or 'indexing'")
+    module = PB if step == 'peaksearch' else IB
+    if not changes:
+        return cfg
+    for name in changes:
+        IB._key_path(name, module.DEFAULT_CONFIG)   # KeyError with close names if unknown
+    diff = _differences(cfg, dict(changes), module.DEFAULT_CONFIG)
+    if not diff:
+        if verbose:
+            print(f'{step} parameters {list(changes)}: same values as in {Path(cfg["configfile"]).name}')
+        return cfg
+    return module.save_config(cfg, cfg['configfile'], overwrite=True, **diff)   # (prints the changes)
 
 
 # --------------------------------------------------------------------------------------
@@ -1088,6 +1912,7 @@ def process_maps(maps, indices: List[int], reference: dict, key_material: str, d
                  output_root: Optional[Union[str, Path]] = None, **run_kwargs) -> dict:
     """peak search and indexation of several maps with the configuration files of a reference map (info dict of
     scan_info()). run_kwargs: arguments of run_step() (execution, nb_cpus, machine ...).
+    detfile 'auto': for each map, the last calibration acquired before it (detfile_for_map())
     Returns {scan index: indexing configuration} of the processed maps. Maps already done are skipped."""
     refpaths = config_paths(reference)
     done = {}
@@ -1096,7 +1921,10 @@ def process_maps(maps, indices: List[int], reference: dict, key_material: str, d
         try:
             info = scan_info(maps, index, output_root)
             print(info['name'], '|', info['command'])
-            pcfg, icfg = make_configs(info, key_material, detfile, peaksearch_template=refpaths['peaksearch'],
+            det = detfile_for_map(maps, index, max_age=3600) if str(detfile) == 'auto' else detfile
+            if det is None:
+                raise FileNotFoundError('no .det calibration file')
+            pcfg, icfg = make_configs(info, key_material, det, peaksearch_template=refpaths['peaksearch'],
                                       indexing_template=refpaths['indexing'])
             if run_step('peaksearch', pcfg, **run_kwargs) is None:
                 continue
@@ -1107,3 +1935,172 @@ def process_maps(maps, indices: List[int], reference: dict, key_material: str, d
             GT.printred(f'scan {index}: {type(err).__name__}: {err}')
     GT.printgreen(f'\n{len(done)}/{len(indices)} maps processed')
     return done
+
+
+def peaksearch_maps(maps, indices: List[int], reference: dict, key_material: str, detfile: Union[str, Path],
+                    output_root: Optional[Union[str, Path]] = None, save_figures: Optional[str] = 'gallery',
+                    redo: bool = False, submit_all: bool = False, **run_kwargs):
+    """peak search of several maps (e.g. all the maps ended with SUCCESS) with the peak search parameters of a
+    reference map (info dict of scan_info(): its peaksearch.yaml is the template of the maps without settings files;
+    maps with settings files keep theirs). Maps of another detector than the reference are skipped.
+    For each map: .cor files and peaksearch_peaks.pickle in PROCESSED_DATA (as run_step()), and the map of the nb of
+    peaks saved by savefigresults() (where=save_figures; not shown: see FigureBrowser).
+    Maps already done with the same parameters (and their figure) are skipped, unless redo=True.
+    detfile: calibration of all the maps, or 'auto': for each map, the last calibration acquired before it
+        (detfile_for_map(); a map with another calibration than before is searched again)
+    run_kwargs: arguments of run_step() (execution, nb_cpus, machine ...)
+    submit_all (execution 'slurm'): the jobs of all the maps are submitted first (they run at the same time if the
+        cluster has free nodes), then waited for one after the other. Interrupted wait: run again, the jobs are
+        not submitted again. Without submit_all: one job at a time.
+    Returns a table (pandas DataFrame) of the maps: dataset, images, mean nb of peaks, status"""
+    import pandas as pd
+    from matplotlib.figure import Figure
+    refpaths = config_paths(reference)
+    submit_all = submit_all and run_kwargs.get('execution') == 'slurm'
+    rows = {}
+    t0 = time.time()
+
+    def prepare(k, index):
+        """peak search configuration of a map, None if skipped (detector, already done)"""
+        row = rows[index] = {'dataset': maps.loc[index, 'dataset'] if index in maps.index else '?',
+                             'images': None, 'mean nb peaks': None, 'status': '', 'detfile': ''}
+        print(f"\n========== map {k + 1}/{len(indices)}: scan {index} {row['dataset']} ==========")
+        info = scan_info(maps, index, output_root)
+        if info['CCDLabel'] != reference['CCDLabel']:
+            row['status'] = f"skipped: detector {info['CCDLabel']}"
+            GT.printyellow(f"{row['status']} (reference map: {reference['CCDLabel']})")
+            return None
+        det = detfile_for_map(maps, index, max_age=3600) if str(detfile) == 'auto' else detfile
+        if det is None:
+            row['status'] = 'skipped: no .det calibration file'
+            return None
+        row['detfile'] = Path(det).name
+        pcfg, _ = make_configs(info, key_material, det, peaksearch_template=refpaths['peaksearch'],
+                               indexing_template=refpaths['indexing'], verbose=False)
+        resfile = _results_file('peaksearch', pcfg)
+        figfile = Path(pcfg['output']['results_folder']) / 'peaksearch_nbpeaks.png'
+        fpfile = _fingerprint_file(resfile)
+        if (not redo and resfile.exists() and fpfile.exists()
+                and fpfile.read_text().strip() == _fingerprint('peaksearch', pcfg)
+                and (not save_figures or figfile.exists())):
+            row['status'] = 'done before'
+            GT.printgreen(f'already done (results and figure): {resfile.parent}')
+            return None
+        return pcfg
+
+    def finish(index, pcfg, redo_map):
+        """peak search of a map (or results of its job), summary and figure"""
+        row = rows[index]
+        peaks = run_step('peaksearch', pcfg, redo=redo_map, **run_kwargs)
+        if peaks is None:
+            row['status'] = 'not done (job)'
+            return
+        summary = PB.summarize_results(peaks, pcfg['scan']['mapdims'])
+        del peaks
+        ok = summary['nbpeaks'] >= 0
+        row['images'] = len(summary['nbpeaks'])
+        row['mean nb peaks'] = round(float(np.mean(summary['nbpeaks'][ok])), 1) if np.any(ok) else 0
+        row['status'] = 'done'
+        if summary['toomanyimages']:
+            row['status'] = (f"done, {len(summary['toomanyimages'])} images NOT FITTED: NumberMaxofFits >= "
+                             f"{summary['nb_local_maxima_max'] + 1} needed")
+        if save_figures:
+            fig = Figure(figsize=(5.5, 4.5))   # not a pyplot figure: nothing displayed in the notebook
+            plot_map(summary['nbpeaks2D'], pcfg, f"{row['dataset']}: nb of peaks", ax=fig.subplots())
+            savefigresults(fig, pcfg, 'peaksearch_nbpeaks', where=save_figures)
+
+    def error(index, err):
+        rows[index]['status'] = f'error: {type(err).__name__}: {err}'
+        GT.printred(f"scan {index}: {rows[index]['status']}")
+
+    if not submit_all:
+        for k, index in enumerate(indices):
+            try:
+                pcfg = prepare(k, index)
+                if pcfg is not None:
+                    finish(index, pcfg, redo)
+            except Exception as err:   # next map
+                error(index, err)
+    else:
+        submitted = {}
+        for k, index in enumerate(indices):   # 1. all jobs submitted
+            try:
+                pcfg = prepare(k, index)
+                if pcfg is not None:
+                    run_step('peaksearch', pcfg, redo=redo, wait=False, **run_kwargs)
+                    submitted[index] = pcfg
+                    rows[index]['status'] = 'submitted'
+            except Exception as err:
+                error(index, err)
+        GT.printgreen(f'\n{len(submitted)} jobs submitted: waiting for them one after the other')
+        for k, (index, pcfg) in enumerate(submitted.items()):   # 2. results of each job
+            print(f"\n========== results {k + 1}/{len(submitted)}: scan {index} {rows[index]['dataset']} ==========")
+            try:
+                finish(index, pcfg, False)   # (redo=False: the job submitted above is waited for, not a new one)
+            except Exception as err:
+                error(index, err)
+    refresh_done(maps)
+    table = pd.DataFrame.from_dict(rows, orient='index')
+    table.index.name = 'index'
+    ndone = int(np.sum(table['status'].str.startswith('done'))) if len(table) else 0
+    GT.printgreen(f'\n{ndone}/{len(indices)} maps with peak search results ({(time.time() - t0) / 60:.1f} min)')
+    return table
+
+
+class FigureBrowser:
+    """browser of the figures (.png) saved by savefigresults() for the maps of the table of list_maps(): menu of the
+    figures (filter by words, '-word': without it; figure name), up/down arrow keys to go from one to the next.
+    where: 'gallery' (GALLERY folder of each map, if it exists, else PROCESSED_DATA) or 'results' (PROCESSED_DATA)
+    Only the folders of the maps are read (not all PROCESSED_DATA)"""
+
+    def __init__(self, maps, output_root: Optional[Union[str, Path]] = None, where: str = 'gallery'):
+        import ipywidgets as widgets
+        from IPython.display import display
+        output_root = maps.attrs.get('output_root') if output_root is None else output_root
+        self.files = []   # (label, path)
+        for index in maps.index:
+            try:
+                workdir = processed_folder(maps.at[index, 'image_folder'], output_root)
+            except ValueError:
+                continue
+            gallery = gallery_folder(workdir) if where == 'gallery' else None
+            folder = gallery if gallery is not None and gallery.is_dir() else workdir
+            if not folder.is_dir():
+                continue
+            for sub in sorted(p for p in folder.iterdir() if p.is_dir() and '_previous_' not in p.name):
+                for png in sorted(sub.glob('*.png')):
+                    self.files.append((f"{index:5d} | {maps.at[index, 'dataset']} | {sub.name}/{png.name}", png))
+        names = sorted({png.stem for _, png in self.files})
+        self.filter = widgets.Text(description='filter:', placeholder="words of the menu lines, '-word': without it",
+                                   continuous_update=False, layout=widgets.Layout(width='45%'))
+        self.name = widgets.Dropdown(options=['all figures'] + names, description='figure:')
+        self.count = widgets.HTML()
+        self.menu = widgets.Select(options=[], rows=8, layout=widgets.Layout(width='98%'))
+        self.menu.add_class('lt-fig-menu')
+        style = widgets.HTML('<style>.lt-fig-menu select {font-family: monospace; font-size: 12px}</style>')
+        self.path = widgets.HTML()
+        self.image = widgets.Image(format='png', layout=widgets.Layout(max_width='100%'))
+        self.menu.observe(self._show, names='value')
+        self.filter.observe(self._apply_filter, names='value')
+        self.name.observe(self._apply_filter, names='value')
+        self._apply_filter(None)
+        if not self.files:
+            self.path.value = (f'no figure (.png) in the folders of the {len(maps)} maps of the table '
+                               '(saved by MW.savefigresults(), SAVE_FIGURES)')
+        display(widgets.VBox([style, widgets.HBox([self.filter, self.name, self.count]), self.menu, self.path,
+                              self.image]))
+
+    def _apply_filter(self, change):
+        options = [(label, str(png)) for label, png in self.files if _words_match(label, self.filter.value)
+                   and self.name.value in ('all figures', png.stem)]
+        self.count.value = f'&nbsp;{len(options)} / {len(self.files)} figures'
+        self.menu.options = options
+        if options:
+            self.menu.value = options[0][1]
+
+    def _show(self, change):
+        if self.menu.value is None:
+            return
+        png = Path(self.menu.value)
+        self.path.value = f'<code>{png}</code> ({time.strftime("%Y-%m-%d %H:%M", time.localtime(png.stat().st_mtime))})'
+        self.image.value = png.read_bytes()

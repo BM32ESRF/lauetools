@@ -60,13 +60,14 @@ class H5file:
                         substrings_logic: str = "OR",
                         only_endreason_SUCCESS:bool=False,
                         exclude_substrings: list = None,
-                        verbose:int=0):
-                        
+                        verbose:int=0, node_filter=None):
+        """node_filter: optional function(node name) -> bool, nodes (scans) kept if True (applied with the
+        other conditions while reading the file)"""
         self.listscans, self.listcts = get_scans_cts(self.path,
                                     n_last=n_last, node_prefix=node_prefix,
                                     node_substrings=node_substrings,
                                     substrings_logic=substrings_logic,only_endreason_SUCCESS=only_endreason_SUCCESS, exclude_substrings=exclude_substrings,
-                                    verbose=verbose-1)
+                                    verbose=verbose-1, node_filter=node_filter)
         self.listscans = [[str(_k)]+elem for _k, elem in enumerate(self.listscans)]
         self.listcts = [[str(_k)]+elem for _k, elem in enumerate(self.listcts)]
         if verbose>0:
@@ -1303,7 +1304,8 @@ def getall_from_hdf5file(
     node_prefix: str = None,
     node_substrings: list = None,
     substrings_logic: str = "OR",
-    exclude_substrings: list = None  # New parameter
+    exclude_substrings: list = None,  # New parameter
+    node_filter=None
 ):
     return getscans_from_hdf5file(
         filename,
@@ -1315,7 +1317,8 @@ def getall_from_hdf5file(
         node_prefix=node_prefix,
         node_substrings=node_substrings,
         substrings_logic=substrings_logic,
-        exclude_substrings=exclude_substrings  # Pass to getscans_from_hdf5file
+        exclude_substrings=exclude_substrings,  # Pass to getscans_from_hdf5file
+        node_filter=node_filter
     )
 
 
@@ -1331,7 +1334,8 @@ def getscans_from_hdf5file(
     node_prefix: str = None,
     node_substrings: list = None,
     substrings_logic: str = "OR",
-    exclude_substrings: list = None 
+    exclude_substrings: list = None,
+    node_filter=None
 ):
     """
     Retrieve and filter scan properties from an HDF5 file, with support for sorting by recency,
@@ -1339,6 +1343,7 @@ def getscans_from_hdf5file(
 
     Args:
         exclude_substrings (list, optional): Exclude nodes containing any of these substrings. Defaults to None.
+        node_filter (function, optional): function(node name) -> bool, nodes kept if True. Defaults to None.
     """
     if collectallscans:
         onlymesh = False
@@ -1360,6 +1365,10 @@ def getscans_from_hdf5file(
 
             # Skip nodes that match any exclude_substrings (if specified)
             if exclude_substrings is not None and any(exclude in name for exclude in exclude_substrings):
+                continue
+
+            # Skip nodes rejected by node_filter (if specified)
+            if node_filter is not None and not node_filter(name):
                 continue
 
             # Skip nodes that don't match the substring logic (if specified)
@@ -2125,14 +2134,14 @@ def get_scans_cts(pathHDF5, potential_motors=('xech','yech','zech','hfoc','zf','
                             substrings_logic: str = "OR",
                             only_endreason_SUCCESS=False,
                             exclude_substrings: list = None,
-                            verbose:int=0):
+                            verbose:int=0, node_filter=None):
 
     res = getall_from_hdf5file(pathHDF5, n_last=n_last,
                                     node_prefix=node_prefix,
                                     node_substrings=node_substrings,
                                     substrings_logic=substrings_logic,
                                     exclude_substrings=exclude_substrings,
-                                    verbose=verbose-1)   # scans and ct
+                                    verbose=verbose-1, node_filter=node_filter)   # scans and ct
 
     listscans = []
     listcts = []
