@@ -2,14 +2,10 @@ from __future__ import division
 import time
 import os
 import copy
-import sys
 
 import wx
 
-if sys.version_info.major == 3:
-    from .. import dict_LaueTools as DictLT
-else:
-    import dict_LaueTools as DictLT
+from .. import dict_LaueTools as DictLT
 
 
 class DetectorParameters(wx.Dialog):

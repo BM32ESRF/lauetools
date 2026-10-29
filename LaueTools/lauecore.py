@@ -15,31 +15,20 @@ https://gitlab.esrf.fr/micha/lauetools
 from __future__ import division
 
 import math
-import sys
 
 import numpy as np
 
 np.set_printoptions(precision=15)
 
 # LaueTools modules
-if sys.version_info.major == 3:
-    import builtins
-    from . import CrystalParameters as CP
-    from . import generaltools as GT
-    from . import IOLaueTools as IOLT
-    from . dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV,
-            DEFAULT_DETECTOR_DISTANCE, DEFAULT_DETECTOR_DIAMETER, DEFAULT_TOP_GEOMETRY)
+import builtins
+from . import CrystalParameters as CP
+from . import generaltools as GT
+from . import IOLaueTools as IOLT
+from . dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV,
+        DEFAULT_DETECTOR_DISTANCE, DEFAULT_DETECTOR_DIAMETER, DEFAULT_TOP_GEOMETRY)
 
-    from . import LaueGeometry as LTGeo
-else:
-    import CrystalParameters as CP
-    import generaltools as GT
-    import IOLaueTools as IOLT
-    from dict_LaueTools import (dict_Materials, dict_Extinc, CST_ENERGYKEV,
-            DEFAULT_DETECTOR_DISTANCE, DEFAULT_DETECTOR_DIAMETER, DEFAULT_TOP_GEOMETRY)
-
-    # TODO: LTGeo to be removed
-    import LaueGeometry as LTGeo
+from . import LaueGeometry as LTGeo
 
 try:  # cython library (package-relative import first, then legacy top-level import)
     import importlib
@@ -512,10 +501,7 @@ def getLaueSpots(wavelmin:float, wavelmax:float, crystalsParams,
 
         table_vec = table_vec[cond_Xnegativeonly]
 
-        if sys.version_info.major == 3:
-            listObj = builtins.list
-        else:
-            listObj = list
+        listObj = builtins.list
 
         # Kf direction selection
 

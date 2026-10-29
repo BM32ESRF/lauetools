@@ -8,7 +8,6 @@ J. S. Micha Sept 2024
 mailto: micha --+at-+- esrf --+dot-+- fr
 """
 import os
-import sys
 import copy
 
 import shutil
@@ -16,21 +15,14 @@ import shutil
 import wx
 from LaueTools.GUI.fastfiledialog import FastFileDialog  # fast in folders with many files
 
-if sys.version_info.major == 3:
-    from . import CCDFileParametersGUI as CCDParamGUI
-    from . import DetectorParameters as DP
-    from .. import dict_LaueTools as DictLT
-    from .. import LaueGeometry as F2TC
-    from .. import IOLaueTools as IOLT
-    from .. import generaltools as GT
-    from . import OpenSpotsListFileGUI as OSLFGUI
+from . import CCDFileParametersGUI as CCDParamGUI
+from . import DetectorParameters as DP
+from .. import dict_LaueTools as DictLT
+from .. import LaueGeometry as F2TC
+from .. import IOLaueTools as IOLT
+from .. import generaltools as GT
+from . import OpenSpotsListFileGUI as OSLFGUI
 
-else:
-    import GUI.CCDFileParametersGUI as CCDParamGUI
-    import GUI.DetectorParameters as DP
-    import dict_LaueTools as DictLT
-    import LaueGeometry as F2TC
-    import IOLaueTools as IOLT
 
 DICT_LAUE_GEOMETRIES = DictLT.DICT_LAUE_GEOMETRIES
 

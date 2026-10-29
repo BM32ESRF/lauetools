@@ -5,7 +5,6 @@ Created on Wed Feb  8 10:16:17 2012
 @author: micha     February 2020
 """
 import os
-import sys
 import wx
 import numpy as np
 import pylab
@@ -16,12 +15,8 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
 import matplotlib as mpl
 from matplotlib.figure import Figure
 
-if sys.version_info.major == 3:
-    from .. import generaltools as GT
-    from . PlotRefineGUI import IntensityScaleBoard
-else:
-    import generaltools as GT
-    from GUI.PlotRefineGUI import IntensityScaleBoard
+from .. import generaltools as GT
+from . PlotRefineGUI import IntensityScaleBoard
 
 DEG = np.pi / 180.0
 CA = np.cos(40.0 * DEG)
@@ -757,10 +752,7 @@ class SimulationPlotFrame(wx.Frame):
 
             from matplotlib.collections import LineCollection
             import matplotlib.patches as patches
-            if sys.version_info.major == 3:
-                from .. import rectangle as rect
-            else:
-                import rectangle as rect
+            from .. import rectangle as rect
 
             w_nbsteps = 40
             h_nbsteps = 15

@@ -1,15 +1,11 @@
 import os
-import sys
 
 import numpy as np
 
 import wx
 import wx.grid
 
-if sys.version_info.major == 3:
-    from .. import IOLaueTools as IOLT
-else:
-    import IOLaueTools as IOLT
+from .. import IOLaueTools as IOLT
 
 # --- ---------------  Plot limits board  parameters
 # class PeaksListBoard(wx.Dialog):

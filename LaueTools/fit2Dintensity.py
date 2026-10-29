@@ -5,7 +5,6 @@ module to fit 2d value in array
 still in development for fit of multiple peaks in ROI
 """
 
-import sys
 import pylab as p
 import numpy as np
 
@@ -13,16 +12,10 @@ from scipy import optimize, stats
 
 from matplotlib.ticker import FuncFormatter
 
-if sys.version_info.major == 3:
-    from . import generaltools as GT
-else:
-    import generaltools as GT
+from . import generaltools as GT
 
 try:  # cython library
-    if sys.version_info.major == 3:
-        from . import gaussian2D
-    else:
-        import gaussian2D
+    from . import gaussian2D
 
     USE_CYTHON = True
 except ImportError:
@@ -524,10 +517,7 @@ if __name__ == "__main__":
 
     center_pixel = peak_1
 
-    if sys.version_info.major == 3:
-        from . import readmccd as RMCCD
-    else:
-        import readmccd as RMCCD
+    from . import readmccd as RMCCD
 
     dat = IOimage.readoneimage_crop(
         fifi, center_pixel, (xboxsize, yboxsize), dirname=dirname)

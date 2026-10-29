@@ -18,7 +18,6 @@ mailto: micha --+at-+- esrf --+dot-+- fr
 import os
 import time
 import copy
-import sys
 import math
 import numpy as np
 
@@ -46,48 +45,27 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
 
 from matplotlib.figure import Figure
 
-if sys.version_info.major == 3:
-    #from .. import dict_LaueTools as DictLT
-    import LaueTools.dict_LaueTools as DictLT
-    from LaueTools.GUI.MaterialsEditor import MaterialComboBox, MaterialsRefreshButton
-    import LaueTools.LaueGeometry as F2TC
-    import LaueTools.indexingAnglesLUT as INDEX
-    import LaueTools.indexingImageMatching as IIM
-    import LaueTools.matchingrate as matchingrate
-    import LaueTools.lauecore as LAUE
-    import LaueTools.findorient as FindO
-    import LaueTools.FitOrient as FitO
-    import LaueTools.GUI.spotslinkeditor as SLE
-    import LaueTools.GUI.LaueSpotsEditor as LSEditor
-    import LaueTools.generaltools as GT
-    import LaueTools.IOLaueTools as IOLT
-    import LaueTools.CrystalParameters as CP
-    import LaueTools.detectorbands as DB
-    import LaueTools.GUI.DetectorParameters as DP
-    from LaueTools.GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    from LaueTools.GUI import OpenSpotsListFileGUI as OSLFGUI
-    import LaueTools.orientations as ORI
+#from .. import dict_LaueTools as DictLT
+import LaueTools.dict_LaueTools as DictLT
+from LaueTools.GUI.MaterialsEditor import MaterialComboBox, MaterialsRefreshButton
+import LaueTools.LaueGeometry as F2TC
+import LaueTools.indexingAnglesLUT as INDEX
+import LaueTools.indexingImageMatching as IIM
+import LaueTools.matchingrate as matchingrate
+import LaueTools.lauecore as LAUE
+import LaueTools.findorient as FindO
+import LaueTools.FitOrient as FitO
+import LaueTools.GUI.spotslinkeditor as SLE
+import LaueTools.GUI.LaueSpotsEditor as LSEditor
+import LaueTools.generaltools as GT
+import LaueTools.IOLaueTools as IOLT
+import LaueTools.CrystalParameters as CP
+import LaueTools.detectorbands as DB
+import LaueTools.GUI.DetectorParameters as DP
+from LaueTools.GUI.ResultsIndexationGUI import RecognitionResultCheckBox
+from LaueTools.GUI import OpenSpotsListFileGUI as OSLFGUI
+import LaueTools.orientations as ORI
 
-else:
-
-    import dict_LaueTools as DictLT
-    import LaueGeometry as F2TC
-    import indexingAnglesLUT as INDEX
-    import indexingImageMatching as IIM
-    import matchingrate
-    import lauecore as LAUE
-    import findorient as FindO
-    import FitOrient as FitO
-    import GUI.spotslinkeditor as SLE
-    import GUI.LaueSpotsEditor as LSEditor
-    import generaltools as GT
-    import IOLaueTools as IOLT
-    import CrystalParameters as CP
-    import detectorbands as DB
-    import GUI.DetectorParameters as DP
-    from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    import OpenSpotsListFileGUI as OSLFGUI
-    import orientations as ORI
 
 
 DEG = DictLT.DEG

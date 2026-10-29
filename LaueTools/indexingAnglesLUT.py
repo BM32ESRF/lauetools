@@ -15,7 +15,6 @@ js micha May  2019
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import os
-import sys
 
 import pylab as p
 import numpy as np
@@ -32,28 +31,16 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Union, List, Dict, Iterable, Tuple
 deg = float
 
-if sys.version_info.major == 3:
-    from . import lauecore as LAUE
-    from . import CrystalParameters as CP
-    from . import findorient as FindO
-    from . import dict_LaueTools as DictLT
-    from . import generaltools as GT
-    from . import indexingSpotsSet as ISS  # for test only
-    from . import matchingrate
-else:
-    import lauecore as LAUE
-    import CrystalParameters as CP
-    import findorient as FindO
-    import dict_LaueTools as DictLT
-    import generaltools as GT
-    import indexingSpotsSet as ISS  # for test only
-    import matchingrate
+from . import lauecore as LAUE
+from . import CrystalParameters as CP
+from . import findorient as FindO
+from . import dict_LaueTools as DictLT
+from . import generaltools as GT
+from . import indexingSpotsSet as ISS  # for test only
+from . import matchingrate
 
 try:  # import cython library
-    if sys.version_info.major == 3:
-        from . import angulardist
-    else:
-        import angulardist
+    from . import angulardist
     USE_CYTHON = True
 except ImportError:
     #print("-- warning. Cython compiled module for fast computation of angular distance is not installed!")

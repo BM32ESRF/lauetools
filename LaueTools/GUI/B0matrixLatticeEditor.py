@@ -2,16 +2,12 @@
 module containing a GUI class to compute lattice parameters in both spaces (real and reciprocal)
 """
 import os
-import sys
 import re
 
 import numpy as np
 
 import wx
-if sys.version_info.major == 3:
-    from .. import CrystalParameters as CP
-else:
-    import CrystalParameters as CP
+from .. import CrystalParameters as CP
 
 # --- ---------------------   UB Matrix Editor
 class B0MatrixEditor(wx.Frame):

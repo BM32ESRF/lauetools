@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
-import sys
 
 import numpy as np
 import scipy.optimize as sciopt
 import pylab as p
 
-if sys.version_info.major == 3:
-    from . import generaltools as GT
-    from . import IOimagefile as IOimage
-else:
-    import generaltools as GT
-    import IOimagefile as IOimage
+from . import generaltools as GT
+from . import IOimagefile as IOimage
 
 def lorentzian(height, center_x, center_y, width_x, width_y):
     """Returns a gaussian function with the given parameters"""

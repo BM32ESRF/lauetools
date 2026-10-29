@@ -9,7 +9,6 @@ JS micha February 2020
 import copy
 import pickle
 import os
-import sys
 import time
 import multiprocessing
 import numpy as np
@@ -22,41 +21,23 @@ mm=float
 degrees = float
 keV = float
 
-if sys.version_info.major == 3:
-    import configparser as CONF
-    from . import generaltools as GT
-    from . import CrystalParameters as CP
-    from . import lauecore as LAUE
-    from . import indexingAnglesLUT as INDEX
-    from . import matchingrate
-    from . import dict_LaueTools as DictLT
-    from . import FitOrient as FitO
-    from . import LaueGeometry as LaueGeo
-    from . import findorient as FO
-    from . import indexingImageMatching as IMM
-    from . import IOLaueTools as IOLT
-    from . generaltools import printred, printgreen, printcyan, printyellow
-    from . import spottracking as SpTra
-    from . import orientations as ORI
-    from . import spotsproposal as SPROP
+import configparser as CONF
+from . import generaltools as GT
+from . import CrystalParameters as CP
+from . import lauecore as LAUE
+from . import indexingAnglesLUT as INDEX
+from . import matchingrate
+from . import dict_LaueTools as DictLT
+from . import FitOrient as FitO
+from . import LaueGeometry as LaueGeo
+from . import findorient as FO
+from . import indexingImageMatching as IMM
+from . import IOLaueTools as IOLT
+from . generaltools import printred, printgreen, printcyan, printyellow
+from . import spottracking as SpTra
+from . import orientations as ORI
+from . import spotsproposal as SPROP
 
-else:
-    import ConfigParser as CONF
-    import generaltools as GT
-    import CrystalParameters as CP
-    import lauecore as LAUE
-    import indexingAnglesLUT as INDEX
-    import matchingrate
-    import dict_LaueTools as DictLT
-    import FitOrient as FitO
-    import LaueGeometry as LaueGeo
-    import findorient as FO
-    import indexingImageMatching as IMM
-    import IOLaueTools as IOLT
-    from generaltools import printred, printgreen, printcyan, printyellow
-    import spottracking as SpTra
-    import orientations as ORI
-    import spotsproposal as SPROP
 
 
 CST_ENERGYKEV = DictLT.CST_ENERGYKEV
@@ -5446,10 +5427,7 @@ def indexFilesSeries(filepathdat:str, filepathcor:str, filepathout:str,
                                                                             dirname=filepathout)
 
         if build_hdf5:
-            if sys.version_info.major == 3:
-                import LaueTools.Lauehdf5 as LaueHDF5
-            else:
-                import Lauehdf5 as LaueHDF5
+            import LaueTools.Lauehdf5 as LaueHDF5
 
             print("\n\n -------  Building hdf5 file   --------------\n")
 
@@ -5554,10 +5532,7 @@ def indexing_multiprocessing(fileindexrange, dirname_dictRes=None, Index_Refine_
 
     if build_hdf5:
         try:
-            if sys.version_info.major == 3:
-                from . import Lauehdf5 as LaueHDF5
-            else:
-                import Lauehdf5 as LaueHDF5
+            from . import Lauehdf5 as LaueHDF5
 
             print("\n\n -------  Building hdf5 file   --------------\n")
         except ImportError:
@@ -6245,10 +6220,7 @@ def index_fileseries_3(fileindexrange, Index_Refine_Parameters_dict=None,
             p.pid)
 
         if build_hdf5:
-            if sys.version_info.major == 3:
-                from . import Lauehdf5 as LaueHDF5
-            else:
-                import Lauehdf5 as LaueHDF5
+            from . import Lauehdf5 as LaueHDF5
 
             LaueHDF5.build_hdf5(outputdict_filename,
                                 dirname_dictRes=ResultsFolder,

@@ -10,7 +10,6 @@ March 2020
 """
 from __future__ import division
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
-import sys
 import copy
 
 import matplotlib
@@ -34,37 +33,21 @@ else:
     WXPYTHON4 = True
     wx.OPEN = wx.FD_OPEN
 
-if sys.version_info.major == 3:
-    from .. import indexingAnglesLUT as INDEX
-    from .. import indexingImageMatching as IIM
-    from .. import indexingSpotsSet as ISS
-    from .. import lauecore as LAUE
-    from .. import LaueGeometry as F2TC
-    from . import LaueSpotsEditor as LSEditor
-    from .. import CrystalParameters as CP
-    from .. import generaltools as GT
-    from .. import dict_LaueTools as DictLT
-    from . MaterialsEditor import MaterialComboBox, MaterialsRefreshButton
-    from .. import dragpoints as DGP
-    from . import threadGUI2 as TG
-    from . ResultsIndexationGUI import RecognitionResultCheckBox
-    from . import PlotLimitsBoard
-    from .. import imageprocessing as ImProc
-else:
-    import indexingAnglesLUT as INDEX
-    import indexingImageMatching as IIM
-    import indexingSpotsSet as ISS
-    import lauecore as LAUE
-    import LaueGeometry as F2TC
-    import CrystalParameters as CP
-    import generaltools as GT
-    import dict_LaueTools as DictLT
-    import dragpoints as DGP
-    import GUI.LaueSpotsEditor as LSEditor
-    from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    import GUI.threadGUI2 as TG
-    import GUI.PlotLimitsBoard
-    import imageprocessing as ImProc
+from .. import indexingAnglesLUT as INDEX
+from .. import indexingImageMatching as IIM
+from .. import indexingSpotsSet as ISS
+from .. import lauecore as LAUE
+from .. import LaueGeometry as F2TC
+from . import LaueSpotsEditor as LSEditor
+from .. import CrystalParameters as CP
+from .. import generaltools as GT
+from .. import dict_LaueTools as DictLT
+from . MaterialsEditor import MaterialComboBox, MaterialsRefreshButton
+from .. import dragpoints as DGP
+from . import threadGUI2 as TG
+from . ResultsIndexationGUI import RecognitionResultCheckBox
+from . import PlotLimitsBoard
+from .. import imageprocessing as ImProc
 
 # --- ---------------  Manual indexation Frame
 class ManualIndexFrame(wx.Frame):

@@ -9,7 +9,6 @@ from LaueTools package hosted in
 https://gitlab.esrf.fr/micha/lauetools
 """
 from __future__ import division
-import sys
 import copy
 
 import wx
@@ -30,19 +29,12 @@ else:
 
 import wx.lib.stattext as ST
 
-if sys.version_info.major == 3:
-    from .. import lauecore as LT
-    from .. import CrystalParameters as CP
-    from .. import dict_LaueTools as DictLT
-    from . PlotRefineGUI import Plot_RefineFrame
-    from .. matchingrate import getProximity
+from .. import lauecore as LT
+from .. import CrystalParameters as CP
+from .. import dict_LaueTools as DictLT
+from . PlotRefineGUI import Plot_RefineFrame
+from .. matchingrate import getProximity
 
-else:
-    import lauecore as LT
-    import CrystalParameters as CP
-    import dict_LaueTools as DictLT
-    from GUI.PlotRefineGUI import Plot_RefineFrame
-    from matchingrate import getProximity
 
 # --- -------------------  Recognition Results
 import wx.lib.scrolledpanel as scrolled

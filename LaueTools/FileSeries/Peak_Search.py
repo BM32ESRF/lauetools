@@ -31,15 +31,10 @@ else:
     wx.Window.SetToolTipString = sttip
 
 # LaueTools modules
-if sys.version_info.major == 3:
-    from .. import readmccd as RMCCD
-    from .. import dict_LaueTools as DictLT
-    from .. import IOLaueTools as IOLT
+from .. import readmccd as RMCCD
+from .. import dict_LaueTools as DictLT
+from .. import IOLaueTools as IOLT
 
-else:
-    import readmccd as RMCCD
-    import dict_LaueTools as DictLT
-    import IOLaueTools as IOLT
 
 dict_CCD = DictLT.dict_CCD
 LIST_OF_CCDS = list(dict_CCD.keys())

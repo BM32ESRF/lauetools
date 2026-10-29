@@ -12,22 +12,14 @@ or for python3 and 2 in
 
 https://gitlab.esrf.fr/micha/lauetools
 """
-import sys
 import numpy as np
 
-if sys.version_info.major == 3:
-    from . import dict_LaueTools as DictLT
-    from . import generaltools as GT
-    from . import lauecore as LAUE
-    from . import LaueGeometry as LTGeo
-    from . import CrystalParameters as CP
+from . import dict_LaueTools as DictLT
+from . import generaltools as GT
+from . import lauecore as LAUE
+from . import LaueGeometry as LTGeo
+from . import CrystalParameters as CP
 
-else:
-    import dict_LaueTools as DictLT
-    import generaltools as GT
-    import lauecore as LAUE
-    import LaueGeometry as LTGeo
-    import CrystalParameters as CP
 
 try:
     WXPYTHON = True

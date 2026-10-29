@@ -8,7 +8,6 @@ More tools can be found in LaueTools package in github march 2026
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 # built-in modules
-import sys
 import os
 import re
 import copy
@@ -71,12 +70,8 @@ oddinteger = int
 
 
 # lauetools modules
-if sys.version_info.major == 3:
-    from . import dict_LaueTools as DictLT
-    from . import imageprocessing as ImProc
-else:
-    import dict_LaueTools as DictLT
-    import imageprocessing as ImProc
+from . import dict_LaueTools as DictLT
+from . import imageprocessing as ImProc
 
 listfile = os.listdir(os.curdir)
 

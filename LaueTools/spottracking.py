@@ -7,15 +7,10 @@ JS Micha November 2019
 spot tracking allows to follow pixel positions of spot in peaks list file
 """
 
-import sys
 import numpy as np
 
-if sys.version_info.major == 3:
-    from . import generaltools as GT
-    from . import IOLaueTools as IOLT
-else:
-    import generaltools as GT
-    import IOLaueTools as IOLT
+from . import generaltools as GT
+from . import IOLaueTools as IOLT
 
 from typing import List, Union, Tuple, Dict
 arrayORList1D = Union[List, 'numpyarrayn']

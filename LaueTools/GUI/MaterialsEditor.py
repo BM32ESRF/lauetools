@@ -9,14 +9,10 @@ GUI widgets for the materials library of LaueTools (dict_LaueTools.dict_Material
 This module belongs to the open source LaueTools project
 JS Micha   October 2026
 """
-import sys
 
 import wx
 
-if sys.version_info.major == 3:
-    from .. import dict_LaueTools as DictLT
-else:
-    import dict_LaueTools as DictLT
+from .. import dict_LaueTools as DictLT
 
 COLUMNS = ["name", "a", "b", "c", "alpha", "beta", "gamma", "extinction"]
 LATTICE_LABELS = COLUMNS[1:7]

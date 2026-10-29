@@ -12,7 +12,6 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import copy
 import os
-import sys
 import time
 
 import wx
@@ -42,38 +41,22 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
 from matplotlib import __version__ as matplotlibversion
 import matplotlib
 
-if sys.version_info.major == 3:
-    from .. import CrystalParameters as CP
-    from .. import detectorbands as DB
-    from .. import IOLaueTools as IOLT
-    from .. import generaltools as GT
-    from .. import dict_LaueTools as DictLT
-    from . MaterialsEditor import MaterialComboBox, MaterialsRefreshButton
-    from .. import lauecore as LAUE
-    from .. import FitOrient as FitO
-    from . import LaueSpotsEditor as LSEditor
-    from .. import indexingSpotsSet as ISS
-    from .. import matchingrate
-    from .. import imageprocessing as ImProc
-    from .. import orientations as ORI
-    from .. import IOimagefile as IOimage
-    from . import OpenSpotsListFileGUI as OSLFGUI
+from .. import CrystalParameters as CP
+from .. import detectorbands as DB
+from .. import IOLaueTools as IOLT
+from .. import generaltools as GT
+from .. import dict_LaueTools as DictLT
+from . MaterialsEditor import MaterialComboBox, MaterialsRefreshButton
+from .. import lauecore as LAUE
+from .. import FitOrient as FitO
+from . import LaueSpotsEditor as LSEditor
+from .. import indexingSpotsSet as ISS
+from .. import matchingrate
+from .. import imageprocessing as ImProc
+from .. import orientations as ORI
+from .. import IOimagefile as IOimage
+from . import OpenSpotsListFileGUI as OSLFGUI
 
-else:
-    import CrystalParameters as CP
-    import detectorbands as DB
-    import IOLaueTools as IOLT
-    import generaltools as GT
-    import dict_LaueTools as DictLT
-    import lauecore as LAUE
-    import FitOrient as FitO
-    import GUI.LaueSpotsEditor as LSEditor
-    import indexingSpotsSet as ISS
-    import matchingrate
-    import imageprocessing as ImProc
-    import orientations as ORI
-    import IOimagefile as IOimage
-    import OpenSpotsListFileGUI as OSLFGUI
 
 
 # class MessageDataBox(wx.Dialog):

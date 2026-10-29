@@ -15,7 +15,6 @@ __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import os
 import time
-import sys
 import pickle
 
 import scipy.ndimage as NDI
@@ -35,29 +34,17 @@ try:
 except ImportError:
     import PIL.ImageFilter as ImageFilter
 
-if sys.version_info.major == 3:
-    from . import lauecore as LAUE
-    from . import CrystalParameters as CP
-    from . import LaueGeometry as F2TC
-    from . import dict_LaueTools as DictLT
-    from . import generaltools as GT
-    from . import readmccd as RMCCD
-    from . import IOLaueTools as IOLT
-    from .annot import AnnoteFinder
-    from . import IOimagefile as IOimage
-    from . import imageprocessing as ImProc
+from . import lauecore as LAUE
+from . import CrystalParameters as CP
+from . import LaueGeometry as F2TC
+from . import dict_LaueTools as DictLT
+from . import generaltools as GT
+from . import readmccd as RMCCD
+from . import IOLaueTools as IOLT
+from .annot import AnnoteFinder
+from . import IOimagefile as IOimage
+from . import imageprocessing as ImProc
 
-else:
-    import lauecore as LAUE
-    import CrystalParameters as CP
-    import LaueGeometry as F2TC
-    import dict_LaueTools as DictLT
-    import generaltools as GT
-    import readmccd as RMCCD
-    import IOLaueTools as IOLT
-    from annot import AnnoteFinder
-    import IOimagefile as IOimage
-    import imageprocessing as ImProc
 
 # --- ------------ CONSTANTS
 DEG = np.pi / 180.0

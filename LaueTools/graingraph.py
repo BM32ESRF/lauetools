@@ -27,16 +27,10 @@ except ImportError:
     print("networkx module is missing! Please install it !")
     print("***********************************************************\n")
 
-if sys.version_info.major == 3:
-    from . import findorient as FO
-    # from . import indexingAnglesLUT as INDEX
-    from . import generaltools as GT
-    from . import IOLaueTools as IOLT
-else:
-    import findorient as FO
-    # import indexingAnglesLUT as INDEX
-    import generaltools as GT
-    import IOLaueTools as IOLT
+from . import findorient as FO
+# from . import indexingAnglesLUT as INDEX
+from . import generaltools as GT
+from . import IOLaueTools as IOLT
 
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 

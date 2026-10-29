@@ -78,46 +78,27 @@ if ObjectListView_Present:
     ObjectListView.SetColumnWidth = _OLV_SetColumnWidth_int
 
 # LaueTools modules
-if sys.version_info.major == 3:
-    from .. import dragpoints as DGP
-    from . import mosaic as MOS
-    from .. import SpotModel
-    from .. import dict_LaueTools as DictLT
-    from .. import readmccd as RMCCD
-    from .. import fit2Dintensity as fit2d
-    from .. import LaueGeometry as F2TC
-    # from . import peaklistfit2d as plf2d
-    from . import Plot1DFrame as PLOT1D
-    from . import HistogramPlot as HISTOPLOT
-    from . import ImshowFrame as IMSHOW
-    from .. import generaltools as GT
-    from . import CCDFileParametersGUI as CCDParamGUI
-    from .. import IOLaueTools as IOLT
-    from . import PeaksListBoard
-    from .. import IOimagefile as IOimage
-    from .. import imageprocessing as ImProc
-    import LaueTools.logfile_reader as logfile_reader
-    import LaueTools.blissdatafolderstructure as bf
-    import LaueTools.scripts.workflowlauncher as WL
+from .. import dragpoints as DGP
+from . import mosaic as MOS
+from .. import SpotModel
+from .. import dict_LaueTools as DictLT
+from .. import readmccd as RMCCD
+from .. import fit2Dintensity as fit2d
+from .. import LaueGeometry as F2TC
+# from . import peaklistfit2d as plf2d
+from . import Plot1DFrame as PLOT1D
+from . import HistogramPlot as HISTOPLOT
+from . import ImshowFrame as IMSHOW
+from .. import generaltools as GT
+from . import CCDFileParametersGUI as CCDParamGUI
+from .. import IOLaueTools as IOLT
+from . import PeaksListBoard
+from .. import IOimagefile as IOimage
+from .. import imageprocessing as ImProc
+import LaueTools.logfile_reader as logfile_reader
+import LaueTools.blissdatafolderstructure as bf
+import LaueTools.scripts.workflowlauncher as WL
 
-else:
-    import dragpoints as DGP
-    import GUI.mosaic as MOS
-    import SpotModel
-    import dict_LaueTools as DictLT
-    import readmccd as RMCCD
-    import fit2Dintensity as fit2d
-    import LaueGeometry as F2TC
-    # import peaklistfit2d as plf2d
-    import GUI.Plot1DFrame as PLOT1D
-    import GUI.HistogramPlot as HISTOPLOT
-    import GUI.ImshowFrame as IMSHOW
-    import generaltools as GT
-    import GUI.CCDFileParametersGUI as CCDParamGUI
-    import IOLaueTools as IOLT
-    import GUI.PeaksListBoard
-    import IOimagefile as IOimage
-    import imageprocessing as ImProc
 
 
 class ScrolledPagePanel(scrolled.ScrolledPanel):

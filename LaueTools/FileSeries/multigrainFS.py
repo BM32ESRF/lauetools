@@ -12,21 +12,20 @@ degrees=float
 
 sys.path.append("..")
 
-if sys.version_info.major == 3:
-    import LaueTools.FileSeries.module_graphique as modgraph
-    import LaueTools.LaueGeometry as F2TC
-    print('For multigrainFS (FileSeries),LaueGeometry is from lauetools distribution at :',F2TC.__file__)
-    import LaueTools.readmccd as rmccd
-    #import LaueTools.LaueAutoAnalysis as LAA
-    import LaueTools.indexingAnglesLUT as INDEX
-    import LaueTools.findorient as FindO
-    import LaueTools.CrystalParameters as CP
-    from LaueTools.generaltools import norme_vec as norme
-    import LaueTools.generaltools as GT
-    import LaueTools.IOLaueTools as IOLT
-    import LaueTools.dict_LaueTools as DictLT
-    #from mosaic import ImshowFrameNew, ImshowFrame_Scalar, ImshowFrame
-    from LaueTools.GUI.mosaic import ImshowFrame_Scalar, ImshowFrame
+import LaueTools.FileSeries.module_graphique as modgraph
+import LaueTools.LaueGeometry as F2TC
+print('For multigrainFS (FileSeries),LaueGeometry is from lauetools distribution at :',F2TC.__file__)
+import LaueTools.readmccd as rmccd
+#import LaueTools.LaueAutoAnalysis as LAA
+import LaueTools.indexingAnglesLUT as INDEX
+import LaueTools.findorient as FindO
+import LaueTools.CrystalParameters as CP
+from LaueTools.generaltools import norme_vec as norme
+import LaueTools.generaltools as GT
+import LaueTools.IOLaueTools as IOLT
+import LaueTools.dict_LaueTools as DictLT
+#from mosaic import ImshowFrameNew, ImshowFrame_Scalar, ImshowFrame
+from LaueTools.GUI.mosaic import ImshowFrame_Scalar, ImshowFrame
 
 # TODO   to refactor -------------------
 # set invisible parameters for serial_peak_search, serial_index_refine_multigrain

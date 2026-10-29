@@ -1,7 +1,6 @@
 """ 2D imshow plot class
 
 """
-import sys
 import wx
 
 import numpy as np
@@ -13,10 +12,7 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
 from matplotlib.font_manager import FontProperties
 from matplotlib.ticker import FuncFormatter
 
-if sys.version_info.major == 3:
-    from .. import generaltools as GT
-else:
-    import generaltools as GT
+from .. import generaltools as GT
 
 
 class ImshowFrame(wx.Frame):

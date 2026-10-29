@@ -58,20 +58,14 @@ try:
 except ImportError:
     print('-- warning. spec control software and SpecClient_gevent missing ? (normal, if you are not at the beamline')
 
-if sys.version_info.major == 3:
-    import LaueTools.generaltools as GT
-    # from LaueTools.Daxm.contrib.spec_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
-    from LaueTools.logfile_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
-    import LaueTools.MessageCommand as MC
-    import LaueTools.IOLaueTools as IOLT
-    # import LaueTools.Daxm.contrib.spec_reader as spec_reader
-    import LaueTools.logfile_reader as logfile_reader
+import LaueTools.generaltools as GT
+# from LaueTools.Daxm.contrib.spec_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
+from LaueTools.logfile_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
+import LaueTools.MessageCommand as MC
+import LaueTools.IOLaueTools as IOLT
+# import LaueTools.Daxm.contrib.spec_reader as spec_reader
+import LaueTools.logfile_reader as logfile_reader
 
-else:
-    import generaltools as GT
-    # from LaueTools.Daxm.contrib.spec_reader import ReadSpec,ReadHdf5, readdata_from_hdf5key
-    from LaueTools.logfile_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
-    import MessageCommand as MC
 
 import wx.lib.agw.customtreectrl as CT
 

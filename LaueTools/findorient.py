@@ -19,7 +19,6 @@ from __future__ import print_function
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 import string
-import sys
 
 try:
     from scipy.linalg.basic import lstsq
@@ -28,18 +27,11 @@ except ImportError:
 import numpy as np
 from numpy import linalg as LA
 
-if sys.version_info.major == 3:
-    from . import CrystalParameters as CP
-    from . import LaueGeometry as LTGeo
-    from . import generaltools as GT
-    # from . dict_LaueTools import dict_Materials
-    from . import dict_LaueTools as DictLT
-else:
-    import CrystalParameters as CP
-    import LaueGeometry as LTGeo
-    import generaltools as GT
-    # from dict_LaueTools import dict_Materials
-    import dict_LaueTools as DictLT
+from . import CrystalParameters as CP
+from . import LaueGeometry as LTGeo
+from . import generaltools as GT
+# from . dict_LaueTools import dict_Materials
+from . import dict_LaueTools as DictLT
 
 # --- ---------  CONSTANTS
 DEG = np.pi / 180.0

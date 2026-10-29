@@ -20,26 +20,16 @@ import numpy as np
 #print('loading readmccd.py')
 
 # lauetools modules
-if sys.version_info.major == 3:
-    import configparser as CONF
-    from . import fit2Dintensity as fit2d
-    from . import fit2Dintensity_Lorentz as fit2d_l
-    from . import generaltools as GT
-    from . import IOLaueTools as IOLT
-    from . import IOimagefile as IOimage
-    from . import dict_LaueTools as DictLT
-    from . import imageprocessing as ImProc
-    from . import LaueGeometry as LaueGeo
+import configparser as CONF
+from . import fit2Dintensity as fit2d
+from . import fit2Dintensity_Lorentz as fit2d_l
+from . import generaltools as GT
+from . import IOLaueTools as IOLT
+from . import IOimagefile as IOimage
+from . import dict_LaueTools as DictLT
+from . import imageprocessing as ImProc
+from . import LaueGeometry as LaueGeo
 
-else:
-    import ConfigParser as CONF
-    import fit2Dintensity as fit2d
-    import fit2Dintensity_Lorentz as fit2d_l
-    import generaltools as GT
-    import IOLaueTools as IOLT
-    import IOimagefile as IOimage
-    import dict_LaueTools as DictLT
-    import imageprocessing as ImProc
 
 listfile = os.listdir(os.curdir)
 

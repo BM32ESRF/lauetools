@@ -9,7 +9,6 @@ from LaueTools package hosted in
 https://gitlab.esrf.fr/micha/lauetools
 """
 
-import sys
 import time
 import os
 import threading
@@ -31,32 +30,19 @@ else:
     wx.Window.SetToolTipString = sttip
 
 
-if sys.version_info.major == 3:
-    from .. import lauecore as LT
-    from .. import CrystalParameters as CP
-    from .. import indexingSpotsSet as ISS
-    from .. import indexingAnglesLUT as INDEX
-    from .. import IOLaueTools as IOLT
-    from .. import generaltools as GT
-    from .. import dict_LaueTools as DictLT
-    from . MaterialsEditor import MaterialComboBox
-    from .. import spotsproposal as SPROP
-    from . PlotRefineGUI import Plot_RefineFrame
-    from . ResultsIndexationGUI import RecognitionResultCheckBox
-    from . import OpenSpotsListFileGUI as OSLFGUI
+from .. import lauecore as LT
+from .. import CrystalParameters as CP
+from .. import indexingSpotsSet as ISS
+from .. import indexingAnglesLUT as INDEX
+from .. import IOLaueTools as IOLT
+from .. import generaltools as GT
+from .. import dict_LaueTools as DictLT
+from . MaterialsEditor import MaterialComboBox
+from .. import spotsproposal as SPROP
+from . PlotRefineGUI import Plot_RefineFrame
+from . ResultsIndexationGUI import RecognitionResultCheckBox
+from . import OpenSpotsListFileGUI as OSLFGUI
 
-else:
-    import lauecore as LT
-    import CrystalParameters as CP
-    import indexingSpotsSet as ISS
-    import indexingAnglesLUT as INDEX
-    import IOLaueTools as IOLT
-    import generaltools as GT
-    import dict_LaueTools as DictLT
-    import spotsproposal as SPROP
-    from GUI.PlotRefineGUI import Plot_RefineFrame
-    from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
-    import OpenSpotsListFileGUI as OSLFGUI
 
 
 # --- ----------------   Classical Indexation Board
@@ -603,10 +589,7 @@ class DistanceScreeningIndexationBoard(wx.Frame):
         """
         import re
         try:
-            if sys.version_info.major == 3:
-                from .. import indexing_batch as IB
-            else:
-                import indexing_batch as IB
+            from .. import indexing_batch as IB
             corfile = str(self.DataPlot_filename)
             corfolder = os.path.dirname(corfile) if os.path.isabs(corfile) else str(self.dirname)
             match = re.fullmatch(r"(.*?)(\d+)\.cor", os.path.basename(corfile))

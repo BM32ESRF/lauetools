@@ -33,10 +33,7 @@ else:
 
     wx.Window.SetToolTipString = sttip
 
-if sys.version_info.major == 3:
-    import LaueTools.dict_LaueTools as dictLT
-else:
-    import dict_LaueTools as dictLT
+import LaueTools.dict_LaueTools as dictLT
 
 LAUETOOLSFOLDER = dictLT.LAUETOOLSFOLDER
 LaueToolsProjectFolder = os.path.abspath(LAUETOOLSFOLDER)

@@ -1,5 +1,4 @@
 import os
-import sys
 import re
 
 import numpy as np
@@ -12,10 +11,7 @@ else:
     WXPYTHON4 = True
     wx.OPEN = wx.FD_OPEN
 
-if sys.version_info.major == 3:
-    from .. import generaltools as GT
-else:
-    import generaltools as GT
+from .. import generaltools as GT
     
 DEG = np.pi/180.
 # --- ---------------  Matrix Editor

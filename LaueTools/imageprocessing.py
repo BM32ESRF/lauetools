@@ -8,7 +8,6 @@ March 2026
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
 # built-in modules
-import sys
 import os
 
 # third party modules
@@ -30,12 +29,8 @@ import numpy as np
 import pylab as pp
 
 # lauetools modules
-if sys.version_info.major == 3:
-    from . import generaltools as GT
-    from . import dict_LaueTools as DictLT
-else:
-    import generaltools as GT
-    import dict_LaueTools as DictLT
+from . import generaltools as GT
+from . import dict_LaueTools as DictLT
 
 
 listfile = os.listdir(os.curdir)

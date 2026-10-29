@@ -1,5 +1,4 @@
 import os
-import sys
 import pickle
 import numpy as np
 import pylab as pp
@@ -18,23 +17,15 @@ if hasattr(Tab, "open_file"):
     Tab.File.createTable = Tab.File.create_table
     Tab.File.createArray = Tab.File.create_array
 
-if sys.version_info.major == 3:
-    #from . import generaltools as GT
-    
-    import LaueTools.generaltools as GT
-    import LaueTools.readmccd as RMCCD
-    import LaueTools.IOLaueTools as IOLT
-    import LaueTools.dict_LaueTools as DictLT
-    import LaueTools.orientations as ORI
-    import LaueTools.imageprocessing as ImProc
+#from . import generaltools as GT
 
-else:
+import LaueTools.generaltools as GT
+import LaueTools.readmccd as RMCCD
+import LaueTools.IOLaueTools as IOLT
+import LaueTools.dict_LaueTools as DictLT
+import LaueTools.orientations as ORI
+import LaueTools.imageprocessing as ImProc
 
-    import generaltools as GT
-    import readmccd as RMCCD
-    import IOLaueTools as IOLT
-    import dict_LaueTools as DictLT
-    import orientations as ORI
 
 
 MAX_NUMBER_GRAINS = 3

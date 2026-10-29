@@ -4,7 +4,6 @@ module of lauetools project
 
 JS Micha May 2019
 """
-import sys
 #import os
 
 # sys.path.insert(0, os.path.abspath('../..'))
@@ -12,18 +11,12 @@ import sys
 
 import numpy as np
 
-if sys.version_info.major == 3:
-    from . import dict_LaueTools as DictLT
-    from . import generaltools as GT
-    from . import LaueGeometry as LaueGeom
-    from . CrystalParameters import matstarlab_to_matstarlabOND, norme
-    from . import findorient as FO
+from . import dict_LaueTools as DictLT
+from . import generaltools as GT
+from . import LaueGeometry as LaueGeom
+from . CrystalParameters import matstarlab_to_matstarlabOND, norme
+from . import findorient as FO
 
-else:
-    import generaltools as GT
-    import dict_LaueTools as DictLT
-    import LaueGeometry as LaueGeom
-    import findorient as FO
 
 DEG = np.pi / 180.0
 

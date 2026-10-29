@@ -1,16 +1,11 @@
 """
 GUI Module of LaueTools package for choosing Detector File Parameters
 """
-import sys
 
 import wx
 
-if sys.version_info.major == 3:
-    from .. import dict_LaueTools as DictLT
-    from .. import generaltools as GT
-else:
-    import dict_LaueTools as DictLT
-    import generaltools as GT
+from .. import dict_LaueTools as DictLT
+from .. import generaltools as GT
 
 if wx.__version__ < "4.":
     WXPYTHON4 = False

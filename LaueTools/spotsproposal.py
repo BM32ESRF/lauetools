@@ -13,18 +13,12 @@ Two rankings of the spots of a Laue pattern:
 
 Lauetools project
 """
-import sys
 
 import numpy as np
 
-if sys.version_info.major == 3:
-    from . import CrystalParameters as CP
-    from . import generaltools as GT
-    from . import indexingImageMatching as IIM
-else:
-    import CrystalParameters as CP
-    import generaltools as GT
-    import indexingImageMatching as IIM
+from . import CrystalParameters as CP
+from . import generaltools as GT
+from . import indexingImageMatching as IIM
 
 
 def gnomonic_directions(twotheta, chi):

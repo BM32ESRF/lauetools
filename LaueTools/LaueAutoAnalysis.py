@@ -11,36 +11,22 @@ https://gitlab.esrf.fr/micha/lauetools/
 
 """
 import os
-import sys
 import time as ttt
 
 import scipy.io
 import numpy as np
 
-if sys.version_info.major == 3:
-    from . import LaueGeometry as F2TC
-    from . import indexingAnglesLUT as INDEX
-    from . import indexingSpotsSet as ISS
-    from . import lauecore as LAUE
-    from . import FitOrient as FitO
-    from . import readmccd as rmccd
-    from . import IOLaueTools as RWASCII
-    from . import generaltools as GT
-    from . import CrystalParameters as CP
-    from . import dict_LaueTools as DictLT
-    from . matchingrate import SpotLinks
-else:
-    import LaueGeometry as F2TC
-    import indexingAnglesLUT as INDEX
-    import indexingSpotsSet as ISS
-    import lauecore as LAUE
-    import FitOrient as FitO
-    import readmccd as rmccd
-    import IOLaueTools as RWASCII
-    import generaltools as GT
-    import CrystalParameters as CP
-    from matchingrate import SpotLinks
-    import dict_LaueTools as DictLT
+from . import LaueGeometry as F2TC
+from . import indexingAnglesLUT as INDEX
+from . import indexingSpotsSet as ISS
+from . import lauecore as LAUE
+from . import FitOrient as FitO
+from . import readmccd as rmccd
+from . import IOLaueTools as RWASCII
+from . import generaltools as GT
+from . import CrystalParameters as CP
+from . import dict_LaueTools as DictLT
+from . matchingrate import SpotLinks
 
 CST_ENERGYKEV = DictLT.CST_ENERGYKEV
 

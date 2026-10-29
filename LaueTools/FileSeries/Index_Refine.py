@@ -39,16 +39,11 @@ else:
 # except (ImportError, SyntaxError):
 #     print("Missing modules or functions of multigrain.py. But It does not matter!")
 
-if sys.version_info.major == 3:
-    import LaueTools.IOLaueTools as IOLT
-    import LaueTools.indexingSpotsSet as ISS
-    import LaueTools.dict_LaueTools as dictLT
-    import LaueTools.indexing_batch as IB
-    import LaueTools.LaueGeometry as LaueGeo
-else:
-    import IOLaueTools as IOLT
-    import indexingSpotsSet as ISS
-    import dict_LaueTools as dictLT
+import LaueTools.IOLaueTools as IOLT
+import LaueTools.indexingSpotsSet as ISS
+import LaueTools.dict_LaueTools as dictLT
+import LaueTools.indexing_batch as IB
+import LaueTools.LaueGeometry as LaueGeo
 
 
 LAUETOOLSFOLDER = dictLT.LAUETOOLSFOLDER

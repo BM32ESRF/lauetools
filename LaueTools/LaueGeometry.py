@@ -78,22 +78,14 @@ from absolute frame by the rotation (axis= - **i**, angle= wo) where wo is the a
 from __future__ import print_function
 
 import os
-import sys
 import numpy as np
 import pylab as P
 
-if sys.version_info.major == 3:
-    from . import findorient as FindO
-    from . import generaltools as GT
-    from . import IOLaueTools as IOLT
-    from . import CrystalParameters as CP
-    from . import dict_LaueTools as DictLT
-else:
-    import findorient as FindO
-    import generaltools as GT
-    import IOLaueTools as IOLT
-    import CrystalParameters as CP
-    import dict_LaueTools as DictLT
+from . import findorient as FindO
+from . import generaltools as GT
+from . import IOLaueTools as IOLT
+from . import CrystalParameters as CP
+from . import dict_LaueTools as DictLT
 
 # -----------  CONSTANTS ------------------
 RECTPIX = DictLT.RECTPIX  # see above  camera skewness

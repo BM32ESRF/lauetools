@@ -26,14 +26,9 @@ except (ImportError, ValueError):
     print("elasticity.py module is missing. You may need it for very few usages")
     ELASTICITYMODULE = False
 
-if sys.version_info.major == 3:
-    from . dict_LaueTools import dict_Materials, dict_Stiffness, dict_Extinc
-    from . import generaltools as GT
-    from . wyckpos_lauetools import testhklcond_generalrules_array
-else:
-    from dict_LaueTools import dict_Materials, dict_Stiffness, dict_Extinc
-    import generaltools as GT
-    from wyckpos_lauetools import testhklcond_generalrules_array
+from . dict_LaueTools import dict_Materials, dict_Stiffness, dict_Extinc
+from . import generaltools as GT
+from . wyckpos_lauetools import testhklcond_generalrules_array
     
 DEG = np.pi / 180.0
 RAD = 1 / DEG
