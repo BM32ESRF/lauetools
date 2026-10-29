@@ -9,6 +9,8 @@ without start())
 import ast
 import importlib
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -41,6 +43,15 @@ def pyproject_commands():
 @pytest.mark.parametrize("module", MODULES)
 def test_import(module):
     importlib.import_module("LaueTools." + module)
+
+
+@pytest.mark.parametrize("module", ["matchingrate"])
+def test_import_alone(module):
+    """import in a new interpreter: in test_import, modules already imported hide circular imports
+    (matchingrate -> indexingSpotsSet -> indexingAnglesLUT -> matchingrate)"""
+    result = subprocess.run([sys.executable, "-c", "import LaueTools." + module], cwd=ROOT,
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr.strip().splitlines()[-1]
 
 
 def test_commands_found():

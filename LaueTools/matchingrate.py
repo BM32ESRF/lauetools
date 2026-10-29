@@ -23,7 +23,6 @@ from . import generaltools as GT
 from . import LaueGeometry as LaueGeo
 from . dict_LaueTools import CST_ENERGYKEV
 from . dict_LaueTools import dict_Materials
-from . import indexingSpotsSet as ISS
 
 
 
@@ -949,6 +948,9 @@ def getMatchingRate(indexed_spots_dict, test_Matrix, ang_tol, simulparam, remove
                 * [1], number of theo. spots
                 * [2], matching rate (ratio*100 of the two previous numbers)
     """
+    # imported here: indexingSpotsSet imports indexingAnglesLUT, which imports matchingrate (circular import)
+    from . import indexingSpotsSet as ISS
+
     emin, emax, key_material, detectorparameters = simulparam
     # TODO to shorten
     _, twicetheta_data, chi_data, _, _, intensity_data = ISS.getSpotsData(indexed_spots_dict).T
