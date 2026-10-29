@@ -5382,7 +5382,7 @@ def indexFilesSeries(filepathdat:str, filepathcor:str, filepathout:str,
     t00 = time.time()
 
 
-    max_nb_cpus = multiprocessing.cpu_count()
+    max_nb_cpus = GT.available_cpus()
     nb_cpus = min(nb_cpus, max_nb_cpus)
 
     if nb_cpus > 1:

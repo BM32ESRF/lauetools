@@ -1106,6 +1106,28 @@ def calc_B_RR(latticeparameters, directspace=1, setvolume=False, verbose=0):
 
 
 # ---- ----------------------Strain computations --------------
+def refined_UB_B0(UBmat, B0matrix, latticeparameters):
+    r"""
+    UB and B0 matrices referred to the refined lattice parameters, to index other images with a new material whose
+    lattice parameters are `latticeparameters` (e.g. refined ones far from the reference ones)
+
+    q = UBmat . B0matrix . G* = UB_new . B0_new . G*  with  B0_new = calc_B_RR(latticeparameters),
+    UB_new = UBmat . B0matrix . inv(B0_new)
+
+    When latticeparameters are those refined from UBmat . B0matrix (one length kept constant), UB_new = scale . R
+    with R a pure rotation: scale is the ratio of the lattice lengths (unknown in Laue diffraction, rescaled with
+    the constant length), rotation_deviation = max |R^T R - I| (0 up to rounding errors)
+
+    :returns: UB_new, B0_new, scale, rotation_deviation
+    """
+    B0_new = calc_B_RR(latticeparameters)
+    UB_new = np.dot(np.dot(UBmat, B0matrix), np.linalg.inv(B0_new))
+    scale = float(np.cbrt(np.linalg.det(UB_new)))
+    R = UB_new / scale
+    rotation_deviation = float(np.amax(np.fabs(np.dot(R.T, R) - np.eye(3))))
+    return UB_new, B0_new, scale, rotation_deviation
+
+
 def DeviatoricStrain_LatticeParams(newUBmat, latticeparams, constantlength="a", verbose=0):
     r"""
     Computes deviatoric strain and new direct (real) lattice parameters
@@ -1578,7 +1600,7 @@ def dlat_to_rlat(dlat, angles_in_deg=1, setvolume=False):
     .. todo:: To remove setvolume
     """
     rlat = np.zeros(6)
-    dlat = np.array(dlat)
+    dlat = np.array(dlat, dtype=float)
 
     if angles_in_deg:
         dlat[3:] *= DEG
@@ -1636,7 +1658,7 @@ def vol_cell(dlat, angles_in_deg=1):
     .. note::
         from O Robach's scripts
     """
-    dlat = dlat[:]
+    dlat = np.array(dlat, dtype=float)
 
     if angles_in_deg:
         dlat[3:] *= DEG
@@ -1646,9 +1668,6 @@ def vol_cell(dlat, angles_in_deg=1):
                     - np.cos(dlat[3]) * np.cos(dlat[3])
                     - np.cos(dlat[4]) * np.cos(dlat[4])
                     - np.cos(dlat[5]) * np.cos(dlat[5])))
-
-    if angles_in_deg:
-        dlat[3:] *= RAD
 
     return volume
 
@@ -1686,7 +1705,7 @@ def calc_epsp_cubic(dlat):
     """
 
     epsp = np.zeros(6)
-    dlat = np.array(dlat)
+    dlat = np.array(dlat, dtype=float)
 
     dlat[3:] *= DEG
 

@@ -14,6 +14,7 @@ js micha May  2019
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
+import os
 import sys
 
 import pylab as p
@@ -744,6 +745,28 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
 # --------------------------------------------------------------------------------------
 STOP_REQUEST = threading.Event()
 
+# nb of processes of the pools of matching rates (internal multiprocessing). Measured (NiMnGa seed, 32000 UB
+# matrices, 144-cpu node): 115 s on 1 cpu, 87 s with 2 processes, 58 s with 4, 45 s with 8, 35 s with 32, 41 s with 143
+# (pool overhead): more than INTERNAL_MAX_CPUS processes is slower
+INTERNAL_MAX_CPUS = 32
+_INTERNAL_NCPUS = None
+
+
+def set_internal_ncpus(ncpus=None):
+    """nb of processes of the pools of matching rates in this process (e.g. a batch worker given ncpus cpus);
+    None: internal_ncpus() default"""
+    global _INTERNAL_NCPUS
+    _INTERNAL_NCPUS = None if ncpus is None else max(int(ncpus), 1)
+
+
+def internal_ncpus() -> int:
+    """nb of processes of the pools of matching rates: set_internal_ncpus() value, otherwise the cpus this process
+    may use (slurm / jupyter-slurm allocation, VISA instance quota, not all cpus of the machine) - 1, at most INTERNAL_MAX_CPUS"""
+    if _INTERNAL_NCPUS is not None:
+        return _INTERNAL_NCPUS
+    ncpus = GT.available_cpus()   # affinity, cpu quota of a VISA instance or container, LAUETOOLS_NB_CPUS
+    return max(1, min(ncpus - 1, INTERNAL_MAX_CPUS))
+
 
 def request_stop():
     """ask the running getOrientMatrices() / getOrientMatrices_fromTwoSets() to stop (from another thread): they
@@ -759,11 +782,13 @@ def stop_requested() -> bool:
     return STOP_REQUEST.is_set()
 
 
-def _matching_rates_stoppable(args, nb: int, ncpus: int) -> list:
+def _matching_rates_stoppable(args, nb: int, ncpus: int, stop_nbclose=None) -> list:
     """matchingrate.Angular_residues_np(*arg) for the nb tuples of args with a pool of ncpus processes, by chunks of
     ~16 matrices per process: a stop request (request_stop()) is taken into account between two chunks, and the
     results not computed are None. (The pool is never terminated while workers are sending results:
-    Pool.terminate() can then wait forever for the lock of the results queue)"""
+    Pool.terminate() can then wait forever for the lock of the results queue)
+    stop_nbclose: no more chunk once a matrix has at least stop_nbclose matches (like the loop of a single process,
+    which stops at the first such matrix: otherwise all the matrices are computed, several times more work)"""
     args = list(args)
     results = [None] * nb
     chunk = max(16 * max(ncpus, 1), 64)
@@ -775,6 +800,8 @@ def _matching_rates_stoppable(args, nb: int, ncpus: int) -> list:
             part = pool.map(worker_unpack, args[first:first + chunk], chunksize=max(1, chunk // (4 * max(ncpus, 1))))
             results[first:first + len(part)] = part
             bar.update(len(part))
+            if stop_nbclose is not None and any(r is not None and r[2] >= stop_nbclose for r in part):
+                break
     return results
 
 
@@ -890,7 +917,7 @@ def getUBs_and_MatchingRate(spot_index_1, spot_index_2, ang_tol_LUT, angdist, co
                    itertools.repeat(dictmaterials),
                    )
         # (stoppable: request_stop())
-        results = _matching_rates_stoppable(args, len(list_orient_matrix), max(cpu_count() - 1, 1))
+        results = _matching_rates_stoppable(args, len(list_orient_matrix), internal_ncpus())
 
         for mat_ind, AngRes in enumerate(results):
             if AngRes is None:
@@ -2055,7 +2082,7 @@ def run_parallel(
         itertools.repeat(maxnbspots_MReval),
     )
 
-    ncpus = max(multiprocessing.cpu_count() - 1, 1)
+    ncpus = internal_ncpus()
 
     if verbose > 1:
         from itertools import tee
@@ -2430,13 +2457,13 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
                     itertools.repeat(crudeMReval), # fastmode
                     itertools.repeat(maxnbspots_MReval),
                     )
-            ncpus = max(cpu_count()-1,1)
+            ncpus = internal_ncpus()
             if verbose>1:
                 #print('args of multiprocessing', next(args))
                 print('ncpus', ncpus)
             # deprecated for python  3.12
             # (stoppable: request_stop())
-            results = _matching_rates_stoppable(args, nb_ub_matrices, ncpus)
+            results = _matching_rates_stoppable(args, nb_ub_matrices, ncpus, stop_nbclose=stop_Nb_Matches)
             # ok for python  3.12
             # results= run_parallel(list_orient_matrix,
             #                         twiceTheta_exp,

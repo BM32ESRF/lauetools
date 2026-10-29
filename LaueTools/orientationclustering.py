@@ -297,6 +297,9 @@ def _read_vector_block(lines: List[str], i: int) -> np.ndarray:
 # header of blocks in .fit files -> (key, reader, factor)
 _FIT_BLOCKS = {
     "#B0 matrix": ('B0', _read_matrix_block, 1.),
+    # UB and B0 referred to the refined lattice parameters (q = UB B0 G* = UB_new B0_new G*)
+    "#refined UB matrix": ('UB_new', _read_matrix_block, 1.),
+    "#refined B0 matrix": ('B0_new', _read_matrix_block, 1.),
     "#deviatoric strain in direct crystal frame (10-3 unit)": ('strain_crystal', _read_matrix_block, 1e-3),
     "#deviatoric strain in crystal frame (10-3 unit)": ('strain_crystal', _read_matrix_block, 1e-3),
     "#deviatoric strain in sample2 frame (10-3 unit)": ('strain_sample', _read_matrix_block, 1e-3),
@@ -309,7 +312,8 @@ def read_fitfile_grains(fitfilename: Union[str, Path]) -> List[Dict[str, Any]]:
     """read all grains of a .fit file
 
     return list of dict with keys: 'UB' (3x3), 'material', 'pixdev', 'nb_indexed' and 'props':
-    dict of the grain block quantities found: 'B0', 'strain_crystal', 'strain_sample' (absolute strain,
+    dict of the grain block quantities found: 'B0', 'UB_new' and 'B0_new' (referred to the refined lattice
+    parameters), 'strain_crystal', 'strain_sample' (absolute strain,
     i.e. file values x 1e-3), 'latticeparams' (a, b, c, alpha, beta, gamma), 'euler' (phi, theta, psi)
     """
     with open(fitfilename, 'r') as f:

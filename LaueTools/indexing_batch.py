@@ -36,6 +36,7 @@ import datetime
 import dataclasses
 import shutil
 import multiprocessing
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -162,6 +163,7 @@ DEFAULT_CONFIG = {
         # False: indexing from scratch
         # 'fromfitfile': refine UB matrix of existing _g0.fit file
         # list of UB matrices (3x3 lists) or names of `ub_matrices`: refine these matrices
+        # True: all the matrices of `ub_matrices`
         # 'neighbours': check first the UB matrices found in the neighbouring map points (see `neighbours`)
         'usepreviousUB': False,
         'skipindexing': False,     # True: only refine usepreviousUB matrices (no indexing from scratch)
@@ -313,12 +315,66 @@ def load_config(configfile: Union[str, Path], overrides: Optional[dict] = None) 
     return cfg
 
 
+# keys of a configuration not in DEFAULT_CONFIG but valid: added by load_config(), or free contents (names of
+# materials, of UB matrices, steps of a sequence)
+_EXTRA_KEYS = (('configfile',), ('scan', 'invmapdims'))
+_FREE_KEYS = (('ub_matrices',), ('material', 'mymaterials'), ('sequence',))
+
+
+def unknown_keys(cfg: dict, tree: Optional[dict] = None) -> Dict[tuple, Optional[str]]:
+    """keys of cfg (icfg, scfg, ucfg ... or a peak search configuration) that are not parameters of the
+    configuration (DEFAULT_CONFIG tree; peak search: PB.DEFAULT_CONFIG): created by mistake, e.g.
+    cfg['indexing']['emax'] = 27 (typo), or a parameter in another section, they are not used (nor written by
+    save_config(), except in dict_indexrefine). Returns {path: suggestion (path of a parameter of close name) or None}"""
+    import difflib
+    if tree is None:
+        if 'peaksearch' in cfg and 'indexing' not in cfg:
+            from LaueTools import peaksearch_batch as PB
+            tree = PB.DEFAULT_CONFIG
+        else:
+            tree = DEFAULT_CONFIG
+    leaves = _leaf_keys(tree)   # {name: path} of all the parameters
+    out = {}
+
+    def walk(node, subtree, path):
+        for key, value in node.items():
+            p = path + (key,)
+            if p in _EXTRA_KEYS or p in _FREE_KEYS:
+                continue
+            if not isinstance(subtree, dict) or key not in subtree:
+                name = _KEY_ALIASES.get(key, key)
+                if name in leaves and leaves[name] != p:   # parameter of another section
+                    out[p] = leaves[name]
+                    continue
+                close = difflib.get_close_matches(str(key), list(subtree) if isinstance(subtree, dict) else [], n=1,
+                                                  cutoff=0.6) or difflib.get_close_matches(str(key), list(leaves), n=1,
+                                                                                           cutoff=0.75)
+                out[p] = (path + (close[0],) if isinstance(subtree, dict) and close[0] in subtree
+                          else leaves[close[0]]) if close else None
+            elif isinstance(value, dict) and isinstance(subtree[key], dict) and subtree[key]:
+                walk(value, subtree[key], p)
+    walk(cfg, tree, ())
+    return out
+
+
+def _unknown_messages(cfg: dict) -> List[str]:
+    """messages of unknown_keys(): one per key created by mistake"""
+    msgs = []
+    for path, sugg in unknown_keys(cfg).items():
+        where = ''.join(f'[{k!r}]' for k in path)
+        hint = f": did you mean {''.join(f'[{k!r}]' for k in sugg)}?" if sugg else ''
+        # all the keys of dict_indexrefine are written by save_config() (see _memory_changes())
+        saved = 'written in the file by save_config()' if path[:2] == ('indexing', 'dict_indexrefine') else 'not saved'
+        msgs.append(f'unknown parameter cfg{where} (not used, {saved}){hint}')
+    return msgs
+
+
 def check_config(cfg: dict, verbose: bool = True) -> bool:
     """check the consistency of the configuration (folders, material, indexing parameters).
 
     Print errors (red) and warnings (yellow). Return True if no error.
     """
-    errors, warnings = [], []
+    errors, warnings = [], _unknown_messages(cfg)
     scan = cfg['scan']
     nbpf = scan['nbfiles_per_folder']
     if nbpf is not None and (not isinstance(nbpf, int) or nbpf < 1):
@@ -443,6 +499,75 @@ def print_config(cfg: dict):
           f"(indexing up to {ind['e_max_MR']} keV), nbGrainstoFind = {ind['nbGrainstoFind']}")
 
 
+def show_config(cfg: dict, sections=None, changes: bool = True, maxlist: int = 10, decimals: int = 5):
+    """pretty print of a configuration (icfg, scfg, ucfg ... of the notebooks): nested dicts indented, one
+    parameter per line, 3x3 matrices (ub_matrices) on 3 lines, lists longer than maxlist shortened
+
+    sections: name or list of names of the sections printed (e.g. 'indexing', ['scan', 'ub_matrices']), None: all
+    changes: parameters changed in memory (e.g. icfg['indexing']['e_max'] = 27) and not yet in the configuration
+        file are marked '*' with the value of the file (written by save_config())
+    keys that are not parameters of the configuration (typo, wrong section: not used, not saved, see
+    unknown_keys()) are marked '!' and listed in red at the end"""
+    memory = {}
+    if changes:
+        try:
+            if 'peaksearch' in cfg and 'indexing' not in cfg:
+                from LaueTools import peaksearch_batch as PB
+                memory = _memory_changes(cfg, PB.DEFAULT_CONFIG, PB.load_config, with_old=True)
+            else:
+                memory = _memory_changes(cfg, DEFAULT_CONFIG, load_config, with_old=True)
+        except Exception:   # configuration file missing or not readable: no comparison
+            pass
+    unknown = unknown_keys(cfg)
+    if isinstance(sections, str):
+        sections = [sections]
+    width = 32
+
+    def fmt(value):
+        value = _to_plain(value)
+        if isinstance(value, float):
+            return f'{value:.{decimals}g}'
+        if isinstance(value, list) and len(value) > maxlist:
+            return f'{value[:maxlist // 2]} ... {value[-2:]} ({len(value)} values)'
+        return repr(value) if isinstance(value, str) else str(value)
+
+    def is_matrix(value):
+        arr = np.asarray(_to_plain(value), dtype=object)
+        return arr.shape == (3, 3) and all(isinstance(v, (int, float)) for v in arr.ravel())
+
+    def show(node, path, indent):
+        pad = '   ' * indent
+        for key, value in node.items():
+            mark = '!' if path + (key,) in unknown else '*' if path + (key,) in memory else ' '
+            if isinstance(value, dict):
+                print(f'{pad}{mark}{key}:' + ('  {}' if not value else ''))
+                show(value, path + (key,), indent + 1)
+            elif is_matrix(value) and ('ub_matrices' in path or 'UB' in str(key)):
+                rows = np.asarray(_to_plain(value), dtype=float)
+                print(f'{pad}{mark}{key}:')
+                for row in rows:
+                    print(f'{pad}      [' + ', '.join(f'{v:{decimals + 4}.{decimals}f}' for v in row) + ']')
+            else:
+                old = f'   (file: {fmt(memory[path + (key,)][1])})' if mark == '*' else ''
+                print(f'{pad}{mark}{str(key):<{width - len(pad)}}  {fmt(value)}{old}')
+
+    print(f"---- {cfg.get('name', '')} ----  ({cfg.get('configfile')})")
+    for key, value in cfg.items():
+        if sections is not None and key not in sections:
+            continue
+        if isinstance(value, dict):
+            mark = '!' if (key,) in unknown else '*' if (key,) in memory else ' '
+            print(f'\n{mark}[{key}]' + ('  {}' if not value else ''))
+            show(value, (key,), 1)
+        elif sections is None and key not in ('name', 'configfile'):
+            print(f"{'!' if (key,) in unknown else ' '}{str(key):<{width}}  {fmt(value)}")
+    for msg in _unknown_messages(cfg):
+        GT.printred('! ' + msg)
+    if memory:
+        GT.printyellow(f'* {len(memory)} parameter(s) changed in memory, not in {cfg.get("configfile")} '
+                       '(written by IB.save_config())')
+
+
 # --------------------------------------------------------------------------------------
 #  WRITE CONFIGURATION FILES (no manual editing of YAML indentation)
 # --------------------------------------------------------------------------------------
@@ -470,6 +595,25 @@ def _key_path(name: str, tree: dict = DEFAULT_CONFIG) -> tuple:
     import difflib
     close = difflib.get_close_matches(name, list(leaves), n=3)
     raise KeyError(f"unknown configuration parameter '{name}'" + (f'. Did you mean {close}?' if close else ''))
+
+
+def check_misplaced_keys(cfg: dict, tree: dict = DEFAULT_CONFIG, name: str = 'cfg'):
+    """error if a parameter is set at the top level of a configuration (e.g. pcfg['IntensityThreshold'] = 300 instead
+    of pcfg['peaksearch']['IntensityThreshold']): it would not be used (silently)"""
+    leaves = _leaf_keys(tree)
+    misplaced = {}
+    for key in cfg:
+        if key in tree or not isinstance(key, str):
+            continue
+        for candidate in (_KEY_ALIASES.get(key, key), key.replace('_', ' ')):
+            if candidate in leaves and len(leaves[candidate]) > 1:
+                misplaced[key] = leaves[candidate]
+                break
+    if misplaced:
+        where = ', '.join(f"{name}[{k!r}] -> {name}" + ''.join(f'[{p!r}]' for p in path) for k, path in misplaced.items())
+        raise KeyError(f'parameter(s) set at the wrong place of the configuration, they would not be used: {where}. '
+                       f'Set them with MW.set_parameters({name}, ...) (dict PEAKSEARCH_TEST / INDEXING_TEST of the test '
+                       f'cells of the quickstart notebook), and delete the wrong keys (or run the cell of STEP 2 again)')
 
 
 def _to_plain(value):
@@ -867,13 +1011,17 @@ def merge_grain_fitfiles(fit_folder: Union[str, Path], stem: str) -> Optional[Pa
 def get_previousUB(cfg: dict):
     """return `usepreviousUB` of cfg['run'] with named matrices replaced by numpy arrays
 
-    Returns False, 'fromfitfile', 'neighbours' or a list of 3x3 arrays
+    True: all the matrices of ub_matrices. Returns False, 'fromfitfile', 'neighbours' or a list of 3x3 arrays
     """
     usepreviousUB = cfg['run']['usepreviousUB']
     if usepreviousUB in (False, None):
         return False
     if usepreviousUB in ('fromfitfile', 'neighbours'):
         return usepreviousUB
+    if usepreviousUB is True:   # all the matrices of ub_matrices
+        usepreviousUB = list(cfg['ub_matrices'] or {})
+        if not usepreviousUB:
+            raise ValueError('usepreviousUB true: ub_matrices is empty')
     if isinstance(usepreviousUB, str):
         usepreviousUB = [usepreviousUB]
     matrices = []
@@ -977,6 +1125,7 @@ def params_from_config(cfg: dict, build_LUT: bool = True, **kwargs) -> IndexRefi
 
     kwargs replace any field of IndexRefineParams, e.g. verboselevel=2
     """
+    check_misplaced_keys(cfg, DEFAULT_CONFIG, 'icfg')
     ind, run = cfg['indexing'], cfg['run']
     params = IndexRefineParams(key_material=cfg['material']['key_material'],
                                mymaterials=cfg['material']['mymaterials'],
@@ -1267,7 +1416,8 @@ def verify_solution(filename: Union[str, Path], UB, params: 'IndexRefineParams',
 
     Returns {'passed': bool, 'steps': [(e_max, tol, min nb, nb of indexed spots or None), ...],
              'pixdev': [mean pixel deviation of the steps (None: not done)],
-             'failed_step': index of the first step failed or None, 'UB': refined UB matrix or None}"""
+             'failed_step': index of the first step failed or None, 'UB': refined UB matrix or None (failed),
+             'UB_refined': UB matrix of the last step done, 'nb_spots', 'matching_rate': of the last step done}"""
     criteria = ISS.parse_refinement_steps(criteria if criteria is not None else params.solution_criteria)
     max_pixdev = max_pixdev if max_pixdev is not None else params.solution_max_pixdev
     dir_ = copy.deepcopy(params.dict_indexrefine)
@@ -1291,8 +1441,10 @@ def verify_solution(filename: Union[str, Path], UB, params: 'IndexRefineParams',
     pixdev = [history[k].get('pixdev') if k < len(history) else None for k in range(len(criteria))]
     if failed is None and max_pixdev is not None and (pixdev[-1] is None or pixdev[-1] > max_pixdev):
         failed = len(criteria) - 1   # last step: too large mean pixel deviation
+    nbmr = dict(res[2]).get(check.starting_grainindex) or [None, None]
     return {'passed': failed is None, 'steps': steps, 'pixdev': pixdev, 'failed_step': failed,
-            'UB': ubs.get(check.starting_grainindex) if failed is None else None}
+            'UB': ubs.get(check.starting_grainindex) if failed is None else None,
+            'UB_refined': ubs.get(check.starting_grainindex), 'nb_spots': nbmr[0], 'matching_rate': nbmr[1]}
 
 
 def criteria_info(grain: int, verification: dict) -> str:
@@ -1525,9 +1677,11 @@ def select_corfiles(cfg: dict, image_range=None, roi=None) -> List[str]:
 _WORKER_PARAMS = None
 
 
-def _init_worker(params):
+def _init_worker(params, internal_ncpus=None):
+    """internal_ncpus: nb of processes of the pools of matching rates of this worker (internal multiprocessing)"""
     global _WORKER_PARAMS
     _WORKER_PARAMS = params
+    IAL.set_internal_ncpus(internal_ncpus)
 
 
 def _index_refine_worker(filename):
@@ -1540,16 +1694,23 @@ def mp_context():
 
 
 def available_cpus() -> int:
-    """nb of cpus this process may use (cpus allocated by slurm or jupyter-slurm, not all cpus of the machine)"""
-    try:
-        return len(os.sched_getaffinity(0))
-    except AttributeError:   # not available on macOS / Windows
-        return multiprocessing.cpu_count()
+    """nb of cpus this process may use (cpus allocated by slurm or jupyter-slurm, cpu quota of a VISA instance or
+    of a container, not all cpus of the machine; LAUETOOLS_NB_CPUS): see GT.available_cpus()"""
+    return GT.available_cpus()
+
+
+# min nb of cpus per image to compute the matching rates of each image with its own pool (internal multiprocessing):
+# few images (e.g. seeds) for many cpus. Measured (NiMnGa seed indexed from scratch): 115 s on 1 cpu, 87 s with 2,
+# 58 s with 4
+MIN_CPUS_INTERNAL = 2
 
 
 def run_multiprocessing(listfiles: List[str], params: IndexRefineParams, nb_cpus: Optional[int] = None,
                         progress_interval: float = 0.1) -> list:
-    """index & refine all .cor files of listfiles with a pool of nb_cpus processes (1 image per process)
+    """index & refine all .cor files of listfiles with min(nb_cpus, nb of files) processes (1 image per process).
+    With at least MIN_CPUS_INTERNAL cpus per image (few images, e.g. seeds), the matching rates of the candidate UB
+    matrices of each image are computed by a pool of nb_cpus // nb of files processes (internal multiprocessing,
+    at most IAL.INTERNAL_MAX_CPUS); otherwise one process per image only.
 
     nb_cpus: None: all cpus available for this process (see available_cpus())
     progress_interval: min time (s) between progress bar updates (large value for log files of batch jobs)
@@ -1566,20 +1727,83 @@ def run_multiprocessing(listfiles: List[str], params: IndexRefineParams, nb_cpus
                        'processes share cpus (no speed gain)')
     if params.usepreviousUB == 'neighbours':
         return IN.run_neighbours(listfiles, params, nb_cpus=nb_cpus, progress_interval=progress_interval)
-    params = dataclasses.replace(params, useinternalmultiprocessing=False, outputlistindices=False)
+    nproc = max(1, min(nb_cpus, len(listfiles)))
+    cpus_per_image = min(nb_cpus // nproc, IAL.INTERNAL_MAX_CPUS)
+    internal = cpus_per_image >= MIN_CPUS_INTERNAL
+    params = dataclasses.replace(params, useinternalmultiprocessing=internal, outputlistindices=False)
     if params.LUT is None:
         params.build_LUT()
 
     t0 = time.time()
     allresults = []
     # parameters (and LUT) are sent once to each worker process
-    with mp_context().Pool(processes=nb_cpus, initializer=_init_worker, initargs=(params,)) as pool:
-        for res in tqdm(pool.imap_unordered(_index_refine_worker, listfiles, chunksize=1), total=len(listfiles),
-                        mininterval=progress_interval):
-            allresults.append(res)
+    if internal:
+        print(f'{len(listfiles)} images for {nb_cpus} cpus: {nproc} processes, matching rates of each image '
+              f'computed with {cpus_per_image} processes')
+        # workers of a ProcessPoolExecutor are not daemonic: they may start their own pools (a multiprocessing.Pool
+        # worker may not). Also with 1 image: the pools of matching rates are not forked from a jupyter kernel
+        with ProcessPoolExecutor(max_workers=nproc, mp_context=mp_context(), initializer=_init_worker,
+                                 initargs=(params, cpus_per_image)) as executor:
+            futures = [executor.submit(_index_refine_worker, f) for f in listfiles]
+            for future in tqdm(as_completed(futures), total=len(futures), mininterval=progress_interval):
+                allresults.append(future.result())
+    else:
+        with mp_context().Pool(processes=nproc, initializer=_init_worker, initargs=(params,)) as pool:
+            for res in tqdm(pool.imap_unordered(_index_refine_worker, listfiles, chunksize=1),
+                            total=len(listfiles), mininterval=progress_interval):
+                allresults.append(res)
     dt = time.time() - t0
     print(f"It took {int(dt // 60)} min {int(dt % 60)} s to index {len(listfiles)} images with {nb_cpus} cpus.")
     return allresults
+
+
+def _verify_worker(task):
+    filename, name, UB, criteria, max_pixdev = task
+    return name, GT.getfileindex(Path(filename).name), verify_solution(filename, UB, _WORKER_PARAMS, criteria,
+                                                                        max_pixdev)
+
+
+def test_ub_matrices(listfiles: List[str], cfg: dict, names=None, criteria=None, max_pixdev: Optional[float] = None,
+                     nb_cpus: Optional[int] = None) -> dict:
+    """check each UB matrix of cfg['ub_matrices'] (names: those names, default all) on each .cor file of listfiles
+    (e.g. select_corfiles(seeds config), or of the whole map) with the criteria of a correct solution (see
+    verify_solution(); default: indexing: solution_criteria of cfg, otherwise one step [e_max_MR,
+    MATCHINGRATE_ANGLE_TOL, MinimumNumberMatches]). One (image, matrix) pair per task, no .fit file written.
+
+    Prints the table images x matrices: nb of indexed spots / mean pixel deviation of the last step reached
+    (* criteria passed)
+    Returns {name: {image index: verification of verify_solution()}}
+    """
+    names = list(cfg['ub_matrices'] or {}) if names is None else ([names] if isinstance(names, str) else list(names))
+    missing = [n for n in names if n not in (cfg['ub_matrices'] or {})]
+    if missing or not names:
+        raise KeyError(f'UB matrices {missing} not found in ub_matrices' if missing else 'ub_matrices is empty')
+    params = params_from_config(cfg, usepreviousUB=False, neighbours=None)
+    if criteria is None:
+        criteria = params.solution_criteria or [[params.e_max_MR, params.dict_indexrefine['MATCHINGRATE_ANGLE_TOL'],
+                                                 params.dict_indexrefine['MinimumNumberMatches']]]
+    tasks = [(str(f), n, np.asarray(cfg['ub_matrices'][n], dtype=float), criteria, max_pixdev)
+             for f in listfiles for n in names]
+    nb_cpus = min(nb_cpus or available_cpus(), len(tasks))
+    out = {n: {} for n in names}
+    with mp_context().Pool(processes=nb_cpus, initializer=_init_worker, initargs=(params,)) as pool:
+        for name, index, verif in tqdm(pool.imap_unordered(_verify_worker, tasks, chunksize=1), total=len(tasks)):
+            out[name][index] = verif
+    indices = sorted({i for v in out.values() for i in v})
+    maxpd = max_pixdev if max_pixdev is not None else params.solution_max_pixdev
+    print(f'criteria {criteria}, max mean pixel deviation {maxpd}')
+    print('image   ' + ''.join(f'{n:>15}' for n in names))
+    for i in indices:
+        cells = []
+        for n in names:
+            v = out[n][i]
+            done = [(st[3], pd) for st, pd in zip(v['steps'], v['pixdev']) if st[3] is not None]
+            nb, pd = done[-1] if done else (0, None)
+            cell = f"{nb}/{pd:.2f}px" if pd is not None else f'{nb}'
+            cells.append(f"{cell:>14}{'*' if v['passed'] else ' '}")
+        print(f'{i:<8}' + ''.join(cells))
+    print('passed: ' + ', '.join(f"{n} {sum(v['passed'] for v in out[n].values())}/{len(indices)}" for n in names))
+    return out
 
 
 # --------------------------------------------------------------------------------------
@@ -2377,9 +2601,13 @@ def show_figure(fig, live: bool = False, dpi: int = 100):
         plt.show()
         return
     from IPython.display import Image, display
-    buf = io.BytesIO()
-    fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight')
+    from matplotlib.backends.backend_agg import FigureCanvasAgg
     plt.close(fig)   # closed figures are not displayed as live canvas at the end of the cell
+    # rendered with an Agg canvas: with the ipympl 'widget' backend, saving through the live canvas of the figure
+    # can give partly drawn (transparent) images
+    FigureCanvasAgg(fig)
+    buf = io.BytesIO()
+    fig.savefig(buf, format='png', dpi=dpi, bbox_inches='tight', facecolor='white')
     display(Image(buf.getvalue()))
 
 
@@ -2394,12 +2622,17 @@ def getimageindex_fromxyech(xech, yech, invmapdims, xech_stepsize=1., yech_steps
 
 
 def quality_masks(ffs, invmapdims, MinimumNbIndexedSpots=20, LargestMeanPixelResidue=0.6) -> dict:
-    """masks (True = masked) of a parsed_fitfileseries: too few indexed spots, too large pixel deviation, OR of both"""
-    cond_lowNbindexed = ffs.NumberOfIndexedSpots.reshape(invmapdims) < MinimumNbIndexedSpots
-    cond_largepixeldev = ffs.MeanDevPixel.reshape(invmapdims) > LargestMeanPixelResidue
-    return {'lowNbindexed': cond_lowNbindexed,
+    """masks (True = masked) of a parsed_fitfileseries: points not indexed (no .fit file), too few indexed spots,
+    too large pixel deviation, OR of them ('combined')"""
+    nbspots = np.asarray(ffs.NumberOfIndexedSpots, dtype=float).reshape(invmapdims)
+    pixdev = np.asarray(ffs.MeanDevPixel, dtype=float).reshape(invmapdims)
+    cond_notindexed = ~np.isfinite(nbspots) | ~np.isfinite(pixdev)   # (NaN fails the comparisons below)
+    cond_lowNbindexed = nbspots < MinimumNbIndexedSpots
+    cond_largepixeldev = pixdev > LargestMeanPixelResidue
+    return {'notindexed': cond_notindexed,
+            'lowNbindexed': cond_lowNbindexed,
             'largepixeldev': cond_largepixeldev,
-            'combined': np.logical_or(cond_lowNbindexed, cond_largepixeldev)}
+            'combined': cond_notindexed | cond_lowNbindexed | cond_largepixeldev}
 
 
 # --------------------------------------------------------------------------------------
@@ -2408,10 +2641,13 @@ def quality_masks(ffs, invmapdims, MinimumNbIndexedSpots=20, LargestMeanPixelRes
 # 1 job = 1 node, 1 task with nb_cpus cpus (multiprocessing pool, no MPI)
 # cpus: nb of cpus per node. Check partitions and node features with: sinfo -N -o "%N %P %c %m %f %T"
 # nodes > 1: the files are split into (at least) `nodes` jobs of a slurm job array, each job on 1 node
+# whole_nodes: jobs always ask for all the cpus of the node (ESRF IT: any node of magnifix is given only to jobs of
+# 192 cpus per node: 192 for magnifix, 2 x 192 for magnifix2, 3 x 192 for magnifix3). magnifix2, magnifix3: the
+# partition magnifix with 2 or 3 nodes (no other partition, sinfo -s)
 SLURM_MACHINES = {
-    'magnifix': {'partition': 'magnifix', 'constraint': None, 'cpus': 192},
-    'magnifix2': {'partition': 'magnifix', 'constraint': None, 'cpus': 192, 'nodes': 2},
-    'magnifix3': {'partition': 'magnifix', 'constraint': None, 'cpus': 192, 'nodes': 3},
+    'magnifix': {'partition': 'magnifix', 'constraint': None, 'cpus': 192, 'whole_nodes': True},
+    'magnifix2': {'partition': 'magnifix', 'constraint': None, 'cpus': 192, 'nodes': 2, 'whole_nodes': True},
+    'magnifix3': {'partition': 'magnifix', 'constraint': None, 'cpus': 192, 'nodes': 3, 'whole_nodes': True},
     'hpc6': {'partition': 'nice', 'constraint': 'hpc6', 'cpus': 96},
     'hpc7': {'partition': 'nice', 'constraint': 'hpc7', 'cpus': 96},
     'hpc8': {'partition': 'nice', 'constraint': 'hpc8', 'cpus': 96},
@@ -2469,6 +2705,8 @@ def choose_slurm_machine(nb_cpus: int, verbose: bool = True):
     """
     if nb_cpus > FALLBACK_MAX_CPUS:
         nb_cpus = min(nb_cpus, SLURM_MACHINES[PRIORITY_MACHINE]['cpus'])
+        if SLURM_MACHINES[PRIORITY_MACHINE].get('whole_nodes'):   # a whole idle node is needed
+            nb_cpus = SLURM_MACHINES[PRIORITY_MACHINE]['cpus']
         idle = slurm_idle_cpus(PRIORITY_MACHINE)
         if idle is None or idle >= nb_cpus:
             if verbose:
@@ -2494,7 +2732,11 @@ def _check_slurm_resources(machine: str, nb_cpus: int, mem_per_cpu: str, nchunks
     if machine not in SLURM_MACHINES:
         raise ValueError(f'unknown machine {machine}: {list(SLURM_MACHINES)}')
     mach = SLURM_MACHINES[machine]
-    if nb_cpus > mach['cpus']:
+    if mach.get('whole_nodes') and nb_cpus != mach['cpus']:
+        GT.printyellow(f"{machine}: jobs of whole nodes only ({mach['cpus']} cpus per node): nb_cpus {nb_cpus} -> "
+                       f"{mach['cpus']}")
+        nb_cpus = mach['cpus']
+    elif nb_cpus > mach['cpus']:
         GT.printyellow(f"{machine} has {mach['cpus']} cpus per node: nb_cpus set to {mach['cpus']}")
         nb_cpus = mach['cpus']
 

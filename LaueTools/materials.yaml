@@ -1678,3 +1678,43 @@ LTO_distor_bulk_fit:
   - 92.8008151
   - 118.0844543
   extinction: R3m_sg160
+NiMnGa_5M_exp:
+  label: NiMnGa_5M_exp
+  lattice:
+  - 4.26
+  - 5.6266
+  - 21.171
+  - 90
+  - 90.3
+  - 90
+  extinction: 'no'
+strained_NiMnGa_5M_exp:
+  label: strained_NiMnGa_5M_exp
+  lattice:
+  - 4.26
+  - 5.622732108665604
+  - 21.16662540428112
+  - 90.0
+  - 90.30746072212463
+  - 90.0
+  extinction: 'no'
+NiTi_martensite:
+  label: NiTi_martensite
+  lattice:
+  - 4.646
+  - 4.108
+  - 2.898
+  - 90
+  - 97.78
+  - 90
+  extinction: 'no'
+NiTiB2:
+  label: NiTiB2
+  lattice:
+  - 3.015
+  - 3.015
+  - 3.015
+  - 90
+  - 90
+  - 90
+  extinction: fcc
