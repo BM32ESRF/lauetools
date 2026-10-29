@@ -18,6 +18,7 @@ import copy
 from copy import deepcopy
 import re
 import io
+import warnings
 
 import numpy as np
 from pathlib import Path
@@ -591,6 +592,7 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
         if guessCCDLabel:
             if 'pixelsize' in CCDcalib:
                 ps = CCDcalib['pixelsize']
+                ccdlabel = None  # no detector matches this pixel size
                 if abs(ps-0.0795) < 0.004:
                     ccdlabel = 'MARCCD165'
                 elif abs(ps-0.073) <= 0.002:
@@ -636,6 +638,42 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                 CCDcalib['CCDLabel'] = ccdlabel
 
     return CCDcalib
+
+
+def get_pixelsize(CCDcalib: Dict, rtol: float = 1e-4) -> Union[float, None]:
+    """
+    pixel size (mm) to use with the spots of a .cor (or .det) file
+
+    The value written in the file wins over the detector table dict_CCD[CCDLabel][1]:
+    the 2theta and chi of the spots were computed with it (see LaueGeometry.convert2corfile()).
+    The table value is used only when the file has no pixel size.
+
+    :param CCDcalib: dict from readCalibParametersInFile() (keys 'pixelsize', 'xpixelsize',
+        'ypixelsize', 'CCDLabel')
+    :param rtol: relative difference above which a warning is issued when file and table differ
+        (a Python warning: shown once per process, not once per file)
+    :return: pixel size, or None if neither the file nor the CCDLabel gives one
+    """
+    from LaueTools.dict_LaueTools import dict_CCD
+
+    pixelsize = None
+    for key in ('pixelsize', 'xpixelsize', 'ypixelsize'):
+        if CCDcalib.get(key) is not None:
+            pixelsize = float(CCDcalib[key])
+            break
+
+    ccdlabel = CCDcalib.get('CCDLabel')
+    table_pixelsize = None
+    if ccdlabel not in (None, 'None') and ccdlabel in dict_CCD:
+        table_pixelsize = float(dict_CCD[ccdlabel][1])
+
+    if pixelsize is None:
+        return table_pixelsize
+
+    if table_pixelsize is not None and abs(pixelsize - table_pixelsize) > rtol * table_pixelsize:
+        warnings.warn(f'pixel size in file ({pixelsize} mm) differs from the one of detector '
+                      f'{ccdlabel} ({table_pixelsize} mm): using the file value', stacklevel=2)
+    return pixelsize
 
 
 def readCalib_det_file(filename_det):
@@ -1219,6 +1257,71 @@ def read_Peaklist(filename_in:str, dirname:str=None, output_columnsname=False,
         return data_peak
 
 
+def fitfile_strain_footer(dict_matrices) -> str:
+    """
+    strain blocks of the footer of a .fit file (deviatoric, equivalent and full strain, stress), written
+    by writefitfile() and by fitfile_strainfix.rewrite_fitfile_strain()
+
+    :param dict_matrices: dict with keys among devstrain_crystal, devstrain_sample, reference_material,
+        equivalent_strain, devstrain_sample_old, fullstrain_sample, hydrostaticstrain,
+        latticeparameters_fullstrain, stress_sample (strains without unit, stress in GPa)
+    """
+    footer = ""
+
+    if "devstrain_crystal" in dict_matrices:
+        footer += "deviatoric strain in direct crystal frame (10-3 unit)\n"
+        footer += str(np.round(np.array(dict_matrices["devstrain_crystal"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
+
+    if "devstrain_sample" in dict_matrices:
+        footer += "deviatoric strain in sample2 frame (10-3 unit)\n"
+        footer += str(np.round(np.array(dict_matrices["devstrain_sample"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
+
+    if "reference_material" in dict_matrices:
+        footer += "unstrained reference material of the strain\n"
+        footer += "%s\n" % str(dict_matrices["reference_material"])
+
+    if "equivalent_strain" in dict_matrices:
+        footer += "equivalent (von Mises) strain sqrt(2/3 dev:dev), frame independent (10-3 unit)\n"
+        footer += "%.3f\n" % (dict_matrices["equivalent_strain"] * 1000.0)
+
+    # TEMPORARY-STRAINFIX: label must not start with 'deviatoric strain' (fit file readers)
+    if "devstrain_sample_old" in dict_matrices:
+        footer += ("[TEMPORARY] OLD deviatoric strain in LT sample frame as computed before Oct. 2026 "
+                   "(wrong for hexagonal, trigonal, monoclinic, triclinic) (10-3 unit)\n")
+        footer += str(np.round(np.array(dict_matrices["devstrain_sample_old"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
+        if "devstrain_sample" in dict_matrices:
+            old = np.array(dict_matrices["devstrain_sample_old"], dtype=np.float64)
+            new = np.array(dict_matrices["devstrain_sample"], dtype=np.float64)
+            footer += "[TEMPORARY] max abs difference OLD - corrected (10-3 unit): %.3f\n" % (np.amax(np.fabs(old - new)) * 1000.0)
+            try:  # lazy import (TEMPORARY-STRAINFIX)
+                from . import CrystalParameters as CP
+            except ImportError:
+                import CrystalParameters as CP
+            eqdiff = CP.equivalent_strain(old - new)
+            eqcorr = CP.equivalent_strain(new)
+            footer += ("[TEMPORARY] equivalent strain of OLD - corrected (10-3 unit): %.3f (%.1f %% of corrected one)\n"
+                       % (eqdiff * 1000.0, 100.0 * eqdiff / eqcorr if eqcorr > 0 else np.nan))
+
+    # full strain and stress assuming stress_zz = 0 in sample frame (needs material elastic constants)
+    if "fullstrain_sample" in dict_matrices:
+        footer += "full strain in sample2 frame assuming stress_zz=0 (10-3 unit)\n"
+        footer += str(np.round(np.array(dict_matrices["fullstrain_sample"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
+
+    if "hydrostaticstrain" in dict_matrices:
+        footer += "hydrostatic strain (trace of full strain, relative volume change) assuming stress_zz=0 (10-3 unit)\n"
+        footer += "%.3f\n" % (dict_matrices["hydrostaticstrain"] * 1000.0)
+
+    if "latticeparameters_fullstrain" in dict_matrices:
+        footer += "lattice parameters from full strain assuming stress_zz=0: a b c (Angstrom) alpha beta gamma (deg)\n"
+        footer += str(np.round(np.array(dict_matrices["latticeparameters_fullstrain"], dtype=np.float64), decimals=6)) + "\n"
+
+    if "stress_sample" in dict_matrices:
+        footer += "stress in sample2 frame assuming stress_zz=0 (MPa)\n"
+        footer += str(np.round(np.array(dict_matrices["stress_sample"] * 1000.0, dtype=np.float64), decimals=1)) + "\n"
+
+    return footer
+
+
 def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
                                             dict_matrices=None,
                                             meanresidues:float=None,
@@ -1315,60 +1418,28 @@ def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
         footer += ",bstar_sample2 = matstarsample[3:6], cstar_lab2 = matstarsample[6:9] \n"
         footer += str(np.round(np.array(dict_matrices["matstarsample"], dtype=np.float64), decimals=8)) + "\n"
 
-    if "devstrain_crystal" in dict_matrices:
-        footer += "deviatoric strain in direct crystal frame (10-3 unit)\n"
-        footer += str(np.round(np.array(dict_matrices["devstrain_crystal"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
-
-    if "devstrain_sample" in dict_matrices:
-        footer += "deviatoric strain in sample2 frame (10-3 unit)\n"
-        footer += str(np.round(np.array(dict_matrices["devstrain_sample"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
-
-    if "reference_material" in dict_matrices:
-        footer += "unstrained reference material of the strain\n"
-        footer += "%s\n" % str(dict_matrices["reference_material"])
-
-    if "equivalent_strain" in dict_matrices:
-        footer += "equivalent (von Mises) strain sqrt(2/3 dev:dev), frame independent (10-3 unit)\n"
-        footer += "%.3f\n" % (dict_matrices["equivalent_strain"] * 1000.0)
-
-    # TEMPORARY-STRAINFIX: label must not start with 'deviatoric strain' (fit file readers)
-    if "devstrain_sample_old" in dict_matrices:
-        footer += ("[TEMPORARY] OLD deviatoric strain in LT sample frame as computed before Oct. 2026 "
-                   "(wrong for hexagonal, trigonal, monoclinic, triclinic) (10-3 unit)\n")
-        footer += str(np.round(np.array(dict_matrices["devstrain_sample_old"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
-        if "devstrain_sample" in dict_matrices:
-            old = np.array(dict_matrices["devstrain_sample_old"], dtype=np.float64)
-            new = np.array(dict_matrices["devstrain_sample"], dtype=np.float64)
-            footer += "[TEMPORARY] max abs difference OLD - corrected (10-3 unit): %.3f\n" % (np.amax(np.fabs(old - new)) * 1000.0)
-            try:  # lazy import (TEMPORARY-STRAINFIX)
-                from . import CrystalParameters as CP
-            except ImportError:
-                import CrystalParameters as CP
-            eqdiff = CP.equivalent_strain(old - new)
-            eqcorr = CP.equivalent_strain(new)
-            footer += ("[TEMPORARY] equivalent strain of OLD - corrected (10-3 unit): %.3f (%.1f %% of corrected one)\n"
-                       % (eqdiff * 1000.0, 100.0 * eqdiff / eqcorr if eqcorr > 0 else np.nan))
-
-    # full strain and stress assuming stress_zz = 0 in sample frame (needs material elastic constants)
-    if "fullstrain_sample" in dict_matrices:
-        footer += "full strain in sample2 frame assuming stress_zz=0 (10-3 unit)\n"
-        footer += str(np.round(np.array(dict_matrices["fullstrain_sample"] * 1000.0, dtype=np.float64), decimals=2)) + "\n"
-
-    if "hydrostaticstrain" in dict_matrices:
-        footer += "hydrostatic strain (trace of full strain, relative volume change) assuming stress_zz=0 (10-3 unit)\n"
-        footer += "%.3f\n" % (dict_matrices["hydrostaticstrain"] * 1000.0)
-
-    if "latticeparameters_fullstrain" in dict_matrices:
-        footer += "lattice parameters from full strain assuming stress_zz=0: a b c (Angstrom) alpha beta gamma (deg)\n"
-        footer += str(np.round(np.array(dict_matrices["latticeparameters_fullstrain"], dtype=np.float64), decimals=6)) + "\n"
-
-    if "stress_sample" in dict_matrices:
-        footer += "stress in sample2 frame assuming stress_zz=0 (MPa)\n"
-        footer += str(np.round(np.array(dict_matrices["stress_sample"] * 1000.0, dtype=np.float64), decimals=1)) + "\n"
+    footer += fitfile_strain_footer(dict_matrices)
 
     if "LatticeParameters" in dict_matrices:
         footer += "new lattice parameters\n"
         footer += str(np.round(np.array(dict_matrices["LatticeParameters"], dtype=np.float64), decimals=7)) + "\n"
+
+    # UB and B0 referred to the refined lattice parameters (new material with these lattice parameters):
+    # q = UB B0 G* = UB_new B0_new G*. (labels must not start with 'UB matrix' or 'B0 matrix': fit file readers)
+    if all(key in dict_matrices for key in ("UBmat", "B0", "LatticeParameters")) \
+            and dict_matrices["LatticeParameters"] is not None:
+        try:  # lazy import
+            from . import CrystalParameters as CP
+        except ImportError:
+            import CrystalParameters as CP
+        UB_new, B0_new, scale, rotdev = CP.refined_UB_B0(np.array(dict_matrices["UBmat"], dtype=np.float64),
+                                                         np.array(dict_matrices["B0"], dtype=np.float64),
+                                                         np.array(dict_matrices["LatticeParameters"], dtype=np.float64))
+        footer += ("refined UB matrix in q= (UB_new) B0_new G*, UB_new = UB B0 inv(B0_new) = scale x rotation "
+                   "(scale %.6f, max |R^T R - I| %.1e)\n" % (scale, rotdev))
+        footer += str(np.round(UB_new, decimals=9)) + "\n"
+        footer += "refined B0 matrix in q= UB_new (B0_new) G*, B0_new from the new lattice parameters\n"
+        footer += str(np.round(B0_new, decimals=8)) + "\n"
 
     if "CCDLabel" in dict_matrices:
         footer += "CCDLabel\n"
@@ -1376,7 +1447,8 @@ def writefitfile(outputfilename:str, datatooutput, nb_of_indexedSpots:int,
 
     if "detectorparameters" in dict_matrices:
         footer += "DetectorParameters\n"
-        footer += str(dict_matrices["detectorparameters"]) + "\n"
+        # plain numbers (str() of numpy 2 scalars gives 'np.float64(...)', not readable by the .fit file parsers)
+        footer += str([float(v) for v in dict_matrices["detectorparameters"]]) + "\n"
 
     if "pixelsize" in dict_matrices:
         footer += "pixelsize\n"
@@ -2945,221 +3017,15 @@ class Peak:
 
 class LT_fitfile:
     """
-    Parse the .fit file in a LT_fitfile object
+    Parse the .fit file in a LT_fitfile object: same object as fitfilereader.parsed_fitfile (former parser of
+    .fit files, kept for compatibility: one parser for all the .fit file formats)
     """
-
-    # dictionary definitions for handling the LaueTools .fit files lines
-    def __param__(self):
-        return {
-            "#UB matrix in q= (UB) B0 G* ": self.__UB__,
-            "#B0 matrix in q= UB (B0) G*": self.__B0__,
-            "#UBB0 matrix in q= (UB B0) G* i.e. recip. basis vectors are columns in LT frame: astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]. (abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam)": self.__UBB0__,
-            "#UBB0 matrix in q= (UB B0) G* , abcstar as lines on xyzlab1, xlab1 = ui, ui = unit vector along incident beam : astar = UBB0[0,:], bstar = UBB0[1,:], cstar = UBB0[2,:]": self.__UBB0__,
-            "#deviatoric strain in crystal frame (10-3 unit)": self.__devCrystal__,
-            "#deviatoric strain in direct crystal frame (10-3 unit)": self.__devCrystal__,
-            "#deviatoric strain in sample2 frame (10-3 unit)": self.__devSample__,
-            "#DetectorParameters": self.__DetectorParameters__,
-            "#pixelsize": self.__PixelSize__,
-            "#Frame dimensions": self.__FrameDimension__,
-            "#CCDLabel": self.__CCDLabel__,
-            "#Element": self.__Element__,
-            "#grainIndex": self.__GrainIndex__,
-            "#spot_index intensity h k l 2theta Chi Xexp Yexp Energy GrainIndex PixDev": self.__Peaks__,
-            "#spot_index Intensity h k l pixDev energy(keV) Xexp Yexp 2theta_exp chi_exp Xtheo Ytheo 2theta_theo chi_theo Qx Qy Qz": self.__Peaks__,
-            "# Number of indexed spots": self.__NumberIndexedSpots__,
-            "# Mean Deviation(pixel)": self.__MeanDev__,
-        }
-
-    def __UB__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ub11, ub12, ub13 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ub21, ub22, ub23 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ub31, ub32, ub33 = float(l[0]), float(l[1]), float(l[2])
-        self.UB = np.array([[ub11, ub12, ub13], [ub21, ub22, ub23], [ub31, ub32, ub33]])
-
-    def __B0__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        b011, b012, b013 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        b021, b022, b023 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        b031, b032, b033 = float(l[0]), float(l[1]), float(l[2])
-        self.B0 = np.array([[b011, b012, b013], [b021, b022, b023], [b031, b032, b033]])
-
-    def __UBB0__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ubb011, ubb012, ubb013 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ubb021, ubb022, ubb023 = float(l[0]), float(l[1]), float(l[2])
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ubb031, ubb032, ubb033 = float(l[0]), float(l[1]), float(l[2])
-        self.UBB0 = np.array([[ubb011, ubb012, ubb013],
-                            [ubb021, ubb022, ubb023],
-                            [ubb031, ubb032, ubb033]])
-
-    def __devCrystal__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ep11, ep12, ep13 = float(l[0]) * 1e-3, float(l[1]) * 1e-3, float(l[2]) * 1e-3
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ep22, ep23 = float(l[1]) * 1e-3, float(l[2]) * 1e-3
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ep33 = float(l[2]) * 1e-3
-        self.deviatoric = np.array([[ep11, ep12, ep13], [ep12, ep22, ep23], [ep13, ep23, ep33]])
-
-    def __devSample__(self, f, l):
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ep_sample11, ep_sample12, ep_sample13 = (float(l[0]) * 1e-3,
-                                                float(l[1]) * 1e-3,
-                                                float(l[2]) * 1e-3)
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ep_sample22, ep_sample23 = float(l[1]) * 1e-3, float(l[2]) * 1e-3
-        l = f.readline().replace("[", "").replace("]", "").replace("\n", "").split()
-        ep_sample33 = float(l[2]) * 1e-3
-        self.dev_sample = np.array([[ep_sample11, ep_sample12, ep_sample13],
-                                    [ep_sample12, ep_sample22, ep_sample23],
-                                    [ep_sample13, ep_sample23, ep_sample33]])
-
-    def __DetectorParameters__(self, f, l):
-        l = (f.readline()
-            .replace("[", "")
-            .replace("]", "")
-            .replace("\n", "")
-            .replace(" ", "")
-            .split(","))
-        self.dd = float(l[0])
-        self.xcen = float(l[1])
-        self.ycen = float(l[2])
-        self.xbet = float(l[3])
-        self.xgam = float(l[4])
-        self.DetectorParameters = [self.dd, self.xcen, self.ycen, self.xbet, self.xgam]
-
-    def __PixelSize__(self, f, l):
-        l = (f.readline()
-            .replace("[", "")
-            .replace("]", "")
-            .replace("\n", "")
-            .replace(" ", "")
-            .split(","))
-        self.PixelSize = float(l[0])
-
-    def __FrameDimension__(self, f, l):
-        l = f.readline().replace("\n", "")
-        if l[0] == "[":
-            l = l.replace("[", "").replace("]", "").split("  ")
-        elif l[0] == "(":
-            l = l.replace("(", "").replace(")", "").split(", ")
-        self.FrameDimension = [float(l[0]), float(l[1])]
-
-    def __CCDLabel__(self, f, l):
-        l = (f.readline()
-            .replace("[", "")
-            .replace("]", "")
-            .replace("\n", "")
-            .replace(" ", "")
-            .split(","))
-        self.CCDLabel = l[0]
-
-    def __Element__(self, f, l):
-        l = (f.readline()
-            .replace("[", "")
-            .replace("]", "")
-            .replace("\n", "")
-            .replace(" ", "")
-            .split(","))
-        self.Element = l[0]
-
-    def __GrainIndex__(self, f, l):
-        l = (f.readline()
-            .replace("[", "")
-            .replace("]", "")
-            .replace("\n", "")
-            .replace(" ", "")
-            .split(","))
-        self.GrainIndex = l[0]
-
-    def __Peaks__(self, f, l):
-        self.peak = {}
-        for _ in list(range(self.NumberOfIndexedSpots)):
-            l = f.readline().split()
-            self.peak["{:d} {:d} {:d}".format(int(float(l[2])), int(float(l[3])), int(float(l[4])))] = Peak(l)
-
-    def __NumberIndexedSpots__(self, _, l):
-        self.NumberOfIndexedSpots = int(l.split(" ")[-1])
-
-    def __MeanDev__(self, _, l):
-        self.MeanDevPixel = float(l.split(" ")[-1])
-
-    def __init__(self, filename, verbose=False):
+    def __new__(cls, filename, verbose=False):
         try:
-            with open(filename, "r") as f:  # python 3.12 no more rU
-                self.filename = filename
-
-                # read the header
-                l = f.readline()
-                self.corfile = l.split(" ")[-1]
-
-                l = f.readline()
-                self.timestamp, self.software = l.lstrip("# File created at ").split(" with ")
-
-                # read the footer
-                l = f.readline().replace("\n", "")
-                while l != "\n" and l != "":
-                    try:
-                        self.__param__()[l](f, l)
-                        if verbose:
-                            print("read ", l)
-                        l = f.readline().replace("\n", "")
-
-                    except KeyError:
-                        try:
-                            # print l.split(':')[0]
-                            self.__param__()[l.split(":")[0]](f, l)
-                            l = f.readline().replace("\n", "")
-
-                        except KeyError:
-                            print("could not read line {}".format(l))
-                            l = f.readline().replace("\n", "")
-
-                # some extra calculations to get the direct and reciprocal lattice basis vector
-                # NOTE: the scale of the lattice basis vector is UNKNOWN !!!
-                #       they are given here with a arbitrary scale factor
-                if not hasattr(self, "UBB0"):
-                    self.UBB0 = np.dot(self.UB, self.B0)
-
-                try:
-                    self.astar_prime = self.UBB0[:, 0]
-                    self.bstar_prime = self.UBB0[:, 1]
-                    self.cstar_prime = self.UBB0[:, 2]
-
-                    self.a_prime = np.cross(self.bstar_prime, self.cstar_prime
-                    ) / np.dot(self.astar_prime, np.cross(self.bstar_prime, self.cstar_prime))
-                    self.b_prime = np.cross(self.cstar_prime, self.astar_prime
-                    ) / np.dot(self.bstar_prime, np.cross(self.cstar_prime, self.astar_prime))
-                    self.c_prime = np.cross(self.astar_prime, self.bstar_prime
-                    ) / np.dot(self.cstar_prime, np.cross(self.astar_prime, self.bstar_prime))
-
-                    self.boa = linalgnorm(self.b_prime
-                    ) / linalgnorm(self.a_prime)
-                    self.coa = linalgnorm(self.c_prime
-                    ) / linalgnorm(self.a_prime)
-
-                    self.alpha = (np.arccos(np.dot(self.b_prime, self.c_prime)
-                            / linalgnorm(self.b_prime)
-                            / linalgnorm(self.c_prime)) * 180.0 / np.pi)
-                    self.beta = (np.arccos(np.dot(self.c_prime, self.a_prime)
-                            / linalgnorm(self.c_prime)
-                            / linalgnorm(self.a_prime)) * 180.0 / np.pi)
-                    self.gamma = (np.arccos(np.dot(self.a_prime, self.b_prime)
-                            / linalgnorm(self.a_prime)
-                            / linalgnorm(self.b_prime)) * 180.0 / np.pi)
-
-                except ValueError:
-                    print("could not compute the reciprocal space from the UBB0")
-
-        except IOError:
-            print("file {} not found! or problem of reading it!".format(filename))
+            from LaueTools.fitfilereader import parsed_fitfile
+        except ImportError:
+            from fitfilereader import parsed_fitfile
+        return parsed_fitfile(filename, verbose=verbose)
 
 
 if __name__ == "__main__":

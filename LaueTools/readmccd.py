@@ -17,7 +17,7 @@ import copy
 import time as ttt
 import numpy as np
 
-print('loading readmccd.py')
+#print('loading readmccd.py')
 
 # lauetools modules
 if sys.version_info.major == 3:
@@ -695,9 +695,8 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     .. note:: used in PeakSearchGUI
     """
     if len(peaklist) >= NumberMaxofFits:
-        print("TOO MUCH peaks to fitdata.")
-        print("(in fitoneimage_manypeaks) It may stuck the computer.")
-        print("Try to reduce the number of Local Maxima or reduce NumberMaxofFits in fitoneimage_manypeaks()")
+        print(f"TOO MUCH peaks to fitdata (in fitoneimage_manypeaks): "
+              f"{too_many_local_maxima_message(len(peaklist), NumberMaxofFits)}")
         return
 
     if dirname is not None:
@@ -723,7 +722,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
                                         xtol=xtol,
                                         addImax=ComputeIpixmax,
                                         use_data_corrected=use_data_corrected,
-                                        computerrorbars=computerrorbars)
+                                        computerrorbars=True)   # (cheap) for the rejection of fits not determined
 
     if verbose>0:
         print("fitting time for {} peaks is : {:.4f}".format(len(peaklist), ttt.time() - tstart))
@@ -746,8 +745,8 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     peak_I = par[:, 1]
     peak_X = par[:, 2]
     peak_Y = par[:, 3]
-    peak_fwaxmaj = par[:, 4]
-    peak_fwaxmin = par[:, 5]
+    peak_fwaxmaj = np.abs(par[:, 4])   # (the sign of the widths of the gaussian is meaningless)
+    peak_fwaxmin = np.abs(par[:, 5])
     peak_inclination = par[:, 6] % 360
 
     rawnbpeaks = len(peak_bkg)
@@ -756,12 +755,12 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     Xdev = peak_X - peaklist[:, 0]
     Ydev = peak_Y - peaklist[:, 1]
 
-    if computerrorbars:
-        Xfiterr = np.zeros(rawnbpeaks)
-        Yfiterr = np.zeros(rawnbpeaks)
-        for _pk, infodict in enumerate(info):
-            # bkg, amp, x, y std1, std2, angle
-            Xfiterr[_pk], Yfiterr[_pk] =  infodict['perr_leastsq'][2:4]
+    # uncertainties of the positions (fit parameters: bkg, amp, Y, X, std1, std2, angle), inf if not determined
+    Xfiterr = np.full(rawnbpeaks, np.nan)
+    Yfiterr = np.full(rawnbpeaks, np.nan)
+    for _pk, infodict in enumerate(info):
+        if 'perr_leastsq' in infodict:   # (not for the lorentzian fit)
+            Yfiterr[_pk], Xfiterr[_pk] = infodict['perr_leastsq'][2:4]
 
     # --- --- PEAKS REJECTION -------------------------------
     # print "peaklist[:20]",peaklist[:]
@@ -795,13 +794,16 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
     # too weak compared to given threshold
     to_reject5 = np.where(peak_I <= MinIntensity)[0]
 
-    maxpeaksize = np.maximum(peak_fwaxmaj, peak_fwaxmin)
-
-    # too small peak compared to given threshold
-    to_reject6 = np.where(maxpeaksize <= PeakSizeRange[0])[0]
+    # too small peak compared to given threshold: both widths (with the largest only, peaks of about one pixel in
+    # one direction were kept)
+    to_reject6 = np.where(np.minimum(peak_fwaxmaj, peak_fwaxmin) <= PeakSizeRange[0])[0]
 
     # too large peak compared to given threshold
-    to_reject7 = np.where(maxpeaksize >= PeakSizeRange[1])[0]
+    to_reject7 = np.where(np.maximum(peak_fwaxmaj, peak_fwaxmin) >= PeakSizeRange[1])[0]
+
+    # position not determined by the fit: uncertainty infinite or larger than FitPixelDev
+    fiterr = np.maximum(Xfiterr, Yfiterr)
+    to_reject8 = np.where(np.isinf(fiterr) | (fiterr > FitPixelDev))[0]
 
     if verbose>0:
         print("to_reject", type(to_reject))
@@ -818,6 +820,7 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         print("{} spots have been rejected (too weak intensity)".format(len(to_reject5)))
         print("{} spots have been rejected (too small peak size)".format(len(to_reject6)))
         print("{} spots have been rejected (too large peak size)".format(len(to_reject7)))
+        print("{} spots have been rejected (position uncertainty of the fit > FitPixelDev)".format(len(to_reject8)))
 
     # spots indices to reject
     ToR = (set(to_reject)
@@ -826,7 +829,8 @@ def fitoneimage_manypeaks(filename, peaklist, boxsize, stackimageindex=-1,
         | set(to_reject4)
         | set(to_reject5)
         | set(to_reject6)
-        | set(to_reject7))  # to reject
+        | set(to_reject7)
+        | set(to_reject8))  # to reject
 
     # spot indices to take
     ToTake = set(np.arange(len(peaklist))) - ToR
@@ -909,7 +913,7 @@ import scipy.ndimage as ndi
 from skimage.feature import peak_local_max
 import time
 import multiprocessing
-ncpu = multiprocessing.cpu_count()
+ncpu = GT.available_cpus()
 
 def twoD_Gaussian(imgSize, amp0, center_x, center_y, theta, sigma_x, sigma_y):
     theta = np.deg2rad(theta)
@@ -1097,6 +1101,25 @@ def peaksearch_skimage(filename, min_dist:int, pkid_threshold:int, bs:int, fit_p
     
     return tabIsorted, peak_coords
 
+class TooManyLocalMaximaError(ValueError):
+    """peak search given up: more local maxima (blobs) than NumberMaxofFits, no peak fitted (PeakSearch())"""
+
+    def __init__(self, nb_local_maxima, NumberMaxofFits, IntensityThreshold=None):
+        self.nb_local_maxima = int(nb_local_maxima)
+        self.NumberMaxofFits = int(NumberMaxofFits)
+        self.IntensityThreshold = IntensityThreshold
+        super().__init__(too_many_local_maxima_message(nb_local_maxima, NumberMaxofFits, IntensityThreshold))
+
+
+def too_many_local_maxima_message(nb_local_maxima, NumberMaxofFits, IntensityThreshold=None):
+    """explanation when the peak search is given up (more local maxima than NumberMaxofFits)"""
+    threshold = f' ({IntensityThreshold})' if IntensityThreshold is not None else ''
+    limit = f' ({NumberMaxofFits})' if NumberMaxofFits is not None else ''
+    return (f"{nb_local_maxima} local maxima (blobs) found, more than NumberMaxofFits{limit}: no peak "
+            f"fitted (the result is not 'no peak'). Set NumberMaxofFits to at least {int(nb_local_maxima) + 1} "
+            f"(fits take longer), or increase IntensityThreshold{threshold} to find fewer local maxima")
+
+
 #@function_details
 def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                                 boxsizeROI=(200, 200),  # use only if center != None
@@ -1129,9 +1152,13 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
                                                 listrois=None,
                                                 outputIpixmax=True,
                                                 computerrorbars=False,
-                                                npixels=10):
+                                                npixels=10,
+                                                raise_too_many=False):
     r"""
     Find local intensity maxima as starting position for fittinng and return peaklist.
+
+    More local maxima than NumberMaxofFits: no peak fitted, None returned with a message (number of local maxima,
+    NumberMaxofFits needed); raise_too_many=True: TooManyLocalMaximaError raised instead (no message).
 
     :param filename: string, full path to image data file
 
@@ -1428,11 +1455,10 @@ def PeakSearch(filename, stackimageindex=-1, CCDLabel="sCMOS", center=None,
         #         print 'peaklist',in peaklist before purge
 
         if len(peaklist) >= NumberMaxofFits:
-            if verbose>0:
-                print("TOO MUCH peaks to handle.")
-                print("(in PeakSearch) It may stuck the computer.")
-                print("Try to reduce the number of Local Maxima or\n reduce "
-                        "NumberMaxofFits in PeakSearch()")
+            if raise_too_many:
+                raise TooManyLocalMaximaError(len(peaklist), NumberMaxofFits, IntensityThreshold)
+            print(f"TOO MUCH peaks to handle (in PeakSearch): "
+                  f"{too_many_local_maxima_message(len(peaklist), NumberMaxofFits, IntensityThreshold)}")
             return None
 
         Xpeaklist, Ypeaklist, tokeep = GT.removeClosePoints(peaklist[:, 0], peaklist[:, 1],
@@ -2283,7 +2309,7 @@ def peaksearch_multiprocessing(fileindexrange, filenameprefix, suffix="", nbdigi
 
     t00 = ttt.time()
 
-    max_nb_cpus = multiprocessing.cpu_count()
+    max_nb_cpus = GT.available_cpus()
     nb_cpus = min(nb_of_cpu, max_nb_cpus)
 
     fileindexdivision = GT.getlist_fileindexrange_multiprocessing(index_start, index_final, nb_of_cpu)

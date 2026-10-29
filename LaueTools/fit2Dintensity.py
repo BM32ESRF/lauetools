@@ -370,8 +370,8 @@ def gaussfit(data, err=None, params=None, autoderiv=1, return_all=0, circle=0,
             for i in range(len(p)):
                 try:
                     error.append(np.absolute(pcov[i][i])**0.5)
-                except:
-                    error.append(0.00)
+                except (TypeError, IndexError):   # pcov = inf: singular fit (parameters not determined)
+                    error.append(np.inf)
             pfit_leastsq = p
             perr_leastsq = np.array(error)
 

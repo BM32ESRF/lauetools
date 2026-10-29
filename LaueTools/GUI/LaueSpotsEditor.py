@@ -51,7 +51,7 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
 
     """
     def __init__(self, parent, _id, title, dict_spots_data,
-                    func_to_call=None, field_name_and_order=fields):
+                    func_to_call=None, field_name_and_order=fields, func_on_select=None):
         """
         dictionnary of data is as following:
         dict_spots_data = { 'spot index':[0,1,3,6,9,10],
@@ -60,6 +60,9 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
                                 'k': [1,1,1,2,0,2],
                                 'l': [-1,0,6,10,1,0],
                                 '2theta': [23.125,90.1258,68.36512,49.98598,65.0000236,101.101101]}
+
+        func_on_select: function called with {field: value (str)} of the row selected in the list (e.g. to show
+            the spot in a plot), None: nothing
         """
         # wx.Dialog.__init__(self, parent, _id, title, size=(600,500), style=wx.DEFAULT_DIALOG_STYLE)
         #        wx.Dialog.__init__(self, parent, _id, title, size=(1100, 500), style=wx.OK)
@@ -69,6 +72,7 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
         self.parent = parent
 
         self.func_to_call = func_to_call
+        self.func_on_select = func_on_select
 
         proceed = True
 
@@ -103,6 +107,8 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
         wx.lib.mixins.listctrl.ColumnSorterMixin.__init__(self.listcontrol, len(self.field_name) + 1)
 
         self.listcontrol.Bind(wx.EVT_KEY_DOWN, self.onKeypressed)
+        if func_on_select is not None:
+            self.listcontrol.Bind(wx.EVT_LIST_ITEM_SELECTED, self.OnItemSelected)
 
         # layout
 
@@ -237,6 +243,16 @@ class SpotsEditor(wx.Frame, wx.lib.mixins.listctrl.ColumnSorterMixin):
         rlbtn.SetToolTipString("Reload and Display the complete set of associations")
         rmv1spotbtn.SetToolTipString("Remove the spot association selected in the links list")
         plotfreqbtn.SetToolTipString("Plot residues distribution frequency of the spot links list")
+
+    def OnItemSelected(self, event):
+        """call func_on_select with {field: value (str)} of the selected row"""
+        row = event.GetIndex()
+        values = {field: self.listcontrol.GetItemText(row, col) for col, field in enumerate(self.field_name)}
+        try:
+            self.func_on_select(values)
+        except Exception as error:   # the list stays usable
+            print("selection of row %d not shown: %s" % (row, error))
+        event.Skip()
 
     def onKeypressed(self, event):
         """ handle key pressed """

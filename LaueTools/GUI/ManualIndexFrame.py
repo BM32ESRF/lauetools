@@ -327,7 +327,7 @@ class ManualIndexFrame(wx.Frame):
 
         self.nlut.Bind(wx.EVT_SPINCTRL, self.onNlut)
 
-        self.slider_exp = wx.Slider(self.panel, -1, 50, 0, 100, size=(120, -1))
+        self.slider_exp = wx.Slider(self.panel, -1, 100, 1, 1000, size=(120, -1))
         self.slidertxt_exp = wx.StaticText(self.panel, -1, "Exp. spot size", (5, 5))
         self.slider_exp.Bind(wx.EVT_SLIDER, self.sliderUpdate_exp)
 
@@ -571,17 +571,8 @@ class ManualIndexFrame(wx.Frame):
 
     def sliderUpdate_ps(self, _):
         """ handle intensity scale factor"""
-        # ps from -5 5
-        ps = (int(self.slider_ps.GetValue()) - 50) / 10.0
-
-        print("ps", ps)
-
-        if ps < 1:  # from 1/5 to 1
-            jump_ps = 4 / 5.0
-            deltaps = 6.0
-            self.powerscale = jump_ps / deltaps * (ps - 1) + 1
-        if ps >= 1:
-            self.powerscale = ps * 2
+        # exponent from 0.1 (slider at 0) to 10 (slider at 100), 1 (linear) at middle position
+        self.powerscale = 10 ** ((int(self.slider_ps.GetValue()) - 50) / 50.0)
 
         self.getlimitsfromplot = True
         self._replot()
@@ -876,7 +867,7 @@ class ManualIndexFrame(wx.Frame):
                 self.ylim = (2000, 0)
                 self.xlim = (0, 1500)
 
-        self.factorsize = 50
+        self.factorsize = 100
         self.powerscale = 1.0
 
     def setplotlimits_fromcurrentplot(self):
@@ -958,58 +949,27 @@ class ManualIndexFrame(wx.Frame):
             self.myplot.set_norm(norm)
             self.myplot.set_cmap(self.data_dict["lut"])
 
-        # exp scale lin=0
-        spotsizescale = 0
-        s0, s_asympt, tau, smin, smax = 0, 1.0, 65000 / 3.0, 1.0, 5.0
-        params_spotsize = s0, s_asympt, tau, smin, smax
-
-        # linear scale lin=1
-        spotsizescale = 1
-        s0, slope, smin, smax = 0, 1.0, 1, 5.0
-        params_spotsize = s0, slope, smin, smax
-
-        # power scale lin=2
-        spotsizescale = 2
-        s0, s_at_Imax, powerscale, smin, smax = 0, 70000, self.powerscale, 1, 5.0
-        params_spotsize = s0, s_at_Imax, powerscale, smin, smax
+        # same colour and size coding (spot intensity) in all representation spaces
+        # size = factorsize * (I/Imax)**powerscale  (sliders 'Exp. spot size' and 'power scale')
+        # powerscale < 1 enlarges weak spots
+        intensities = np.asarray(self.Data_I, dtype=float)
+        spotsizes = self.factorsize * np.clip(intensities / np.amax(intensities), 0, None) ** self.powerscale
 
         if self.datatype == "pixels":
-            # background image
-            if self.ImageArray is not None:
-                kwords = {"marker": "o",
-                            "facecolor": "None",
-                            "edgecolor": self.data_dict["markercolor"]}
-            else:
-                kwords = {"edgecolor": "None", "facecolor": self.data_dict["markercolor"]}
-
-            self.axes.scatter(self.pixelX - X_offset, self.pixelY - Y_offset, s=self.factorsize
-                * self.func_size_peakintensity(np.array(self.Data_I), params_spotsize,
-                                                            lin=spotsizescale),
-                                                            alpha=1.0,
-                                                            **kwords)
-
+            plotX, plotY = self.pixelX - X_offset, self.pixelY - Y_offset
         elif self.datatype == "2thetachi":
-            self.axes.scatter(
-                self.data_2thetachi[0],
-                self.data_2thetachi[1],
-                #                           s=self.func_size_intensity(np.array(self.Data_I), self.factorsize, 0, lin=1))
-                s=self.factorsize
-                * self.func_size_peakintensity(np.array(self.Data_I),
-                                                        params_spotsize,
-                                                        lin=spotsizescale))
-            # c=self.Data_I / 50.)#, cmap = GT.SPECTRAL)
+            plotX, plotY = self.data_2thetachi
         elif self.datatype == "gnomon":
-            self.axes.scatter(
-                self.gnomonX - X_offset,
-                self.gnomonY - Y_offset,
-                #                           s=self.func_size_intensity(np.array(self.Data_I), self.factorsize, 0, lin=1))
-                # s=self.factorsize
-                # * self.func_size_peakintensity(np.array(self.Data_I),
-                #                                 params_spotsize,
-                #                                 lin=spotsizescale))
+            plotX, plotY = self.gnomonX - X_offset, self.gnomonY - Y_offset
 
-                s=self.Data_I / np.amax(self.Data_I) * 100.0,
-                c=self.Data_I / 50.0)
+        if self.datatype == "pixels" and self.ImageArray is not None:
+            # hollow markers over the background image, edges coloured by intensity
+            norm = matplotlib.colors.Normalize(vmin=np.amin(intensities),
+                                               vmax=np.amax(intensities))
+            self.axes.scatter(plotX, plotY, s=spotsizes, marker="o", facecolors="none",
+                              edgecolors=matplotlib.cm.viridis(norm(intensities)))
+        else:
+            self.axes.scatter(plotX, plotY, s=spotsizes, c=intensities)
 
         # axes labels
         if self.datatype == "2thetachi":

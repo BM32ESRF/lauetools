@@ -4,6 +4,7 @@ scipy>=0.15.0
 matplotlib>=2.0.0
 wxpython>=3.0
 networkx>=2.1
+pandas
 tqdm>=4.60.0
 h5py>=3.1
 scikit-image>=0.1.0

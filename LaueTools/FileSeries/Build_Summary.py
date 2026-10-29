@@ -248,7 +248,7 @@ class MainFrame_BuildSummary(wx.Frame):
 
             abspath = folder.GetPath()
             filename = os.path.split(abspath)[-1]
-            intension, extension = filename.split(".")
+            intension, extension = filename.rsplit(".", 1)
 
             self.list_txtctrl[3].SetValue("." + extension)
 
@@ -352,7 +352,7 @@ class MainFrame_BuildSummary(wx.Frame):
             from LaueTools.Lauehdf5 import Add_allspotsSummary_from_fitfiles
 
             "\n\n ****** \nBuilding a hdf5 summary file\n*********  \n\n"
-            fname = os.path.split(fullpath_summary_filename)[-1].split('.')[0]
+            fname = os.path.splitext(os.path.split(fullpath_summary_filename)[-1])[0]
             Summary_HDF5_filename = fname + ".h5"
             print('hdf5 filename  :', fname)
             Add_allspotsSummary_from_fitfiles(Summary_HDF5_filename,

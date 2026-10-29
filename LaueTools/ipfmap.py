@@ -289,15 +289,75 @@ def _arc(v1, v2, nb=100) -> np.ndarray:
     return (np.sin((1 - t) * angle) * v1 + np.sin(t * angle) * v2) / np.sin(angle)
 
 
+def _small_integer_vectors(maxindex: int) -> np.ndarray:
+    """integer triplets (n, 3) with indices in [-maxindex, maxindex], 0 excluded, without common divisor"""
+    r = np.arange(-maxindex, maxindex + 1)
+    v = np.array(np.meshgrid(r, r, r, indexing='ij')).reshape(3, -1).T
+    v = v[np.any(v != 0, axis=1)]
+    return v[np.gcd.reduce(np.abs(v), axis=1) == 1]
+
+
+def nearest_lattice_vectors(direction, B0: Optional[np.ndarray] = None, maxindex: int = 6):
+    """plane (hkl) whose normal and lattice direction [uvw] are the closest to a crystal direction (orthonormal
+    crystal frame of B0: q = B0 . (h, k, l)), with indices up to maxindex. B0 None: cubic (identity).
+    Returns (hkl, angle deg), (uvw, angle deg)"""
+    v = np.asarray(direction, dtype=float)
+    v = v / np.linalg.norm(v)
+    B0 = np.eye(3) if B0 is None else np.asarray(B0, dtype=float)
+    ints = _small_integer_vectors(maxindex)
+    out = []
+    for basis in (B0, np.linalg.inv(B0).T):   # plane normals (reciprocal basis), directions (direct basis)
+        vecs = ints @ basis.T
+        cosang = (vecs @ v) / np.linalg.norm(vecs, axis=1)
+        angles = np.degrees(np.arccos(np.clip(cosang, -1, 1)))
+        # lowest indices among the vectors within 0.05 deg of the closest one
+        best = np.flatnonzero(angles <= angles.min() + 0.05)
+        k = best[np.argmin(np.abs(ints[best]).sum(axis=1))]
+        out.append((tuple(int(x) for x in ints[k]), float(angles[k])))
+    return out[0], out[1]
+
+
+def _key_format_coord(laue_group: str, B0: Optional[np.ndarray] = None, maxindex: int = 6):
+    """ax.format_coord of an IPF color key: crystal direction under the cursor, its color, and the closest plane
+    (hkl) normal and lattice direction [uvw]"""
+    group = LAUE_GROUPS[laue_group]
+
+    def fmt(x, y):
+        r2 = x ** 2 + y ** 2
+        local = np.array([2 * x, 2 * y, 1 - r2]) / (1 + r2)   # inverse stereographic projection
+        if 'pole' in group:
+            v = local[0] * group['e1'] + local[1] * group['e2'] + local[2] * group['pole']
+            polar, azimuth = _polar_azimuth(v[None], group)
+            if r2 > 1 or azimuth[0] > group['period'] + 1e-9:
+                return ''
+            rgb = _sector_colors(polar, azimuth, group)[0]
+        else:
+            v = local
+            weights = np.linalg.solve(group['corners'].T, v)
+            if np.any(weights < -1e-9):
+                return ''
+            rgb = np.clip(weights / weights.max(), 0, 1)
+        (hkl, ahkl), (uvw, auvw) = nearest_lattice_vectors(v, B0, maxindex)
+        return ("plane (%d %d %d) %.1f deg, direction [%d %d %d] %.1f deg | xyz %.3f %.3f %.3f | rgb %.2f %.2f %.2f"
+                % (*hkl, ahkl, *uvw, auvw, *v, *rgb))
+    return fmt
+
+
 def plot_ipf_key(laue_group: str, ax=None, directions: Optional[np.ndarray] = None, resolution: int = 400,
-                 markersize: float = 2, markercolor='k', alpha: float = 0.3, title: Optional[str] = None):
+                 markersize: float = 2, markercolor='k', alpha: float = 0.3, title: Optional[str] = None,
+                 B0: Optional[np.ndarray] = None):
     """color key of IPF maps in the standard triangle (stereographic projection)
 
     directions: optional crystal directions (n, 3) (e.g. sample_directions_in_crystal()) plotted as points
+    B0: matrix of the material (q = B0 . (h, k, l), e.g. parsed_fitfileseries.B0[i]): mouse hover gives the
+        closest plane (hkl) normal and lattice direction [uvw] of the crystal direction under the cursor
+        (interactive figure, e.g. ipympl). None: cubic (B0 proportional to identity)
     """
     group = LAUE_GROUPS[laue_group]
     if 'pole' in group:
-        return _plot_sector_key(laue_group, ax, directions, resolution, markersize, markercolor, alpha, title)
+        ax = _plot_sector_key(laue_group, ax, directions, resolution, markersize, markercolor, alpha, title)
+        ax.format_coord = _key_format_coord(laue_group, B0)
+        return ax
     corners = group['corners'] / np.linalg.norm(group['corners'], axis=1, keepdims=True)
     if ax is None:
         _, ax = plt.subplots(figsize=(3.5, 3.5))
@@ -341,6 +401,7 @@ def plot_ipf_key(laue_group: str, ax=None, directions: Optional[np.ndarray] = No
     ax.set_aspect('equal')
     ax.axis('off')
     ax.set_title(title if title is not None else laue_group, fontsize=10)
+    ax.format_coord = _key_format_coord(laue_group, B0)
     return ax
 
 
@@ -456,11 +517,15 @@ def plot_ipf_maps(UB: np.ndarray, invmapdims: Tuple[int, int], laue_group: str,
                   sample_axes: Iterable[str] = ('x', 'y', 'z'), anglesample: float = 40.,
                   mask: Optional[np.ndarray] = None, bad_color='black',
                   xlabel: str = 'fast axis', ylabel: str = 'slow axis', show_directions: bool = True,
-                  figsize=None) -> Tuple[plt.Figure, np.ndarray, Dict[str, np.ndarray]]:
+                  figsize=None, transposed: bool = False,
+                  B0: Optional[np.ndarray] = None) -> Tuple[plt.Figure, np.ndarray, Dict[str, np.ndarray]]:
     """IPF color maps along sample axes + color key (with the measured directions of the last sample axis)
 
     UB: (n, 3, 3) orientation matrices of the map (e.g. parsed_fitfileseries.UB), n >= invmapdims[0] * invmapdims[1]
     mask: (True = masked) array of shape invmapdims, masked and missing points are drawn with bad_color
+    B0: matrix of the material, for the hover of the color key (closest (hkl) and [uvw], see plot_ipf_key())
+    xlabel, ylabel: names of the fast and slow motors. transposed: fast motor along the vertical axis (e.g. the y
+    motor yech, yps, sy is the fast one, see generaltools.map_transposed())
 
     Returns fig, axes, {sample axis: rgb map (nb rows, nb cols, 3)}
     """
@@ -478,11 +543,11 @@ def plot_ipf_maps(UB: np.ndarray, invmapdims: Tuple[int, int], laue_group: str,
         rgba[..., :3] = np.nan_to_num(rgb)
         rgba[..., 3] = np.all(np.isfinite(rgb), axis=2)   # masked and missing points: transparent
         ax.set_facecolor(bad_color)
-        ax.imshow(rgba, origin='lower', interpolation='nearest')
+        ax.imshow(rgba.transpose(1, 0, 2) if transposed else rgba, origin='lower', interpolation='nearest')
         ax.set_title(f'IPF-{sample_axis.upper()} (sample frame)', fontsize=10)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.format_coord = lambda x, y: GT.format_getimageindex_imshow(x, y, invmapdims)
+        ax.set_xlabel(ylabel if transposed else xlabel)
+        ax.set_ylabel(xlabel if transposed else ylabel)
+        ax.format_coord = GT.map_format_coord(xlabel, ylabel, (invmapdims[1], invmapdims[0]), transposed)
 
     directions = None
     if show_directions:
@@ -490,7 +555,7 @@ def plot_ipf_maps(UB: np.ndarray, invmapdims: Tuple[int, int], laue_group: str,
                                                   sample_axes[-1], anglesample)
         if mask is not None:
             directions = directions[~np.asarray(mask, dtype=bool).ravel()]
-    plot_ipf_key(laue_group, ax=axes[-1], directions=directions,
+    plot_ipf_key(laue_group, ax=axes[-1], directions=directions, B0=B0,
                  title=f'{laue_group}' + (f'  (points: IPF-{sample_axes[-1].upper()})' if show_directions else ''))
     fig.tight_layout()
     return fig, axes, rgbmaps

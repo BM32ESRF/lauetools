@@ -67,7 +67,7 @@ def get_motor(ExpFolder: str, image_index: int, nbdigits_filename: int) -> np.nd
     
 def get_motor_fileseries(ExpFolder: str, nb_rows: int, nb_cols: int, nbdigits_filename: int) -> np.ndarray:
     
-    nb_cpus = multiprocessing.cpu_count()
+    nb_cpus = GT.available_cpus()
     
     print(f"Using {nb_cpus} cpus.")
     
@@ -101,6 +101,11 @@ def get_motor_fileseries(ExpFolder: str, nb_rows: int, nb_cols: int, nbdigits_fi
 
 
 # Sam's class, modified by Beatriz
+# .fit blocks whose label contains values, matched by the beginning of their label -> attribute of the 3x3 matrix
+# (UB and B0 referred to the refined lattice parameters, see IOLaueTools.writefitfile())
+REFINED_BLOCKS = {"#refined UB matrix": "UB_new", "#refined B0 matrix": "B0_new"}
+
+
 class parsed_fitfile:
     """
     Parse the .fit file in a parse_fitfile object
@@ -182,7 +187,24 @@ class parsed_fitfile:
                             l = f.readline().replace("\n", "")
                             
                         except KeyError:
-                            print("could not read line {}".format(l))
+                            # blocks whose label contains values (e.g. scale of UB_new): matched by its beginning
+                            key = next((k for k in REFINED_BLOCKS if l.startswith(k)), None)
+                            if l.lstrip("#").startswith("spot_index"):
+                                # table of the indexed spots, whatever its columns (e.g. .fit files of
+                                # DetectorCalibration): h k l in columns 2, 3, 4
+                                self.__Peaks__(f, l)
+                            elif key is not None:
+                                values = []
+                                while len(values) < 9:
+                                    line = f.readline()
+                                    if not line:
+                                        break
+                                    values += [float(v) for v in
+                                               line.replace("[", " ").replace("]", " ").replace("#", " ").split()]
+                                if len(values) >= 9:
+                                    setattr(self, REFINED_BLOCKS[key], np.array(values[:9]).reshape(3, 3))
+                            elif verbose:   # blocks not used (e.g. Umatrix, HKL axes of DetectorCalibration)
+                                print("could not read line {}".format(l))
                             l = f.readline().replace("\n", "")
                             
                 self.indexed_hkls = list(self.peak.keys())
@@ -356,8 +378,10 @@ class parsed_fitfile:
 
     def __DetectorParameters__(self, f, l):
         
-        l = (f.readline().replace("[", "").replace("]", "").replace("\n", "").replace(" ", "").replace("#","").split(","))
-        
+        l = (f.readline().replace("[", "").replace("]", "").replace("\n", "").replace(" ", "").replace("#","")
+             .replace("np.float64(", "").replace(")", "")   # files written with numpy 2 scalars
+             .split(","))
+
         self.dd = float(l[0])
         self.xcen = float(l[1])
         self.ycen = float(l[2])
@@ -418,6 +442,7 @@ class parsed_fitfile:
     def __Peaks__(self, f, l):
         
         self.peak = {}
+        self.peak_columns = l.lstrip("#").split()   # names of the columns of the spots table
         
         for _ in list(range(self.NumberOfIndexedSpots)):
             l = f.readline().replace("#","").split()
@@ -475,7 +500,7 @@ class parsed_fitfileseries:
         # ----- create a list whose elements are the class parsed_fitfile, initialized for each file in the folder ------
         
         if use_multiprocessing:
-            self.nb_cpus = nb_cpus or multiprocessing.cpu_count()
+            self.nb_cpus = nb_cpus or GT.available_cpus()
             print(f"Using {self.nb_cpus} cpus.")
             chunksize = 1   # (larger chunks: slower with many processes on a network file system)
             

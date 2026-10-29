@@ -370,10 +370,51 @@ def EulerAngles(indexed_fileseries: parsed_fitfileseries, size: tuple = (21,6), 
     
     return fig, ax
 
+def _tight_layout(fig):
+    """fig.tight_layout(), skipped (figure kept as it is) if the layout cannot be computed"""
+    try:
+        fig.tight_layout()
+    except Exception as error:   # e.g. text metrics errors: the figure is still drawn
+        print("tight layout not applied:", str(error).strip().splitlines()[-1][:120])
+
+
+def draw_map(ax, data, xech=None, yech=None, transposed=False, motors=None, fill_figure=False, **kwargs):
+    """draw a 2D map data (shape (slow, fast): lines along the slow motor) on ax: pcolormesh with positions
+    xech (fast motor), yech (slow motor) in microns, or imshow (map points) if xech is None.
+    transposed: fast motor along the vertical axis (e.g. the y motor yech, yps, sy is the fast one, see
+    generaltools.map_transposed()). motors: (fast motor, slow motor) names for the axes labels.
+    fill_figure: False: real proportions of the map (equal aspect); True: the map fills the axes (e.g. long and
+    narrow maps), the proportions are then lost. Also accepted by the map functions of this module (kwargs).
+    Sets labels, aspect and hover text (image index, value). Returns the image"""
+    nslow, nfast = np.shape(data)[:2]
+    shown = data.T if transposed else data
+    if xech is None:
+        im = ax.imshow(shown, **kwargs)
+        steps, unit = (1., 1.), 'map points'
+    else:
+        xstep = np.fabs(xech[1] - xech[0]) if len(xech) > 1 else 1.
+        ystep = np.fabs(yech[1] - yech[0]) if len(yech) > 1 else 1.
+        im = (ax.pcolormesh(yech, xech, shown, **kwargs) if transposed
+              else ax.pcolormesh(xech, yech, shown, **kwargs))
+        steps, unit = (xstep, ystep), 'µm'
+    if motors is not None:
+        xlabel, ylabel = GT.map_axes_labels(motors[0], motors[1], transposed)
+        ax.set_xlabel(f'{xlabel} [{unit}]')
+        ax.set_ylabel(f'{ylabel} [{unit}]')
+    else:
+        ax.set_xlabel(f'Position [{unit}]')
+        ax.set_ylabel(f'Position [{unit}]')
+    ax.set_aspect('auto' if fill_figure else 'equal')
+    names = motors if motors is not None else ('fast', 'slow')
+    ax.format_coord = GT.map_format_coord(names[0], names[1], (nfast, nslow), transposed, data2D=data, steps=steps)
+    return im
+
+
 def EulerAngles2D(xech: np.ndarray, yech: np.ndarray, 
                   indexed_fileseries: parsed_fitfileseries, 
                   size: tuple = (10,6), maskingcondition:bool=None,
-                  vlimits=((None,None),(None,None),(None,None)), figuretitle=None, **kwargs) -> None:
+                  vlimits=((None,None),(None,None),(None,None)), figuretitle=None, transposed=False,
+                  motors=None, **kwargs) -> None:
     
     txttitle = ''
     if figuretitle is None:
@@ -413,12 +454,8 @@ def EulerAngles2D(xech: np.ndarray, yech: np.ndarray,
     titles = ['Phi', 'Theta', 'Psi']
     kk=0
     for axis, data, title, vlimit in zip(ax, [phi, theta, psi], titles, vlimits):
-        im = axis.pcolormesh(xech, yech, data, vmin=vlimit[0], vmax=vlimit[1], **kwargs)
-        axis.set_xlabel('Position [µm]')
-        axis.set_ylabel('Position [µm]')
-        axis.set_aspect('equal')
+        im = draw_map(axis, data, xech, yech, transposed, motors, vmin=vlimit[0], vmax=vlimit[1], **kwargs)
         axis.set_title(title)
-        axis.format_coord = fmtcoordfuncs[kk]
         kk+=1
         
         # create axis just for colorbar to give it the same height of the plot 
@@ -432,7 +469,7 @@ def EulerAngles2D(xech: np.ndarray, yech: np.ndarray,
     return phi, theta, psi
 
 def PlotNumberIndexedSpots(indexed_fileseries: parsed_fitfileseries, 
-                  size: tuple = (10,6), maskingcondition=None, **kwargs) -> None:
+                  size: tuple = (10,6), maskingcondition=None, transposed=False, motors=None, **kwargs) -> None:
     
     fig, ax = plt.subplots()
     if size is not None:
@@ -446,10 +483,7 @@ def PlotNumberIndexedSpots(indexed_fileseries: parsed_fitfileseries,
             return None, None
         data = ma.masked_where(maskingcondition, data)
     
-    im = ax.imshow(data, **kwargs)
-    ax.set_xlabel('Position [µm]')
-    ax.set_ylabel('Position [µm]')
-    ax.set_aspect('equal')
+    im = draw_map(ax, data, None, None, transposed, motors, **kwargs)
     ax.set_title(f'Nb of indexed spots')
     
     # create axis just for colorbar to give it the same height of the plot 
@@ -459,7 +493,7 @@ def PlotNumberIndexedSpots(indexed_fileseries: parsed_fitfileseries,
 
 
 def PlotMeanDevPixel(indexed_fileseries: parsed_fitfileseries, 
-                  size: tuple = (10,6), maskingcondition=None, **kwargs) -> None:
+                  size: tuple = (10,6), maskingcondition=None, transposed=False, motors=None, **kwargs) -> None:
     
     fig, ax = plt.subplots()
     if size is not None:
@@ -473,10 +507,7 @@ def PlotMeanDevPixel(indexed_fileseries: parsed_fitfileseries,
             return None, None
         data = ma.masked_where(maskingcondition, data)
 
-    im = ax.imshow(data, **kwargs)
-    ax.set_xlabel('Position [µm]')
-    ax.set_ylabel('Position [µm]')
-    ax.set_aspect('equal')
+    im = draw_map(ax, data, None, None, transposed, motors, **kwargs)
     ax.set_title(f'Mean Deviation (pix)')
     
     # create axis just for colorbar to give it the same height of the plot 
@@ -486,7 +517,8 @@ def PlotMeanDevPixel(indexed_fileseries: parsed_fitfileseries,
     return fig, ax
 
 def StrainMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fitfileseries, frame:str='crystal',
-              multiplier: float = 1e4, scale: str = 'default', size: tuple = (21,10), maskingcondition=None, **kwargs) -> tuple:
+              multiplier: float = 1e4, scale: str = 'default', size: tuple = (21,10), maskingcondition=None,
+              transposed=False, motors=None, **kwargs) -> tuple:
     
     if frame == 'crystal':
         exx = indexed_fileseries.exx * multiplier
@@ -557,7 +589,8 @@ def StrainMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fit
     else:
         raise Exception("scale must be in the list ['default', 'mean3sigma', 'uniform', 'other']")
     
-    titles = ['ε$_{xx}$', 'ε$_{yy}$', 'ε$_{zz}$', 'ε$_{xy}$', 'ε$_{xz}$', 'ε$_{yz}$']
+    # plain text (no mathtext: its parser may fail in some sessions, e.g. 'exception raised in parse action')
+    titles = ['εxx', 'εyy', 'εzz', 'εxy', 'εxz', 'εyz']
     strain = [exx, eyy, ezz, exy, exz, eyz]
     
     fig, ax = plt.subplots(2, 3)
@@ -586,17 +619,13 @@ def StrainMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fit
 
     kk = 0
     for axidx, data, title, plotmin, plotmax in zip(np.ndindex(ax.shape), strain, titles, plotvmin, plotvmax):
-        im = ax[axidx].pcolormesh(xech, yech, data, vmin = plotmin, vmax = plotmax, **kwargs)
-        ax[axidx].set_xlabel('Position [µm]')
-        ax[axidx].set_ylabel('Position [µm]')
+        im = draw_map(ax[axidx], data, xech, yech, transposed, motors, vmin=plotmin, vmax=plotmax, **kwargs)
         ax[axidx].set_title(title+f' (x{1/multiplier:.0E})')
-        ax[axidx].set_aspect('equal')
         ax[axidx].title.set_size(12)
-        ax[axidx].format_coord = fmtcoordfuncs[kk]
         kk+=1
         plt.colorbar(im, ax=ax[axidx])
     fig.suptitle(f'Deviatoric strain components in {frame} frame')
-    #fig.tight_layout()
+    _tight_layout(fig)   # (axes labels do not overlap the titles of the next row)
 
     return fig, ax
 
@@ -626,7 +655,7 @@ def StrainMapHistogram(indexed_fileseries: parsed_fitfileseries, frame:str='crys
         return None, None, None
 
     strain  = [exx, eyy, ezz, exy, exz, eyz]
-    xlabels = [f'ε$_{{{comp}}}$ (x{1/multiplier:.0E})' for comp in ('xx', 'yy', 'zz', 'xy', 'xz', 'yz')]
+    xlabels = [f'ε{comp} (x{1/multiplier:.0E})' for comp in ('xx', 'yy', 'zz', 'xy', 'xz', 'yz')]
 
     return __histograms_panel__(strain, xlabels, maskingcondition, size, fit,
                                 f'Distribution strain components in {frame} frame', **kwargs)
@@ -654,10 +683,100 @@ def LatticeParamsHistogram(indexed_fileseries: parsed_fitfileseries, maskingcond
                                 'Distribution of lattice parameters', percentile_range=percentile_range,
                                 fmt='.5f', **kwargs)
 
+LATTICE_PARAMETERS_UNITS = {'a': 'Angst', 'b': 'Angst', 'c': 'Angst', 'alpha': 'deg', 'beta': 'deg', 'gamma': 'deg'}
+
+
+def _single_map(data, xech, yech, maskingcondition, vmin, vmax, percentiles, size, transposed, motors, ax,
+                fill_figure, name, unit, fmt='.5f', symmetric=False, **kwargs):
+    """map of a single quantity data (shape (nb rows, nb cols)) with hover, color limits from percentiles of the
+    unmasked values (symmetric: [-m, m] around 0), title with mean and std. Returns fig, ax"""
+    data = np.asarray(data, dtype=float)
+    mask = ~np.isfinite(data)
+    if maskingcondition is not None:
+        mask |= np.asarray(maskingcondition, dtype=bool)
+    data = ma.masked_where(mask, data)
+    values = np.ma.compressed(data)
+    if len(values) and (vmin is None or vmax is None):
+        low, high = np.percentile(values, percentiles)
+        if symmetric:
+            low, high = -max(abs(low), abs(high)), max(abs(low), abs(high))
+        vmin = low if vmin is None else vmin
+        vmax = high if vmax is None else vmax
+    if ax is None:
+        fig, ax = plt.subplots()
+        if size is not None:
+            fig.set_size_inches(size[0], size[1])
+    else:
+        fig = ax.figure
+    im = draw_map(ax, data, xech, yech, transposed, motors, fill_figure=fill_figure, vmin=vmin, vmax=vmax, **kwargs)
+    label = f'{name} ({unit})' if unit else name
+    fig.colorbar(im, ax=ax, label=label)
+    ax.set_title(f'{label}: mean {np.mean(values):{fmt}}, std {np.std(values):{fmt}} ({len(values)} points)'
+                 if len(values) else f'{label}: no value', fontsize=10)
+    return fig, ax
+
+
+def LatticeParamMap(name: str, xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fitfileseries,
+                    maskingcondition=None, vmin=None, vmax=None, percentiles=(1, 99), size=(7, 6),
+                    transposed=False, motors=None, ax=None, fill_figure=False, **kwargs) -> tuple:
+    """map of a single lattice parameter name ('a', 'b', 'c', 'alpha', 'beta' or 'gamma') of the map, with hover
+    (motor indices, image index, value) in interactive figures
+
+    xech, yech: positions (micron) along the fast and slow motors
+    maskingcondition: (True = masked) array of shape (nb rows, nb cols), e.g. IB.quality_masks()['combined']
+    vmin, vmax: color limits, None: percentiles (%) of the unmasked values
+    transposed, motors: see draw_map() (y motor vertical, axes labels)
+    fill_figure: False: real proportions of the map; True: the map fills the figure (see draw_map())
+    kwargs: of pcolormesh (cmap, norm, ...). Returns fig, ax"""
+    if name not in LATTICE_PARAMETERS_UNITS:
+        raise ValueError(f"name must be one of {list(LATTICE_PARAMETERS_UNITS)}, not {name}")
+    data = np.asarray(getattr(indexed_fileseries, name), dtype=float).reshape(indexed_fileseries.nb_rows,
+                                                                            indexed_fileseries.nb_cols)
+    return _single_map(data, xech, yech, maskingcondition, vmin, vmax, percentiles, size, transposed, motors, ax,
+                       fill_figure, name, LATTICE_PARAMETERS_UNITS[name], fmt='.5f', **kwargs)
+
+
+STRAIN_COMPONENTS = ('xx', 'yy', 'zz', 'xy', 'xz', 'yz')
+
+
+def StrainComponentMap(component: str, xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fitfileseries,
+                       frame: str = 'sample', multiplier: float = 1e4, maskingcondition=None, vmin=None, vmax=None,
+                       percentiles=(1, 99), size=(7, 6), transposed=False, motors=None, ax=None,
+                       fill_figure=False, **kwargs) -> tuple:
+    """map of a single deviatoric strain component with hover (motor indices, image index, value), as
+    LatticeParamMap()
+
+    component: 'xx', 'yy', 'zz', 'xy', 'xz', 'yz' (in frame 'sample' or 'crystal'), or 'equivalent' (von Mises
+        equivalent strain, frame independent)
+    multiplier: values shown in 1/multiplier units (1e4: 1e-4 units)
+    vmin, vmax: color limits, None: from percentiles (%) of the unmasked values, symmetric around 0 for the
+        components (default colormap 'bwr', white = 0), [0, high percentile] for 'equivalent'
+    Returns fig, ax"""
+    nb = (indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
+    if component == 'equivalent':
+        data = np.asarray(indexed_fileseries.equivalent_strain, dtype=float).reshape(nb)
+        name, symmetric = 'equivalent strain', False
+        kwargs.setdefault('cmap', 'viridis')
+        if vmin is None:
+            vmin = 0.
+    elif component in STRAIN_COMPONENTS:
+        if frame not in ('sample', 'crystal'):
+            raise ValueError(f"frame must be 'sample' or 'crystal', not {frame}")
+        attribute = 'e' + component + ('_sample' if frame == 'sample' else '')
+        data = np.asarray(getattr(indexed_fileseries, attribute), dtype=float).reshape(nb)
+        name, symmetric = f'ε{component} {frame} frame', True
+        kwargs.setdefault('cmap', 'bwr')
+    else:
+        raise ValueError(f"component must be one of {list(STRAIN_COMPONENTS) + ['equivalent']}, not {component}")
+    return _single_map(data * multiplier, xech, yech, maskingcondition, vmin, vmax, percentiles, size, transposed,
+                       motors, ax, fill_figure, name, f'x{1 / multiplier:.0e}', fmt='.3f', symmetric=symmetric,
+                       **kwargs)
+
+
 def LatticeParamsMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: parsed_fitfileseries, 
               scale: str = 'default', size = (21,10),
               vlimits=((None,None),(None,None),(None,None),(None,None),(None,None),(None,None)),
-                     maskingcondition=None,
+                     maskingcondition=None, transposed=False, motors=None,
                      **kwargs) -> tuple:
     
     a = (indexed_fileseries.a).reshape(indexed_fileseries.nb_rows, indexed_fileseries.nb_cols)
@@ -730,15 +849,12 @@ def LatticeParamsMap(xech: np.ndarray, yech: np.ndarray, indexed_fileseries: par
 
     kk=0
     for axidx, data, title, vlimit in zip(np.ndindex(ax.shape), latparams, titles, vlimits):
-        im = ax[axidx].pcolormesh(xech, yech, data, vmin = vlimit[0], vmax = vlimit[1],**kwargs)
-        ax[axidx].set_xlabel('Position [µm]')
-        ax[axidx].set_ylabel('Position [µm]')
+        im = draw_map(ax[axidx], data, xech, yech, transposed, motors, vmin=vlimit[0], vmax=vlimit[1], **kwargs)
         ax[axidx].set_title(title)
-        ax[axidx].set_aspect('equal')
         ax[axidx].title.set_size(16)
-        ax[axidx].format_coord = fmtcoordfuncs[kk]
         kk+=1
         plt.colorbar(im, ax=ax[axidx])
 
-    fig.suptitle(f'Distribution of lattice parameters')    
+    fig.suptitle(f'Distribution of lattice parameters')
+    _tight_layout(fig)   # (axes labels do not overlap the titles of the next row)
     return fig, ax

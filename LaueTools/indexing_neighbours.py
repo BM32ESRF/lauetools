@@ -38,7 +38,9 @@ Configuration (indexing YAML file):
         min_nb_matches: 100   # nb of indexed spots to accept a candidate UB matrix
         min_matching_rate: 0  # and matching rate (%) to accept it (0: not used)
         seed_step: 20         # seed pass: every seed_step points (0: no seed pass)
-        seed_grid: rectangular  # or hexagonal (most compact: ~23 % less seeds for the same max distance to a seed)
+        seed_grid: rectangular  # or hexagonal (most compact: ~23 % less seeds for the same max distance to a seed),
+                                # or none: only seed_images
+        seed_images: []       # image indices of seeds added to those of the grid (e.g. chosen grains, regions)
         seed_spacing: null    # micron: grid spacing in real space (map step sizes), replaces seed_step
         seeds_file: null      # validated seeds (indexed beforehand, checked by the user): no seed pass
         library_size: 20      # max nb of orientations of the library tested
@@ -56,6 +58,7 @@ import os
 import shutil
 import time
 from pathlib import Path
+from contextlib import nullcontext as _nullcontext
 from typing import List, Optional
 
 import numpy as np
@@ -68,7 +71,8 @@ DEFAULT_NEIGHBOURS = {
     'min_nb_matches': 30,
     'min_matching_rate': 0.,   # %, also needed to accept a candidate (0: not used)
     'seed_step': 10,
-    'seed_grid': 'rectangular',   # 'rectangular' or 'hexagonal' (most compact) grid of the seeds
+    'seed_grid': 'rectangular',   # 'rectangular' or 'hexagonal' (most compact) grid of the seeds, 'none': no grid
+    'seed_images': [],        # image indices of seeds added to those of the grid (seed_grid 'none': the only seeds)
     'seed_spacing': None,     # micron: spacing of the seeds grid in real space (map step sizes), replaces seed_step
     # file of the validated seeds (seeds indexed from scratch beforehand, see seeds_config(), seed_table(),
     # save_validated_seeds()): their results are used and the seed pass is skipped. None: seed pass
@@ -166,8 +170,11 @@ def check_settings(neighbours: Optional[dict], ub_matrices: Optional[dict] = Non
         errors.append(f"run: neighbours: dispatch must be 'front' or 'tiles', not {nb['dispatch']}")
     if not isinstance(nb['front_attempts'], int) or nb['front_attempts'] < 0:
         errors.append(f"run: neighbours: front_attempts must be an integer >= 0, not {nb['front_attempts']}")
-    if nb['seed_grid'] not in ('rectangular', 'hexagonal'):
-        errors.append(f"run: neighbours: seed_grid must be 'rectangular' or 'hexagonal', not {nb['seed_grid']}")
+    if nb['seed_grid'] not in ('rectangular', 'hexagonal', 'none', None):
+        errors.append(f"run: neighbours: seed_grid must be 'rectangular', 'hexagonal' or 'none', not {nb['seed_grid']}")
+    if not (isinstance(nb['seed_images'], (list, tuple))
+            and all(isinstance(i, (int, np.integer)) and i >= 0 for i in nb['seed_images'])):
+        errors.append(f"run: neighbours: seed_images must be a list of image indices, not {nb['seed_images']}")
     if nb['seed_spacing'] is not None and (not isinstance(nb['seed_spacing'], (int, float)) or nb['seed_spacing'] <= 0):
         errors.append(f"run: neighbours: seed_spacing must be null or a positive number (micron), not {nb['seed_spacing']}")
     if nb['seeds_file'] is not None and not Path(str(nb['seeds_file'])).is_file():
@@ -267,9 +274,9 @@ def _metric(params_or_steps):
 
 
 def seed_indices(indices, mapdims, seed_step: int, grid: str = 'rectangular', spacing: Optional[float] = None,
-                 stepsizes=None) -> np.ndarray:
+                 stepsizes=None, seed_images=None) -> np.ndarray:
     """image indices of the seed pass, on a regular grid of the map, each grid node taken at the nearest map point
-    (nodes whose map point has no image are skipped)
+    (nodes whose map point has no image are skipped), and the images seed_images (those among indices)
 
     seed_step: grid spacing in map points (in both directions); spacing: grid spacing in micron (with stepsizes
         [fast, slow] (micron) of the map: same spacing in real space in both directions), replaces seed_step
@@ -280,9 +287,18 @@ def seed_indices(indices, mapdims, seed_step: int, grid: str = 'rectangular', sp
         (fast direction), shifted by spacing / 2 every other row, centred on the map. Inside the grid, every point
         is within spacing / sqrt(3) of a seed (most compact: ~23 % less seeds than the square grid for the same max
         distance to a seed, in a large map)
+    grid 'none' (or None): no grid, the seeds are seed_images only
     """
     indices = np.asarray(indices, dtype=int)
-    if spacing is None and not seed_step:
+    grid_seeds = _grid_seeds(indices, mapdims, seed_step, grid, spacing, stepsizes)
+    if not seed_images:
+        return grid_seeds
+    return indices[np.isin(indices, grid_seeds) | np.isin(indices, np.asarray(seed_images, dtype=int))]
+
+
+def _grid_seeds(indices, mapdims, seed_step, grid, spacing, stepsizes) -> np.ndarray:
+    """image indices of the nodes of the seed grid (see seed_indices())"""
+    if grid in ('none', None) or (spacing is None and not seed_step):
         return indices[:0]
     nfast, nslow = mapdims
     uf, us = _metric(stepsizes) if spacing is not None else (1., 1.)
@@ -317,7 +333,7 @@ def seeds_of(indices, params) -> np.ndarray:
     """seeds of the images `indices` with the neighbours parameters of params (IndexRefineParams)"""
     nb = settings(params.neighbours)
     return seed_indices(indices, params.mapdims, nb['seed_step'], nb['seed_grid'], nb['seed_spacing'],
-                        getattr(params, 'stepsizes', None))
+                        getattr(params, 'stepsizes', None), nb['seed_images'])
 
 
 def tiles(indices, mapdims, seeds, tile_size=None, nb_tiles: int = 1, stepsizes=None) -> List[List[int]]:
@@ -614,8 +630,11 @@ def run_neighbours(listfiles: List[str], params, nb_cpus: Optional[int] = None, 
     front = nb['dispatch'] == 'front'
     tilelist = [] if front else tiles(others, params.mapdims, seeds, nb['tile_size'], nb_tiles=4 * nb_cpus,
                                       stepsizes=getattr(params, 'stepsizes', None))
-    seedgrid = (f"{nb['seed_grid']} grid, spacing " + (f"{nb['seed_spacing']:g} micron" if nb['seed_spacing'] is not None
-                                                         else f"{nb['seed_step']} points"))
+    seedgrid = ('no grid' if nb['seed_grid'] in ('none', None) else
+                f"{nb['seed_grid']} grid, spacing " + (f"{nb['seed_spacing']:g} micron" if nb['seed_spacing'] is not None
+                                                       else f"{nb['seed_step']} points"))
+    if nb['seed_images']:
+        seedgrid += f" + {len(nb['seed_images'])} seed_images"
     if validated is not None:
         seedgrid = f"validated seeds of {nb['seeds_file']}, not indexed again"
     print(f"{len(indices)} images{f' (band {chunk + 1}/{nchunks} of the map)' if nchunks > 1 else ''}: "
@@ -765,8 +784,8 @@ def seeds_config(cfg: dict, neighbours: Optional[dict] = None, criteria=None, ma
                  newfile=None, fit_folder=None, overwrite: bool = True) -> dict:
     """configuration file of the indexing from scratch of the seeds only (step 1 of the indexing guided by
     neighbours): copy of cfg (indexing.yaml) with
-        - selection: image_indices = seeds (grid of `neighbours`: seed_grid, seed_step or seed_spacing; default:
-          run: neighbours of cfg), within the images selected by cfg
+        - selection: image_indices = seeds (grid of `neighbours`: seed_grid, seed_step or seed_spacing, and the
+          images seed_images; default: run: neighbours of cfg), within the images selected by cfg
         - usepreviousUB: false (indexing from scratch, no reference UB matrix)
         - fit_folder: <folder of cfg fit_folder>/seeds_<material> (or fit_folder)
         - solution_criteria: criteria (steps [e_max, tolerance angle, min nb of matches]) that each seed found must
@@ -778,7 +797,10 @@ def seeds_config(cfg: dict, neighbours: Optional[dict] = None, criteria=None, ma
     nb = settings({**(cfg['run'].get('neighbours') or {}), **(neighbours or {})})
     indices = [GT.getfileindex(Path(f).name) for f in IB.select_corfiles(cfg)]
     seeds = seed_indices(indices, cfg['scan']['mapdims'], nb['seed_step'], nb['seed_grid'], nb['seed_spacing'],
-                         cfg['scan'].get('stepsizes'))
+                         cfg['scan'].get('stepsizes'), nb['seed_images'])
+    missing = sorted(set(int(i) for i in nb['seed_images']) - set(int(i) for i in indices))
+    if missing:
+        GT.printyellow(f'seed_images {missing} skipped: not among the images selected by the configuration')
     newfile = Path(newfile) if newfile else Path(cfg['configfile']).parent / 'indexing_seeds.yaml'
     fit_folder = Path(fit_folder) if fit_folder else (Path(cfg['output']['fit_folder']).parent
                                                      / f"seeds_{cfg['material']['key_material']}")
@@ -787,15 +809,45 @@ def seeds_config(cfg: dict, neighbours: Optional[dict] = None, criteria=None, ma
     return IB.save_config(cfg, newfile, overwrite=overwrite, usepreviousUB=False, skipindexing=False,
                           fit_folder=str(fit_folder), image_indices=[int(i) for i in seeds],
                           solution_criteria=criteria, solution_max_pixdev=max_pixdev,
-                          seed_grid=nb['seed_grid'], seed_spacing=nb['seed_spacing'], seed_step=nb['seed_step'])
+                          seed_grid=nb['seed_grid'], seed_spacing=nb['seed_spacing'], seed_step=nb['seed_step'],
+                          seed_images=[int(i) for i in nb['seed_images']])
+
+
+def update_seed_images(scfg: dict, seed_images) -> dict:
+    """seeds configuration scfg (seeds_config()) with seed_images replaced by the list seed_images (e.g.
+    SEEDS['seed_images'] after SeedPicker.accept()): image_indices = seeds of the grid of scfg + seed_images (those
+    with a .cor file); written in the file of scfg. Returns the new configuration (run it with MW.run_step())"""
+    from LaueTools import indexing_batch as IB
+    nb = settings(scfg['run'].get('neighbours'))
+    nfast, nslow = scfg['scan']['mapdims']
+    old = np.asarray(scfg['selection']['image_indices'] or [], dtype=int)
+    # seeds of the grid: grid nodes among the former seeds (grid nodes without image are not seeds)
+    grid = np.intersect1d(_grid_seeds(np.arange(nfast * nslow), (nfast, nslow), nb['seed_step'], nb['seed_grid'],
+                                      nb['seed_spacing'], scfg['scan'].get('stepsizes')), old)
+    seed_images = [int(i) for i in dict.fromkeys(seed_images)]
+    missing = [i for i in seed_images if not IB.corfile_path(scfg, i).is_file()]
+    if missing:
+        GT.printyellow(f'seed_images {missing} skipped: no .cor file')
+    added = [i for i in seed_images if i not in missing]
+    seeds = sorted(set(grid.tolist()) | set(added))
+    print(f"{len(grid)} seeds of the grid + {len(added)} seed_images ({len(set(added) - set(grid.tolist()))} not "
+          f"on the grid): {len(seeds)} seeds")
+    return IB.save_config(scfg, scfg['configfile'], overwrite=True, image_indices=seeds, seed_images=seed_images)
 
 
 def seed_grid_description(neighbours: Optional[dict], cfg: dict) -> str:
     """text of the seed grid: setting used (seed_spacing in micron, else seed_step in map points) and spacing in map
     points along the fast and slow motors"""
     nb = settings(neighbours)
+    extra = f" + {len(nb['seed_images'])} seed_images" if nb['seed_images'] else ''
+    return _grid_description(nb, cfg) + extra
+
+
+def _grid_description(nb: dict, cfg: dict) -> str:
     scan = cfg['scan']
     fast, slow = scan.get('fast_motor', 'fast'), scan.get('slow_motor', 'slow')
+    if nb['seed_grid'] in ('none', None):
+        return 'no seed grid'
     if nb['seed_spacing'] is not None:
         uf, us = _metric(scan.get('stepsizes'))
         if (uf, us) == (1., 1.):
@@ -814,7 +866,7 @@ def plot_seed_grid(cfg: dict, seeds=None, ax=None, annotate: bool = True, cmap='
     map of the distance from each map point to its nearest seed, before indexing them
 
     cfg: configuration of the seeds (seeds_config()), or of the map (then give seeds: image indices)
-    annotate: image index of each seed
+    annotate: image index of each seed. Seeds of seed_images (run: neighbours of cfg): magenta diamonds
     Returns ax"""
     import matplotlib.pyplot as plt
     from LaueTools import map_workflow as MW
@@ -842,7 +894,13 @@ def plot_seed_grid(cfg: dict, seeds=None, ax=None, annotate: bool = True, cmap='
         xlabel, ylabel = scan.get('fast_motor', 'fast'), scan.get('slow_motor', 'slow')
     im = ax.imshow(img, origin='lower', extent=extent, cmap=cmap, interpolation='nearest')
     ax.figure.colorbar(im, ax=ax, shrink=0.7, label=f'distance to the nearest seed ({unit})')
-    ax.scatter(xs, ys, s=25, c='red', edgecolors='white', linewidths=0.5, zorder=3)
+    # seeds of seed_images (chosen by the user) in another color
+    chosen = np.isin(seeds, [int(i) for i in settings(cfg['run'].get('neighbours'))['seed_images']])
+    ax.scatter(xs[~chosen], ys[~chosen], s=25, c='red', edgecolors='white', linewidths=0.5, zorder=3)
+    if chosen.any():
+        ax.scatter(xs[chosen], ys[chosen], s=40, c='magenta', marker='D', edgecolors='white', linewidths=0.5,
+                   zorder=3, label='seed_images')
+        ax.legend(loc='upper right', fontsize=8)
     if annotate:
         for x, y, i in zip(xs, ys, seeds):
             ax.annotate(str(i), (x, y), textcoords='offset points', xytext=(3, 3), fontsize=6, color='white')
@@ -851,7 +909,136 @@ def plot_seed_grid(cfg: dict, seeds=None, ax=None, annotate: bool = True, cmap='
     ax.set_ylabel(f'{ylabel} ({unit})')
     ax.set_title(f'{len(seeds)} seeds: max distance to a seed {np.max(dist):.0f}, mean {np.mean(dist):.0f} {unit}',
                  fontsize=9)
+    seedset = set(int(i) for i in seeds)
+
+    def fmt(x, y):   # status bar text (interactive backend, e.g. %matplotlib widget)
+        point = seed_plot_point(cfg, x, y)
+        if point is None:
+            return ''
+        index, f, sl = point
+        return (f"image {index} ({scan.get('fast_motor', 'fast')} #{f}, {scan.get('slow_motor', 'slow')} #{sl}), "
+                f"distance to the nearest seed {dist[sl, f]:.0f} {unit}" + (' (seed)' if index in seedset else ''))
+    ax.format_coord = fmt
     return ax
+
+
+def seed_plot_point(cfg: dict, x: float, y: float):
+    """(image index, fast index, slow index) of the map point at (x, y) of plot_seed_grid() (real space), or None"""
+    nfast, nslow = cfg['scan']['mapdims']
+    uf, us = _metric(cfg['scan'].get('stepsizes'))
+    from LaueTools import map_workflow as MW
+    fx, sx = (y / uf, x / us) if MW.map_transposed(cfg) else (x / uf, y / us)
+    f, sl = int(np.floor(fx + 0.5)), int(np.floor(sx + 0.5))
+    if 0 <= f < nfast and 0 <= sl < nslow:
+        return sl * nfast + f, f, sl
+    return None
+
+
+class SeedPicker:
+    """plot_seed_grid() with the mouse (interactive backend: %matplotlib widget, package ipympl):
+        - hover: image index of the map point under the mouse (and whether it is a seed)
+        - click: picks the map point (white cross); zoom / pan mode of the toolbar: no picking
+        - key 'a' (plot focused) or accept(): the picked point is added to seeds_settings['seed_images']
+          (magenta diamond); remove(index) removes an image of seed_images
+        - update_config(): seeds configuration written with these seed_images (returns the new scfg)
+    seeds_settings: dict of the seed settings (SEEDS of the notebook), changed in place (copy the printed
+    seed_images into SEEDS to keep them when the settings cell is run again)
+
+    Keep a reference to the picker (e.g. picker = IN.SeedPicker(...)): the mouse events need it"""
+
+    def __init__(self, cfg: dict, seeds_settings: dict, ax=None, figsize=(8, 8), **kwargs):
+        import matplotlib.pyplot as plt
+        if ax is None:
+            _, ax = plt.subplots(figsize=figsize)
+        self.cfg, self.settings, self.ax = cfg, seeds_settings, ax
+        self.settings.setdefault('seed_images', [])
+        plot_seed_grid(cfg, ax=ax, **kwargs)
+        self.seeds = set(int(i) for i in cfg['selection']['image_indices'] or [])
+        self.picked = None
+        self._cross = None
+        self._added = {}   # image index -> marker of the seeds added here
+        self._hover = ax.annotate('', (0, 0), textcoords='offset points', xytext=(8, 8), fontsize=8,
+                                  bbox={'boxstyle': 'round', 'fc': 'white', 'alpha': 0.85}, zorder=5, visible=False)
+        canvas = ax.figure.canvas
+        ax.figure._seed_picker = self   # (callbacks of mpl_connect are weak references)
+        self._cids = [canvas.mpl_connect('motion_notify_event', self._on_move),
+                      canvas.mpl_connect('button_press_event', self._on_click),
+                      canvas.mpl_connect('key_press_event', self._on_key)]
+
+    def _xy(self, index):
+        nfast = self.cfg['scan']['mapdims'][0]
+        uf, us = _metric(self.cfg['scan'].get('stepsizes'))
+        from LaueTools import map_workflow as MW
+        f, sl = index % nfast, index // nfast
+        return (sl * us, f * uf) if MW.map_transposed(self.cfg) else (f * uf, sl * us)
+
+    def _on_move(self, event):
+        point = seed_plot_point(self.cfg, event.xdata, event.ydata) if event.inaxes is self.ax else None
+        if point is None:
+            if self._hover.get_visible():
+                self._hover.set_visible(False)
+                self.ax.figure.canvas.draw_idle()
+            return
+        index = point[0]
+        self._hover.xy = (event.xdata, event.ydata)
+        self._hover.set_text(f'{index}' + (' (seed)' if index in self.seeds or index in self._added else ''))
+        self._hover.set_visible(True)
+        self.ax.figure.canvas.draw_idle()
+
+    def _on_click(self, event):
+        toolbar = getattr(self.ax.figure.canvas, 'toolbar', None)
+        if event.inaxes is not self.ax or (toolbar is not None and getattr(toolbar, 'mode', '')):
+            return
+        point = seed_plot_point(self.cfg, event.xdata, event.ydata)
+        if point is None:
+            return
+        self.picked = point[0]
+        x, y = self._xy(self.picked)
+        if self._cross is None:
+            self._cross = self.ax.scatter([x], [y], s=120, marker='x', c='white', linewidths=2, zorder=4)
+        else:
+            self._cross.set_offsets([[x, y]])
+        self.ax.set_xlabel(self.ax.get_xlabel().split('  |')[0] + f"  |  picked: image {self.picked} (key 'a': add)")
+        self.ax.figure.canvas.draw_idle()
+
+    def _on_key(self, event):
+        if event.key == 'a':
+            self.accept()
+
+    def accept(self) -> Optional[int]:
+        """add the picked point to seed_images (returns its image index, None if no point is picked)"""
+        if self.picked is None:
+            print('no picked point: click on the map first')
+            return None
+        index = int(self.picked)
+        if index not in self.settings['seed_images']:
+            self.settings['seed_images'].append(index)
+        if index not in self._added:
+            x, y = self._xy(index)
+            self._added[index] = self.ax.scatter([x], [y], s=60, c='magenta', marker='D', edgecolors='white',
+                                                 linewidths=0.8, zorder=4)
+            self.ax.figure.canvas.draw_idle()
+        print(f"image {index} added. seed_images: {self.settings['seed_images']} "
+              '(scfg = picker.update_config() writes them; copy them into SEEDS to keep them)')
+        return index
+
+    def update_config(self) -> dict:
+        """write the seeds configuration with seed_images = the current list (see update_seed_images()).
+        Returns the new seeds configuration (scfg)"""
+        self.cfg = update_seed_images(self.cfg, self.settings['seed_images'])
+        self.seeds = set(int(i) for i in self.cfg['selection']['image_indices'] or [])
+        return self.cfg
+
+    def remove(self, index: int):
+        """remove an image of seed_images"""
+        index = int(index)
+        if index in self.settings['seed_images']:
+            self.settings['seed_images'].remove(index)
+        marker = self._added.pop(index, None)
+        if marker is not None:
+            marker.remove()
+            self.ax.figure.canvas.draw_idle()
+        print(f"seed_images: {self.settings['seed_images']}")
 
 
 def same_lattice_orientation(UB_A, UB_B, tol: float = 0.03) -> bool:
@@ -869,7 +1056,6 @@ def seed_table(allresults: list, cfg: dict, grain: int = 0, max_angle: float = 2
     misorientation < max_angle deg), 0 = most frequent; -1: not indexed
     'criteria': True / False: criteria of a correct solution passed or not (solution_criteria of the seeds
     configuration), None: not checked; 'criteria_nb': nb of indexed spots at each step of the criteria"""
-    from LaueTools import orientationclustering as OC
     from LaueTools import indexing_batch as IB
     nfast = cfg['scan']['mapdims'][0]
     table = []
@@ -884,6 +1070,13 @@ def seed_table(allresults: list, cfg: dict, grain: int = 0, max_angle: float = 2
         table[-1]['criteria'] = None if crit is None else crit['passed']
         table[-1]['criteria_nb'] = None if crit is None else crit['nb']
         table[-1]['criteria_pixdev'] = None if crit is None else crit['pixdev'][-1]
+    return _orientation_groups(table, max_angle)
+
+
+def _orientation_groups(table: List[dict], max_angle: float = 2.) -> List[dict]:
+    """'orientation' of the seeds of table: number of the group of seeds with the same orientation (symmetry
+    equivalent UB matrices and misorientation < max_angle deg), 0 = most frequent; -1: no UB matrix"""
+    from LaueTools import orientationclustering as OC
     groups = []   # [representative UB, members]
     for t in sorted([t for t in table if t['UB'] is not None], key=lambda t: -t['nb_spots']):
         for g in groups:
@@ -900,10 +1093,272 @@ def seed_table(allresults: list, cfg: dict, grain: int = 0, max_angle: float = 2
     return table
 
 
+def check_seeds(scfg: dict, ub_matrices: dict, names=None, criteria=None, max_pixdev: Optional[float] = None,
+                nb_cpus: Optional[int] = None, max_angle: float = 2.) -> List[dict]:
+    """seeds of scfg (seeds_config(): grid and/or seed_images) checked with the UB matrices ub_matrices (names:
+    those names, default all) and the criteria of a correct solution (default: those of scfg), instead of indexing
+    them from scratch: each (seed, matrix) pair is linked and refined with the steps of the criteria
+    (IB.test_ub_matrices(), no .fit file). Each seed keeps the matrix passing the criteria with the most indexed
+    spots (if none passes: the one with the most indexed spots, criteria False).
+
+    Returns the table of seed_table() (refined UB matrices, orientation groups ...) + 'matrix': name of the matrix,
+    for validate_seeds(), print_seed_table(), plot_seeds() and save_validated_seeds()"""
+    from LaueTools import indexing_batch as IB
+    cfg = {**scfg, 'ub_matrices': dict(ub_matrices or {})}
+    criteria = criteria if criteria is not None else scfg['indexing'].get('solution_criteria')
+    tests = IB.test_ub_matrices(IB.select_corfiles(scfg), cfg, names=names, criteria=criteria,
+                                max_pixdev=max_pixdev, nb_cpus=nb_cpus)
+    nfast = scfg['scan']['mapdims'][0]
+    table = []
+    for index in sorted({i for v in tests.values() for i in v}):
+        def score(name):
+            v = tests[name][index]
+            return (bool(v['passed']), v['nb_spots'] or 0)
+        name = max((n for n in tests if index in tests[n]), key=score)
+        v = tests[name][index]
+        ub = v['UB_refined']
+        table.append({'image_index': int(index), 'fast': int(index) % nfast, 'slow': int(index) // nfast,
+                      'nb_spots': int(v['nb_spots'] or 0) if ub is not None else 0,
+                      'matching_rate': float(v['matching_rate'] or 0.) if ub is not None else 0.,
+                      'UB': None if ub is None else np.asarray(ub, dtype=float), 'orientation': -1,
+                      'criteria': bool(v['passed']), 'criteria_nb': [st[3] for st in v['steps']],
+                      'criteria_pixdev': v['pixdev'][-1], 'matrix': name})
+    return _orientation_groups(table, max_angle)
+
+
+def seeds_from_fitfiles(fitfiles, cfg: Optional[dict] = None, prefix: str = 'fit') -> dict:
+    """UB matrices and seeds from .fit files (e.g. indexed and refined with the LaueTools GUI), to check them as
+    seeds with the parameters of the map (check_seeds()) and reproduce these results before indexing the map.
+
+    fitfiles: list of .fit files, a folder (all its .fit files) or a glob pattern
+    cfg: configuration of the map: material and detector parameters of each .fit file compared with those of the
+        map (key_material, calibration in the header of the .cor file of the image): a difference explains
+        different results (nb of indexed spots, pixel deviation)
+    Image index: of the .cor file written in the first line of the .fit file, else of the .fit file name.
+    Name of the UB matrix of grain g of image i: '<prefix>_<i>_g<g>'
+
+    Returns {'ub_matrices': {name: 3x3 list}, 'seed_images': [image indices],
+             'table': [{'name', 'image_index', 'grain', 'nb_spots', 'pixdev', 'material', 'fitfile'}]}"""
+    import glob
+    import re
+    from LaueTools import indexing_batch as IB
+    from LaueTools import IOLaueTools as IOLT
+    if isinstance(fitfiles, (str, Path)):
+        path = Path(fitfiles)
+        fitfiles = sorted(path.glob('*.fit')) if path.is_dir() else sorted(glob.glob(str(fitfiles)))
+    out = {'ub_matrices': {}, 'seed_images': [], 'table': []}
+    for fitfile in [str(f) for f in fitfiles]:
+        source = IB.fitfile_source(fitfile)
+        try:
+            image_index = GT.getfileindex(Path(source or fitfile).name)
+            grains, nbs, _, ubs = IOLT.readfitfile_multigrains(fitfile)[:4]
+        except Exception as err:
+            GT.printyellow(f'{fitfile} skipped: {err}')
+            continue
+        lines = Path(fitfile).read_text(errors='replace').splitlines()
+        material = next((lines[k + 1].lstrip('#').strip() for k, l in enumerate(lines[:-1])
+                         if l.strip() == '#Element'), None)
+        pixdevs = [float(l.split(':')[1]) for l in lines if l.startswith('#Mean Deviation(pixel)') and ':' in l
+                   and l.split(':')[1].strip()]
+        detline = next((lines[k + 1] for k, l in enumerate(lines[:-1]) if l.strip() == '#DetectorParameters'), '')
+        det = [float(v) for v in re.findall(r'[-+]?\d+\.?\d*(?:[eE][-+]?\d+)?', re.sub(r'np\.float64', '', detline))]
+        for k, (grain, nb, ub) in enumerate(zip(np.atleast_1d(grains), np.atleast_1d(nbs), ubs)):
+            name = f'{prefix}_{image_index}_g{int(grain)}'
+            out['ub_matrices'][name] = np.asarray(ub, dtype=float).reshape(3, 3).tolist()
+            out['table'].append({'name': name, 'image_index': image_index, 'grain': int(grain), 'nb_spots': int(nb),
+                                 'pixdev': pixdevs[k] if k < len(pixdevs) else None, 'material': material,
+                                 'detector': det[:5] or None, 'fitfile': fitfile})
+        if image_index not in out['seed_images']:
+            out['seed_images'].append(image_index)
+    print('name                 image  spots  pixdev  material')
+    for t in out['table']:
+        pd = '-' if t['pixdev'] is None else f"{t['pixdev']:.2f}"
+        print(f"{t['name']:<20} {t['image_index']:6d} {t['nb_spots']:6d} {pd:>7}  {t['material']}")
+    if cfg is not None:
+        key = cfg['material']['key_material']
+        for t in out['table']:
+            if t['material'] and t['material'] != key:
+                GT.printyellow(f"{t['name']}: material {t['material']} (.fit) != {key} (map): the results differ")
+        for index in out['seed_images']:
+            t = next(t for t in out['table'] if t['image_index'] == index)
+            corfile = IB.corfile_path(cfg, index)
+            if not corfile.is_file():
+                GT.printyellow(f'image {index}: no .cor file {corfile} in the map')
+                continue
+            calib = IOLT.readfile_cor(str(corfile), output_CCDparamsdict=True)[-1]
+            cor_det = [calib[k] for k in ('dd', 'xcen', 'ycen', 'xbet', 'xgam')] if isinstance(calib, dict) else None
+            if t['detector'] and cor_det and not np.allclose(t['detector'], cor_det, atol=1e-3):
+                GT.printyellow(f'image {index}: detector parameters {t["detector"]} (.fit) != {cor_det} (.cor of '
+                               'the map): the results differ (calibration)')
+    return out
+
+
+def merge_ub_matrices(ub_matrices: dict, max_angle: float = 0.5, symmetry: bool = True,
+                      verbose: bool = True) -> dict:
+    """UB matrices of ub_matrices closer than max_angle (deg) merged (greedy, in the order of ub_matrices): each
+    group keeps its first matrix, with its name (and so its reference image index, e.g. 'UB_<image>',
+    'fit_<image>_g<grain>'). symmetry: symmetry equivalent UB matrices (same lattice, other Miller indices) are
+    also merged, else raw angle only (no symmetry)
+
+    Returns {'ub_matrices': {name: 3x3 list} kept, 'merged': {kept name: [names merged into it]}}"""
+    from LaueTools import orientationclustering as OC
+    kept, merged = {}, {}
+    for name, ub in (ub_matrices or {}).items():
+        ub = np.asarray(ub, dtype=float).reshape(3, 3)
+        for ref_name, ref in kept.items():
+            ang, _ = OC.misorientation(OC.orthonormalize(ref)[None], OC.orthonormalize(ub)[None], np.eye(3)[None])
+            if ang[0] < max_angle or (symmetry and same_lattice_orientation(ref, ub, tol=np.radians(max_angle))):
+                merged[ref_name].append((name, float(ang[0])))
+                break
+        else:
+            kept[name] = ub
+            merged[name] = []
+    if verbose:
+        print(f'{len(ub_matrices or {})} UB matrices -> {len(kept)} (merged within {max_angle} deg'
+              f"{', symmetry equivalent matrices included' if symmetry else ''})")
+        for name, others in merged.items():
+            if others:
+                print(f"   {name} <- " + ', '.join(f'{n} ({a:.2f} deg)' if a < max_angle else f'{n} (symmetry equivalent)'
+                                                   for n, a in others))
+    return {'ub_matrices': {n: ub.tolist() for n, ub in kept.items()},
+            'merged': {n: [o for o, _ in others] for n, others in merged.items()}}
+
+
+def ub_map_config(cfg: dict, name: str, newfile=None, fit_folder=None, overwrite: bool = True) -> dict:
+    """configuration of the check and refinement of the UB matrix `name` (of ub_matrices) on all the images of the
+    map selected by cfg: usepreviousUB [name], skipindexing (no indexing from scratch): each image whose matching
+    rate with this matrix is at least MinimumMatchingRate (dict_indexrefine) is refined (1 grain, .fit file),
+    the others are not indexed: first maps of the grain of this orientation.
+    newfile: default <configs>/indexing_ub_<name>.yaml; fit_folder: default <folder of fit_folder>/ub_<name>.
+    Returns the new configuration (run it with MW.run_step())"""
+    from LaueTools import indexing_batch as IB
+    if name not in (cfg['ub_matrices'] or {}):
+        raise KeyError(f"UB matrix '{name}' not found in ub_matrices")
+    newfile = Path(newfile) if newfile else Path(cfg['configfile']).parent / f'indexing_ub_{name}.yaml'
+    fit_folder = Path(fit_folder) if fit_folder else Path(cfg['output']['fit_folder']).parent / f'ub_{name}'
+    return IB.save_config(cfg, newfile, overwrite=overwrite, usepreviousUB=[name], skipindexing=True,
+                          fit_folder=str(fit_folder), nbGrainstoFind=1, solution_criteria=None)
+
+
+def plot_ub_maps(fits_by_name: dict, cfg: dict, min_nb_spots: int = 0, live: bool = False, ncols_max: int = 4):
+    """maps of the UB matrices checked over the whole map (results of MW.run_step() with ub_map_config()):
+    nb of indexed spots for each matrix, and the matrix giving the most indexed spots at each map point (points
+    with at least min_nb_spots). Returns the figure
+
+    live=True (ipympl 'widget' backend and ipywidgets): figure displayed as a live canvas, hover shows the image
+    index and the nb of indexed spots of each matrix at that point, a range slider (vmin, vmax) for each map and a
+    slider of min_nb_spots for the map of the best matrix; maps on rows of at most ncols_max panels.
+    live=False: the figure is returned, to display with plt.show() or IB.show_figure(fig) (static image)"""
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import ListedColormap
+    from LaueTools import map_workflow as MW
+    nfast, nslow = cfg['scan']['mapdims']
+    names = list(fits_by_name)
+    nbs = np.full((len(names), nslow, nfast), np.nan)
+    for k, name in enumerate(names):
+        for res in fits_by_name[name] or []:
+            if 0 <= res[0] < nfast * nslow:
+                rows = result_rows(res)
+                nbs[k].flat[res[0]] = rows[0, 9] if len(rows) else 0
+    filled = np.where(np.isnan(nbs), -1, nbs)
+
+    def best_map(minspots):
+        best = np.argmax(filled, axis=0).astype(float) if len(names) else np.full((nslow, nfast), np.nan)
+        best[(np.max(filled, axis=0) < max(minspots, 1))] = np.nan
+        return best
+
+    best = best_map(min_nb_spots)
+    if live:
+        try:
+            import ipywidgets as widgets
+            from IPython.display import display
+            live = 'ipympl' in plt.get_backend() or 'widget' in plt.get_backend().lower()
+        except ImportError:
+            live = False
+        if not live:
+            GT.printyellow("live=True needs ipywidgets and the ipympl backend (%matplotlib widget): static figure")
+    npanels = len(names) + 1
+    ncols = min(npanels, ncols_max) if live else npanels
+    nrows = -(-npanels // ncols)
+    with plt.ioff() if live else _nullcontext():
+        fig, axes = plt.subplots(nrows, ncols, figsize=(4.5 * ncols, 4.2 * nrows), squeeze=False)
+    axes = axes.ravel()
+    for ax in axes[npanels:]:
+        ax.set_visible(False)
+    for k, name in enumerate(names):
+        MW.plot_map(nbs[k], cfg, f'{name}: nb of indexed spots', ax=axes[k])
+    cmap = ListedColormap(plt.get_cmap('tab10').colors[:max(len(names), 1)])
+    axbest = axes[len(names)]
+    MW.plot_map(best, cfg, f'matrix with the most indexed spots (>= {max(min_nb_spots, 1)})', ax=axbest,
+                cmap=cmap, vmin=-0.5, vmax=len(names) - 0.5, colorbar=False)
+    handles = [plt.Line2D([], [], marker='s', ls='', color=cmap(k), label=n) for k, n in enumerate(names)]
+    axbest.legend(handles=handles, fontsize=7, loc='upper right')
+
+    # hover: image index (and motors) + nb of indexed spots of each matrix at this point, best matrix
+    transposed = MW.map_transposed(cfg)
+    base = MW._map_format_coord(cfg, None, transposed)
+
+    def format_coord(x, y):
+        txt = base(x, y)
+        if not txt:
+            return ''
+        i, j = int(np.floor(x + 0.5)), int(np.floor(y + 0.5))
+        row, col = (i, j) if transposed else (j, i)
+        vals = ', '.join(f"{n} {'-' if np.isnan(nbs[k, row, col]) else int(nbs[k, row, col])}"
+                         for k, n in enumerate(names))
+        kbest = best_now[0][row, col]
+        return f"{txt} | {vals} | best: {'-' if np.isnan(kbest) else names[int(kbest)]}"
+
+    best_now = [best]
+    for ax in axes[:npanels]:
+        ax.format_coord = format_coord
+    for k, name in enumerate(names):
+        n = int(np.sum(best == k))
+        print(f'{name}: best matrix at {n} points, '
+              f'{int(np.sum(nbs[k] >= max(min_nb_spots, 1)))} points with >= {max(min_nb_spots, 1)} indexed spots')
+    fig.tight_layout()
+    if not live:
+        return fig
+
+    # sliders: (vmin, vmax) of each map, min nb of spots of the map of the best matrix
+    vmax_all = int(np.nanmax(nbs)) if np.any(np.isfinite(nbs)) else 1
+    layout = widgets.Layout(width='520px')
+    style = {'description_width': '160px'}
+    sliders = []
+    for k, name in enumerate(names):
+        im = axes[k].images[0]
+        lo, hi = im.get_clim()
+        slider = widgets.IntRangeSlider(value=[int(np.floor(lo)), int(np.ceil(hi))], min=0, max=max(vmax_all, 1),
+                                        description=f'{name} vmin, vmax', layout=layout, style=style,
+                                        continuous_update=False)
+
+        def on_range(change, im=im):
+            im.set_clim(*change['new'])
+            fig.canvas.draw_idle()
+        slider.observe(on_range, names='value')
+        sliders.append(slider)
+    minslider = widgets.IntSlider(value=int(min_nb_spots), min=0, max=max(vmax_all, 1),
+                                  description='best: min nb of spots', layout=layout, style=style,
+                                  continuous_update=False)
+
+    def on_min(change):
+        best_now[0] = best_map(change['new'])
+        shown = best_now[0].T if transposed else best_now[0]
+        axbest.images[0].set_data(shown)
+        axbest.set_title(f"matrix with the most indexed spots (>= {max(change['new'], 1)})", fontsize=9)
+        fig.canvas.draw_idle()
+    minslider.observe(on_min, names='value')
+    fig.canvas.header_visible = False
+    display(widgets.VBox([fig.canvas, widgets.VBox(sliders + [minslider])]))
+    return fig
+
+
 def print_seed_table(table: List[dict], validated: Optional[set] = None):
     """seeds: image index, position, nb of spots, matching rate, orientation group (* validated)"""
     withcrit = any(t.get('criteria') is not None for t in table)
-    print('image   fast  slow  spots  MR(%)  orientation'
+    withmat = any(t.get('matrix') for t in table)
+    width = max([len(str(t.get('matrix') or '')) for t in table] + [6])
+    print('image   fast  slow  spots  MR(%)  orientation' + (f"  {'matrix':<{width}}" if withmat else '')
           + ('  criteria (nb of spots of the steps, mean pixel deviation of the last step)' if withcrit else ''))
     for t in table:
         mark = '' if validated is None else ('  *' if t['image_index'] in validated else '')
@@ -913,8 +1368,9 @@ def print_seed_table(table: List[dict], validated: Optional[set] = None):
                                                                          for n in t['criteria_nb'])
             if t.get('criteria_pixdev') is not None:
                 crit += f"  {t['criteria_pixdev']:.2f} px"
+        mat = f"  {str(t.get('matrix') or ''):<{width}}" if withmat else ''
         print(f"{t['image_index']:6d} {t['fast']:5d} {t['slow']:5d} {t['nb_spots']:6d} {t['matching_rate']:6.1f}  "
-              f"{t['orientation'] if t['orientation'] >= 0 else '-':>6}{crit}{mark}")
+              f"{t['orientation'] if t['orientation'] >= 0 else '-':>6}{mat}{crit}{mark}")
     import collections
     count = collections.Counter(t['orientation'] for t in table if t['orientation'] >= 0)
     if withcrit:

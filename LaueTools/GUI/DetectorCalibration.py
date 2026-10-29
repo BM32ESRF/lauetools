@@ -62,6 +62,7 @@ if sys.version_info.major == 3:
     import LaueTools.generaltools as GT
     import LaueTools.IOLaueTools as IOLT
     import LaueTools.CrystalParameters as CP
+    import LaueTools.detectorbands as DB
     import LaueTools.GUI.DetectorParameters as DP
     from LaueTools.GUI.ResultsIndexationGUI import RecognitionResultCheckBox
     from LaueTools.GUI import OpenSpotsListFileGUI as OSLFGUI
@@ -82,6 +83,7 @@ else:
     import generaltools as GT
     import IOLaueTools as IOLT
     import CrystalParameters as CP
+    import detectorbands as DB
     import GUI.DetectorParameters as DP
     from GUI.ResultsIndexationGUI import RecognitionResultCheckBox
     import OpenSpotsListFileGUI as OSLFGUI
@@ -137,6 +139,11 @@ class PlotRangePanel(wx.Panel):
         t5 = wx.StaticText(self, -1, "SpotSize")
         self.spotsizefactor = wx.TextCtrl(self, -1, "1.")
 
+        # bands of the detector without data (gaps between modules), drawn in light grey
+        self.showbands = wx.CheckBox(self, -1, "show detector bands")
+        self.showbands.SetValue(True)
+        self.showbands.Bind(wx.EVT_CHECKBOX, lambda evt: self.mainframe._replot(evt))
+
         # Warning button id is 52 and used
         b3 = wx.Button(self, 52, "Update Plot")
         b3.SetFont(font3)
@@ -157,6 +164,8 @@ class PlotRangePanel(wx.Panel):
         h3box = wx.BoxSizer(wx.HORIZONTAL)
         h3box.Add(t5, 0, wx.EXPAND, 10)
         h3box.Add(self.spotsizefactor, 0, wx.EXPAND, 10)
+        h3box.AddSpacer(20)
+        h3box.Add(self.showbands, 0, wx.EXPAND, 10)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.AddSpacer(1)
@@ -310,6 +319,11 @@ class CrystalParamPanel(wx.Panel):
 
         b1 = wx.Button(self, 1010, "Enter UB")
         b2 = wx.Button(self, 1011, "Store UB")
+        # pure rotation U of UB = U B (B triangular up: strain), see OnStoreUMatrix()
+        self.storeUbtn = wx.Button(self, -1, "Store U")
+        self.storeUbtn.Bind(wx.EVT_BUTTON, lambda evt: self.mainframe.OnStoreUMatrix(evt))
+        self.storeUbtn.SetToolTipString("Store the pure rotation U of the current matrix UB = U B "
+                                        "(B triangular up: deviatoric strain removed), as the 'Umatrix' of .fit files")
         btn_sortUBsname = wx.Button(self, -1, "sort UBs name")
 
         btnReloadMaterials = wx.Button(self, -1, "Reload Materials")
@@ -357,6 +371,7 @@ class CrystalParamPanel(wx.Panel):
         h6box = wx.BoxSizer(wx.HORIZONTAL)
         h6box.Add(b1, 1, wx.EXPAND|wx.ALL, 5)
         h6box.Add(b2, 1, wx.EXPAND|wx.ALL, 5)
+        h6box.Add(self.storeUbtn, 1, wx.EXPAND|wx.ALL, 5)
         h6box.Add(btn_sortUBsname, 0, wx.EXPAND|wx.ALL, 5)
         h6box.Add(btnReloadMaterials, 0, wx.EXPAND|wx.ALL, 5)
 
@@ -1386,6 +1401,7 @@ class MainCalibrationFrame(wx.Frame):
         # rotation around axis q1 x q2 defined by two clicked spots
         self.TwoSpotsRotationActivated = False
         self.TwoSpotsPoints = []  # list of (xplot, yplot, 2theta, chi)
+        self.selected_link = None  # (exp. spot index, hkl) selected in the list of Filter Links
         self.TwoSpotsAxis = None
 
         self.savedindex = 0
@@ -1503,9 +1519,13 @@ class MainCalibrationFrame(wx.Frame):
         self.tooltip.SetDelay(0)
 
         # Add the custom tools that we created
-        self.toolbar.AddTool(123456, 'oneTool',  wx.Bitmap(os.path.join(DictLT.LAUETOOLSFOLDER,"icons",'flipudsmall.png')),  
-                                                     wx.Bitmap(os.path.join(DictLT.LAUETOOLSFOLDER,"icons",'flipudsmall.png')),  
-                                             kind = wx.ITEM_CHECK, shortHelp ="Flip up/down")
+        # inserted right after matplotlib's buttons, before the stretchable space and the
+        # coordinates label: an item placed after them is pushed (as text label) into the
+        # GTK overflow menu when the coordinates text grows on mouse motion
+        flipud_bitmap = wx.Bitmap(os.path.join(DictLT.LAUETOOLSFOLDER, "icons", 'flipudsmall.png'))
+        self.toolbar.InsertTool(len(self.toolbar.toolitems), 123456, "Flip up/down",
+                                flipud_bitmap, flipud_bitmap,
+                                kind=wx.ITEM_CHECK, shortHelp="Flip up/down")
         self.toolbar.Bind(wx.EVT_TOOL, self.OnChangeOrigin, id=123456)
 
         self.toolbar.Realize() 
@@ -1943,6 +1963,41 @@ class MainCalibrationFrame(wx.Frame):
                 print('dict_data_spotsproperties = ', dict_data_spotsproperties)
             pass
 
+    def _chi_origin(self):
+        """shift of the chi angles of the experimental spots in the plot ('Shift Chi origin of Exp. Data')"""
+        if self.plotrangepanel.shiftChiOrigin.GetValue():
+            return float(self.plotrangepanel.meanchi.GetValue())
+        return 0.
+
+    def _plot_selected_link(self, X_offset, Y_offset):
+        """markers of the link selected in the list of 'Filter Links' (see onFilterLinkSelected())"""
+        exp_index, hkl = self.selected_link
+        if exp_index < 0 or exp_index >= len(self.twicetheta):
+            return
+        if self.datatype == "2thetachi":
+            xy_exp = self.twicetheta[exp_index], self.chi[exp_index] + self._chi_origin()
+        elif self.datatype == "pixels":
+            xy_exp = self.data_x[exp_index] - X_offset, self.data_y[exp_index] - Y_offset
+        else:
+            xy_exp = self.data_gnomonx[exp_index], self.data_gnomony[exp_index]
+        self.axes.scatter([xy_exp[0]], [xy_exp[1]], s=400., marker="s", facecolor="none", edgecolor="m",
+                          linewidths=2, zorder=5)
+        xy_theo = None
+        if self.data_theo is not None:   # simulated spot of the same hkl (indices may change after a refinement)
+            match = np.flatnonzero(np.all(np.array(self.data_theo[2]) == np.array(hkl), axis=1))
+            if len(match):
+                k = match[0]
+                if self.datatype == "2thetachi":
+                    xy_theo = self.data_theo[0][k], self.data_theo[1][k]
+                elif self.datatype == "pixels":
+                    xy_theo = self.data_theo[3][k], self.data_theo[4][k]
+                elif getattr(self, "sim_gnomonx", None) is not None:
+                    xy_theo = self.sim_gnomonx[k], self.sim_gnomony[k]
+        if xy_theo is not None:
+            self.axes.scatter([xy_theo[0]], [xy_theo[1]], s=200., marker="x", c="m", linewidths=2, zorder=5)
+        self.axes.annotate("#%d  %s" % (exp_index, " ".join(str(v) for v in hkl)), xy_exp, xytext=(12, 12),
+                           textcoords="offset points", color="m", fontsize=10, fontweight="bold", zorder=6)
+
     def computeGnomonicExpData(self):
         # compute Gnomonic projection
         (twicetheta, chi, dataintensity) = self.data[:3]
@@ -2054,6 +2109,19 @@ class MainCalibrationFrame(wx.Frame):
     #             self.crystalparampanel.comboMatrix.Append(matrix_name)
     #             dlg.Destroy()
 
+    def OnStoreUMatrix(self, _):
+        """
+        Store the pure rotation U of the current matrix UB = U B (B triangular up, deviatoric strain removed),
+        as the 'Umatrix' written in .fit files: q = U B0 G* for the unstrained material of B0
+        """
+        UBmatrix = np.array(self.crystalparampanel.UBmatrix, dtype=float)
+        Umatrix = CP.matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=UBmatrix)
+        if self.verbose > 0:
+            print("U = orthonormalized UB (UB = U B):\n", np.round(Umatrix, 6))
+        tf = TextFrame(self, -1, self.getstringrep(np.array(Umatrix)), self.storedmatrixindex)
+        tf.Show(True)
+        self.storedmatrixindex += 1
+
     def getstringrep(self, matrix):
         if isinstance(matrix, np.ndarray):
             listmatrix = matrix.tolist()
@@ -2111,9 +2179,18 @@ class MainCalibrationFrame(wx.Frame):
         dia = LSEditor.SpotsEditor(None, -1, "Spots Editor in Calibration Board",
                                     mySpotData,
                                     func_to_call=self.readdata_fromEditor_Filter,
-                                    field_name_and_order=fields)
+                                    field_name_and_order=fields,
+                                    func_on_select=self.onFilterLinkSelected)
 
         dia.Show(True)
+
+    def onFilterLinkSelected(self, values):
+        """row selected in the list of 'Filter Links': marker on its experimental spot (and on the simulated spot of
+        the same hkl) in the plot, in the current representation space"""
+        hkl = tuple(int(float(values[key])) for key in ("h", "k", "l"))
+        self.selected_link = (int(float(values["#Spot Exp"])), hkl)
+        self.sb.SetStatusText("selected link: exp. spot #%d, hkl %s" % self.selected_link)
+        self._replot(None)
 
     def readdata_fromEditor_Filter(self, data):
         """function to set filtered links from SpotsEditor
@@ -2312,6 +2389,9 @@ class MainCalibrationFrame(wx.Frame):
         self.linkEnergy = linkEnergy
 
         self.plotlinks = self.linkedspots
+
+        # display yellow markers on linked exp. spots already before refinement
+        self._replot(None)
 
         return calib_indexed_spots
 
@@ -2887,6 +2967,25 @@ class MainCalibrationFrame(wx.Frame):
                 wx.MessageBox("Lattice parameters of %s are not 6 numbers [a, b, c, alpha, beta, gamma]: "
                             "they cannot be refined." % key_material, "INFO")
                 return
+            # start: refined lattice parameters = those of the current crystal UB.B0 (lengths rescaled so that a
+            # length not refined keeps its value: scale unknown in Laue diffraction), parameters not refined = those
+            # of the material (kept), and orientation = pure rotation (x scale) closest to UB.B0.inv(B0_start).
+            # Otherwise the strain of UB (e.g. of an indexation) is absorbed by the refined lattice parameters,
+            # which then differ from those of the crystal (written in the .fit file from UB.B0)
+            UBB0 = np.dot(self.crystalparampanel.UBmatrix, CP.calc_B_RR(latticeparameters))
+            crystal_lattice = np.array(CP.directlatticeparameters_fromBmatrix(UBB0), dtype=float)
+            fixedlength = boollattice[:3].index(False)
+            crystal_lattice[:3] *= latticeparameters[fixedlength] / crystal_lattice[fixedlength]
+            start_lattice = np.where(boollattice, crystal_lattice, latticeparameters)
+            M = np.dot(UBB0, np.linalg.inv(CP.calc_B_RR(start_lattice)))
+            u_svd, _, vt_svd = np.linalg.svd(M)   # polar decomposition: closest rotation u_svd . vt_svd
+            initrot_lattice = np.cbrt(np.linalg.det(M)) * np.dot(u_svd, vt_svd)
+            if verbose >= 0:
+                print("lattice parameters of %s: %s" % (key_material, np.round(latticeparameters, 5)))
+                print("lattice parameters of the current crystal (UB.B0): %s" % np.round(crystal_lattice, 5))
+                print("start of the refinement (refined: crystal, fixed: %s): %s"
+                      % (key_material, np.round(start_lattice, 5)))
+            latticeparameters = start_lattice.tolist()
             # 5 detector parameters, 3 angles, 6 lattice parameters
             allparameters = np.array(self.CCDParam + [0, 0, 0] + latticeparameters, dtype=float)
 
@@ -2918,6 +3017,12 @@ class MainCalibrationFrame(wx.Frame):
         arr_indexvaryingparameters = np.array(varyingparameters)  # indices of position of parameters in [dd, xcen, ycen, ang1, ang2, theta1, theta2, theta3]
 
         self.UBmatrix = self.crystalparampanel.UBmatrix
+
+        # refined parameters (detector and orientation: check boxes of the tab 'Move CCD and Xtal', all checked by
+        # default; lattice parameters: tab 'Strain Xtal')
+        txtrefined = "Refined: " + ", ".join(listparam[k] for k in arr_indexvaryingparameters)
+        print(txtrefined)
+        self.sb.SetStatusText(txtrefined)
 
         if verbose>0:
             print("starting fit of :", [listparam[k] for k in arr_indexvaryingparameters])
@@ -2951,7 +3056,7 @@ class MainCalibrationFrame(wx.Frame):
             # detector, orientation and lattice parameters model (B0 matrix computed from lattice parameters)
             self.StartFit_latticeparameters(event, initial_values, Data_Q, allparameters,
                                             arr_indexvaryingparameters, sim_indices, pixX, pixY,
-                                            pureRotation, weights, listparam)
+                                            pureRotation, weights, listparam, initrot=initrot_lattice)
             return
 
         if verbose>1:print("Initial error--------------------------------------\n")
@@ -3066,7 +3171,7 @@ class MainCalibrationFrame(wx.Frame):
 
     def StartFit_latticeparameters(self, event, initial_values, Data_Q, allparameters,
                                     arr_indexvaryingparameters, sim_indices, pixX, pixY,
-                                    pureRotation, weights, listparam):
+                                    pureRotation, weights, listparam, initrot=None):
         """
         Refinement, called by StartFit(), when at least one lattice parameter is selected:
         5 detector geometry parameters, 3 orientation angles and 6 lattice parameters model
@@ -3074,9 +3179,11 @@ class MainCalibrationFrame(wx.Frame):
 
         :param allparameters: array of the 14 parameters [dd, xcen, ycen, xbet, xgam, 0, 0, 0, a, b, c, alpha, beta, gamma]
         :param arr_indexvaryingparameters: indices in allparameters of the parameters to refine
+        :param initrot: starting orientation matrix (q = initrot . B0(lattice parameters of allparameters) . G*),
+            default self.UBmatrix
         """
         verbose = self.verbose
-        kwargs = dict(initrot=self.UBmatrix, pureRotation=pureRotation,
+        kwargs = dict(initrot=self.UBmatrix if initrot is None else initrot, pureRotation=pureRotation,
                         pixelsize=self.pixelsize, dim=self.framedim, kf_direction=self.kf_direction)
         args = (Data_Q, allparameters, arr_indexvaryingparameters, sim_indices, pixX, pixY)
 
@@ -3110,7 +3217,8 @@ class MainCalibrationFrame(wx.Frame):
             print("lattice parameters: ", txtlattice)
             print("mean pixel deviation: %.4f -> %.4f (%d spots)" % (np.mean(initialresidues),
                                                 np.mean(residues_nonweighted), len(residues_nonweighted)))
-        self.sb.SetStatusText("Refined lattice parameters: %s" % txtlattice)
+        self.sb.SetStatusText("Refined lattice parameters: %s   (refined: %s)"
+                              % (txtlattice, ", ".join(listparam[k] for k in arr_indexvaryingparameters)))
 
         self.EndFit(event, results, allresults, arr_indexvaryingparameters, residues_nonweighted, newmatrix,
                                                     latticeparameters=latticeparameters)
@@ -3156,6 +3264,10 @@ class MainCalibrationFrame(wx.Frame):
                 if arr_indexvaryingparameters[0] < 5:
                     self.CCDParam[arr_indexvaryingparameters[0]] = results[0]
             print("New parameters", self.CCDParam)
+            changed = ["%s %s -> %s" % (name, old, new) for name, old, new in
+                       zip(("dd", "xcen", "ycen", "xbet", "xgam"), self.previous_CCDParam, self.CCDParam) if old != new]
+            if changed:
+                print("detector parameters refined (tab 'Move CCD and Xtal'): " + ", ".join(changed))
 
             # update orient UBmatrix
             #             print "updating orientation parameters"
@@ -3236,7 +3348,7 @@ class MainCalibrationFrame(wx.Frame):
                                                             verbose=verbose-1)
 
         folder, filename = os.path.split(fullpathfilename)
-        prefix = filename.split(".")[0]
+        prefix = os.path.splitext(filename)[0]
 
         if self.writefolder is None and not os.access(folder, os.W_OK):
             self.writefolder = OSLFGUI.askUserForDirname(self, verbose=verbose-1)
@@ -3276,7 +3388,7 @@ class MainCalibrationFrame(wx.Frame):
             self.savedindex += 1
             suffix = "_%d" % self.savedindex
 
-        outputfilename = self.filename.split(".")[0] + suffix + ".fit"
+        outputfilename = os.path.splitext(self.filename)[0] + suffix + ".fit"
         folder, filename = os.path.split(outputfilename)
 
         if verbose>0:
@@ -3478,7 +3590,8 @@ class MainCalibrationFrame(wx.Frame):
         The unstrained material is the current one, or <material> if the current one is
         strained_<material> (created by the refinement or the modification of lattice parameters).
 
-        :return: dict with keys 'LatticeParameters' [a, b, c, alpha, beta, gamma] of UB.B0,
+        :return: dict with keys 'LatticeParameters' [a, b, c, alpha, beta, gamma] of UB.B0 (lengths rescaled with a
+            of the current material),
             'devstrain_crystal', 'devstrain_sample', 'equivalent_strain' (see IOLT.writefitfile()),
             'reference_material', and the matrices 'UBmat_reference', 'B0_reference' of the same crystal
             with respect to the unstrained material (q = UBmat_reference B0_reference G*)
@@ -3501,7 +3614,13 @@ class MainCalibrationFrame(wx.Frame):
         devstrain_sample = CP.strain_from_crystal_to_sample_frame2(devstrain, UB_ref,
                                                                 latticeparams=latticeparams_ref)
 
-        return {"LatticeParameters": CP.directlatticeparameters_fromBmatrix(UBB0),
+        # lattice parameters of UB.B0 with the lengths of the current material (scale unknown in Laue diffraction):
+        # those of the material after a refinement of the lattice parameters
+        latticeparameters = np.array(CP.directlatticeparameters_fromBmatrix(UBB0), dtype=float)
+        current = [float(evaluate_lattice_param(param)) for param in self.dict_Materials[self.key_material][1]]
+        latticeparameters[:3] *= current[0] / latticeparameters[0]
+
+        return {"LatticeParameters": latticeparameters,
                 "devstrain_crystal": devstrain,
                 "devstrain_sample": devstrain_sample,
                 "equivalent_strain": CP.equivalent_strain(devstrain),
@@ -4369,6 +4488,18 @@ class MainCalibrationFrame(wx.Frame):
             self.axes.set_xlabel("X CCD")
             self.axes.set_ylabel("Y CCD")
 
+        # bands of the detector without data (gaps between modules), in the current space
+        if self.plotrangepanel.showbands.GetValue() and DB.has_bands(self.CCDLabel):
+            chi_offset = 0.
+            if self.datatype != "pixels" and self.plotrangepanel.shiftChiOrigin.GetValue():
+                chi_offset = float(self.plotrangepanel.meanchi.GetValue())
+            try:
+                polygons = DB.band_polygons(self.CCDLabel, self.framedim, self.datatype, self.CCDParam,
+                                            self.pixelsize, self.kf_direction, chi_offset=chi_offset)
+                DB.draw_bands(self.axes, polygons, offset=(X_offset, Y_offset))
+            except (ValueError, TypeError, IndexError) as error:
+                print("detector bands not shown:", error)
+
         # ---------------------------------------------------------------
         # plot experimental spots linked to 1 theo. spot)
         # ---------------------------------------------------------------
@@ -4380,7 +4511,7 @@ class MainCalibrationFrame(wx.Frame):
             # experimental spots selection -------------------------------------
             if self.datatype == "2thetachi":
                 Xlink = np.take(self.twicetheta, exp_indices)
-                Ylink = np.take(self.chi, exp_indices)
+                Ylink = np.take(self.chi, exp_indices) + self._chi_origin()
             elif self.datatype == "pixels":
                 pixX = np.take(self.data_x, exp_indices)
                 pixY = np.take(self.data_y, exp_indices)
@@ -4388,10 +4519,14 @@ class MainCalibrationFrame(wx.Frame):
                 Xlink = pixX - X_offset
                 Ylink = pixY - Y_offset
             elif self.datatype == "gnomon":
-                GT.printyellow('Yellow links (pairing spots) in Gnomonic projection are not implemented yet...')
-                Xlink, Ylink = [], []
+                Xlink = np.take(self.data_gnomonx, exp_indices)
+                Ylink = np.take(self.data_gnomony, exp_indices)
 
             self.axes.scatter(Xlink, Ylink, s=100., alpha=0.5, c='yellow')
+
+        # link selected in the list of 'Filter Links': exp. spot (square) and simulated spot of the same hkl (cross)
+        if getattr(self, "selected_link", None) is not None:
+            self._plot_selected_link(X_offset, Y_offset)
 
         # spots selected for the rotation axis q1 x q2
         if self.TwoSpotsRotationActivated and self.TwoSpotsPoints:

@@ -441,6 +441,7 @@ class PeakSearchParams:
 
 def params_from_config(cfg: dict, **kwargs) -> PeakSearchParams:
     """PeakSearchParams from configuration. kwargs replace any field (e.g. verboselevel=1, writefiles=False)"""
+    IB.check_misplaced_keys(cfg, DEFAULT_CONFIG, 'pcfg')
     scan, out = cfg['scan'], cfg['output']
     calibration, detfile = None, None
     if out['write_cor'] and scan['detfile'] is not None:
@@ -489,6 +490,8 @@ def peaksearch_image(imagefile: Union[str, Path], params: PeakSearchParams) -> t
     X, Y, I (background subtracted), fwhm major axis, fwhm minor axis, inclination, Xdev, Ydev, background, Ipixmax.
     nb of peaks = -1 if the image could not be read or the peak search failed, peaklist = None if no peak.
     Without params.overwrite, images with an existing .cor (or .dat) file are skipped: (imageindex, -2, None)
+    More local maxima than NumberMaxofFits (peak search given up, no peak fitted): (imageindex, -3, nb of local
+    maxima)
     With calibration, only the .cor file is written (it contains all the peak properties), unless params.write_dat
     """
     imagefile = Path(imagefile)
@@ -497,7 +500,11 @@ def peaksearch_image(imagefile: Union[str, Path], params: PeakSearchParams) -> t
     if not params.overwrite and (datfile.exists() or datfile.with_suffix('.cor').exists()):
         return imageindex, -2, None
     try:
-        res = RMCCD.PeakSearch(str(imagefile), **params.peaksearch_kwargs())
+        res = RMCCD.PeakSearch(str(imagefile), raise_too_many=True, **params.peaksearch_kwargs())
+    except RMCCD.TooManyLocalMaximaError as err:   # not 'no peak': NumberMaxofFits too small
+        if params.verboselevel > 0:
+            GT.printyellow(f'{imagefile.name}: {err}')
+        return imageindex, -3, err.nb_local_maxima
     except Exception as err:   # unreadable image, ...: the batch goes on
         if params.verboselevel > 0:
             GT.printred(f'{imagefile.name}: {type(err).__name__} {err}')
@@ -520,10 +527,13 @@ def peaksearch_image(imagefile: Union[str, Path], params: PeakSearchParams) -> t
     return imageindex, len(peaklist), peaklist
 
 
-def print_result(res: tuple):
-    """print the result of peaksearch_image()"""
+def print_result(res: tuple, NumberMaxofFits: Optional[int] = None):
+    """print the result of peaksearch_image() (NumberMaxofFits: value used, in the message of an image with too many
+    local maxima)"""
     imageindex, nbpeaks, peaklist = res
-    if nbpeaks == -1:
+    if nbpeaks == -3:
+        GT.printred(f'image {imageindex}: ' + RMCCD.too_many_local_maxima_message(peaklist, NumberMaxofFits))
+    elif nbpeaks == -1:
         GT.printred(f'image {imageindex}: peak search failed (image not readable?)')
     elif nbpeaks == -2:
         print(f'image {imageindex}: skipped (.cor or .dat file exists and overwrite is False)')
@@ -626,7 +636,8 @@ def summarize_results(allresults: list, mapdims=None) -> dict:
     """nb of peaks per image, and its 2D map (shape invmapdims = (slow, fast), nan for images not treated)
 
     Returns dict with keys: imageindices, nbpeaks (sorted by image index), failedimages, emptyimages,
-    skippedimages, nbpeaks2D (None without mapdims), outofmapimages
+    skippedimages, toomanyimages (more local maxima than NumberMaxofFits: no peak fitted), nb_local_maxima_max
+    (largest nb of local maxima of these images), nbpeaks2D (None without mapdims), outofmapimages
     """
     ordered = sorted(allresults, key=lambda r: r[0])
     imageindices = np.array([r[0] for r in ordered], dtype=int)
@@ -636,6 +647,8 @@ def summarize_results(allresults: list, mapdims=None) -> dict:
                'failedimages': imageindices[nbpeaks == -1].tolist(),
                'emptyimages': imageindices[nbpeaks == 0].tolist(),
                'skippedimages': imageindices[nbpeaks == -2].tolist(),
+               'toomanyimages': imageindices[nbpeaks == -3].tolist(),
+               'nb_local_maxima_max': max((int(r[2]) for r in ordered if r[1] == -3), default=None),
                'nbpeaks2D': None,
                'outofmapimages': []}
     if mapdims is not None:
@@ -657,14 +670,20 @@ def summarize_results(allresults: list, mapdims=None) -> dict:
                        ('skippedimages', 'skipped (existing .cor or .dat file)')):
         if summary[key]:
             print(f'nb of images {label}: {len(summary[key])}  {summary[key][:10]}{" ..." if len(summary[key]) > 10 else ""}')
+    if summary['toomanyimages']:
+        n = summary['toomanyimages']
+        GT.printred(f"nb of images NOT FITTED, more local maxima (blobs) than NumberMaxofFits: {len(n)}  {n[:10]}"
+                    f"{' ...' if len(n) > 10 else ''}\n   up to {summary['nb_local_maxima_max']} local maxima: set "
+                    f"NumberMaxofFits to at least {summary['nb_local_maxima_max'] + 1} (peak search: NumberMaxofFits), "
+                    f"or increase IntensityThreshold (fewer local maxima). These images are not 'without peak'.")
     return summary
 
 
 def peaks_of_image(allresults: list, imageindex: int) -> Optional[np.ndarray]:
     """peaklist of an image from allresults (None if no peak or not treated)"""
-    for index, _, peaklist in allresults:
+    for index, nbpeaks, peaklist in allresults:
         if index == imageindex:
-            return peaklist
+            return peaklist if nbpeaks > 0 else None
     return None
 
 

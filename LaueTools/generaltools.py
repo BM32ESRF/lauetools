@@ -3018,6 +3018,29 @@ def map_transposed(fastmotor, slowmotor):
                                                 and fastmotor not in MAP_HORIZONTAL_MOTORS)
 
 
+def map_format_coord(fastmotor, slowmotor, mapdims, transposed=False, data2D=None, steps=(1., 1.)):
+    """function for ax.format_coord of a 2D map (lines along slow motor): hover text with the motor indices, the
+    image index and the value of data2D (shape (slow, fast)) of the map point under the cursor.
+    Plot coordinates in units of steps (fast, slow) (map points: (1, 1), microns: step sizes);
+    transposed: fast motor along the vertical axis (see map_transposed())"""
+    nfast, nslow = int(mapdims[0]), int(mapdims[1])
+    sfast = float(steps[0]) or 1.
+    sslow = float(steps[1]) or 1.
+
+    def fmt(x, y):
+        cfast, cslow = (y, x) if transposed else (x, y)
+        f, s = int(np.floor(cfast / sfast + 0.5)), int(np.floor(cslow / sslow + 0.5))
+        if 0 <= f < nfast and 0 <= s < nslow:
+            txt = "%s #%d, %s #%d, image %d" % (fastmotor, f, slowmotor, s, s * nfast + f)
+            if data2D is not None:
+                value = np.ma.getdata(data2D)[s, f]
+                if not np.ma.is_masked(data2D[s, f]) and np.isfinite(value):
+                    txt += ", value %.6g" % value
+            return txt
+        return ""
+    return fmt
+
+
 def map_axes_labels(fastmotor, slowmotor, transposed):
     """(xlabel, ylabel) of 2D map plots: map lines are along slow motor (fast motor varies along
     horizontal axis), or along fast motor if map is transposed"""
@@ -3322,6 +3345,71 @@ dictcoloredprint = {"r": bcolors.RED, "g": bcolors.GREEN, "b": bcolors.BLUE, "y"
 def pcolor(message, color="r"):
     if color in dictcoloredprint:
         print("%s%s%s" % (dictcoloredprint[color], message, bcolors.ENDC))
+
+
+def _cgroup_cpu_limit():
+    """nb of cpus allowed by the cpu quota of the cgroup of this process (container, e.g. VISA instance, docker,
+    kubernetes): cgroup v2 cpu.max of its cgroup and of their parents, or cgroup v1 cpu.cfs_quota_us. None: no
+    quota (or not on linux)"""
+    limits = []
+    try:
+        with open('/proc/self/cgroup') as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return None
+    for line in lines:
+        hierarchy, controllers, path = line.split(':', 2)
+        if hierarchy == '0' and controllers == '':   # cgroup v2: cpu.max of the cgroup and of its parents
+            folder = Path('/sys/fs/cgroup') / path.lstrip('/')
+            for parent in [folder] + list(folder.parents):
+                if not str(parent).startswith('/sys/fs/cgroup'):
+                    break
+                try:
+                    quota, period = (Path(parent) / 'cpu.max').read_text().split()[:2]
+                except (OSError, ValueError):
+                    continue
+                if quota != 'max':
+                    limits.append(int(quota) / int(period))
+        elif 'cpu' in controllers.split(','):   # cgroup v1
+            for folder in (Path('/sys/fs/cgroup') / controllers / path.lstrip('/'),
+                           Path('/sys/fs/cgroup') / controllers, Path('/sys/fs/cgroup/cpu')):
+                try:
+                    quota = int((folder / 'cpu.cfs_quota_us').read_text())
+                    period = int((folder / 'cpu.cfs_period_us').read_text())
+                except (OSError, ValueError):
+                    continue
+                if quota > 0 and period > 0:
+                    limits.append(quota / period)
+                break
+    return max(1, int(min(limits))) if limits else None
+
+
+_AVAILABLE_CPUS = None
+
+
+def available_cpus(verbose: bool = False) -> int:
+    """nb of cpus this process may use, for its pools of processes ('local machine' of the notebooks and GUI):
+    - environment variable LAUETOOLS_NB_CPUS if set (e.g. export LAUETOOLS_NB_CPUS=8)
+    - else the cpus of the process (affinity: cpus allocated by SLURM or jupyter-slurm, not all cpus of the
+      machine), limited by the cpu quota of its container (VISA instance, docker ...: cpu_count() and the affinity
+      give the cpus of the host machine)"""
+    global _AVAILABLE_CPUS
+    env = os.environ.get('LAUETOOLS_NB_CPUS')
+    if env:
+        try:
+            return max(1, int(env))
+        except ValueError:
+            printyellow(f'LAUETOOLS_NB_CPUS={env!r} is not an integer: ignored')
+    if _AVAILABLE_CPUS is None:
+        try:
+            ncpus = len(os.sched_getaffinity(0))
+        except AttributeError:   # not available on macOS / Windows
+            ncpus = multiprocessing.cpu_count()
+        quota = _cgroup_cpu_limit()
+        _AVAILABLE_CPUS = min(ncpus, quota) if quota else ncpus
+        if verbose and quota and quota < ncpus:
+            print(f'{_AVAILABLE_CPUS} cpus available (cpu quota of the container), {ncpus} cpus on the machine')
+    return _AVAILABLE_CPUS
 
 
 def printred(message):
