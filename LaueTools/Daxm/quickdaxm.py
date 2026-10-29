@@ -296,7 +296,8 @@ def _profiles_of_image(imageindex):
 
 
 def _pool_map(function, indices, scan, boxes, nb_cpus, progress_callback=None):
-    nb_cpus = max(1, min(nb_cpus or len(os.sched_getaffinity(0)), len(indices)))
+    from LaueTools import generaltools as GT
+    nb_cpus = max(1, min(nb_cpus or GT.available_cpus(), len(indices)))
     results = []
     if nb_cpus == 1:
         _init_worker(scan, boxes)

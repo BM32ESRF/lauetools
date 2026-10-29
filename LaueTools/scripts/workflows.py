@@ -270,7 +270,7 @@ class MosaicWorkflow:
             list_indices = self.params.get("listindices")
     
         nb_images = len(list_indices)
-        max_nb_cpus = cpu_count()
+        max_nb_cpus = available_cpus()
         nb_cpus = min(nb_cpus, max_nb_cpus)
         #self.logger.info(f"Using {nb_cpus} CPUs for {nb_images} images.")
     
@@ -403,6 +403,9 @@ DEFAULT_FIT_PARAMETERS = {'modelFunction': "gaussian", 'positionStart': "max", '
 # detectors for which IOimage.readrectangle_in_image() reads the whole image: ROIs are taken in
 # the image read once
 FULLIMAGE_CCDLABELS = ('EIGER_4MCdTe', 'EIGER_1M', 'EIGER_4MCdTestack')
+# other detectors: whole image read once (then ROIs cut in memory) from this nb of ROIs; fewer ROIs: each ROI read in
+# the file (1 open + read per ROI: with many ROIs and processes, many small requests slow down the file system)
+FULLIMAGE_MIN_ROIS = 20
 
 
 def image_filepath(params: Dict[str, Any], imageindex: int) -> Tuple[str, int]:
@@ -439,7 +442,7 @@ def read_rois(imagepath: str, roicenters, boxsize_X: int, boxsize_Y: int, CCDLab
     centers = [(int(x), int(y)) for x, y in roicenters]
     inside = [boxsize_X <= x < framedim[1] - boxsize_X and boxsize_Y <= y < framedim[0] - boxsize_Y
                 for x, y in centers]
-    if CCDLabel in FULLIMAGE_CCDLABELS:
+    if CCDLabel in FULLIMAGE_CCDLABELS or sum(inside) >= FULLIMAGE_MIN_ROIS:
         data = IOimage.readCCDimage(imagepath, CCDLabel=CCDLabel, stackimageindex=stackimageindex)[0]
         crops = [data[y - boxsize_Y:y + boxsize_Y + 1, x - boxsize_X:x + boxsize_X + 1] if ok else None
                     for (x, y), ok in zip(centers, inside)]
@@ -590,11 +593,10 @@ def _process_image_in_worker(imageindex):
 
 
 def available_cpus() -> int:
-    """nb of cpus that can be used by this process (cpus allocated by SLURM on a cluster node)"""
-    try:
-        return len(os.sched_getaffinity(0))
-    except AttributeError:  # not on linux
-        return cpu_count()
+    """nb of cpus that can be used by this process (cpus allocated by SLURM on a cluster node, cpu quota of a VISA
+    instance or of a container; LAUETOOLS_NB_CPUS): see generaltools.available_cpus()"""
+    from LaueTools import generaltools as GT
+    return GT.available_cpus()
 
 
 def to_jsonable(obj):

@@ -8,7 +8,7 @@ from a jupyter notebook or from the command line::
     # compute in this process (e.g. inside a SLURM job or on a powerful machine)
     python -m LaueTools.scripts.workflowlauncher run config.json --ncpus 32
     # launch in background on this machine or submit to a SLURM partition
-    python -m LaueTools.scripts.workflowlauncher submit config.json --resource magnifix --ncpus 96 --wait
+    python -m LaueTools.scripts.workflowlauncher submit config.json --resource magnifix --wait   # whole node
     # on several nodes (images shared between nodes, results merged at the end of the job)
     python -m LaueTools.scripts.workflowlauncher submit config.json --resource magnifix3 --wait
     # list computing resources
@@ -27,7 +27,7 @@ From a notebook::
 
     import LaueTools.scripts.workflowlauncher as WL
     config = WL.make_config(params, output='/path/to/results.h5')
-    job = WL.launch(config, resource='magnifix', nbcpus=96)   # or resource='local'
+    job = WL.launch(config, resource='magnifix')   # whole node of 192 cpus; or resource='local', nbcpus=32
     job.wait()
     results = job.results()
 
@@ -62,14 +62,20 @@ import LaueTools.scripts.workflows as wf
 
 # 'type': 'local' (this machine) or 'slurm' (partition, optional constraint)
 # 'nbcpus': default nb of cpus (per node). Not set for 'nodes' > 1: whole nodes (all their cpus)
+# 'nodecpus': nb of cpus of a node, for whole nodes (default: from sinfo when the job is submitted)
 # 'nodes': nb of nodes (default 1). Images are shared between nodes (1 task per node, part files of
 #     results merged at the end of the job, see run_config() and merge_parts())
+# 'whole_nodes': jobs always ask for all the cpus of their nodes, whatever nbcpus is given (ESRF IT: any node of
+#     magnifix is given only to jobs of 192 cpus per node: 192 for magnifix, 2 x 192 for magnifix2, 3 x 192 for
+#     magnifix3). magnifix2 and magnifix3 are the partition magnifix with 2 or 3 nodes (sinfo -s: no other partition)
 COMPUTING_RESOURCES = {
     'local': {'type': 'local', 'description': 'this machine'},
-    'magnifix': {'type': 'slurm', 'partition': 'magnifix', 'nbcpus': 96,
-                    'description': 'SLURM partition magnifix'},
-    'magnifix3': {'type': 'slurm', 'partition': 'magnifix3', 'nodes': 3,
-                    'description': 'SLURM partition magnifix3, 3 nodes (images shared between nodes)'},
+    'magnifix': {'type': 'slurm', 'partition': 'magnifix', 'nodecpus': 192, 'whole_nodes': True,
+                    'description': 'SLURM partition magnifix, 1 whole node (192 cpus)'},
+    'magnifix2': {'type': 'slurm', 'partition': 'magnifix', 'nodes': 2, 'nodecpus': 192, 'whole_nodes': True,
+                    'description': 'SLURM partition magnifix, 2 whole nodes (2 x 192 cpus, images shared between nodes)'},
+    'magnifix3': {'type': 'slurm', 'partition': 'magnifix', 'nodes': 3, 'nodecpus': 192, 'whole_nodes': True,
+                    'description': 'SLURM partition magnifix, 3 whole nodes (3 x 192 cpus, images shared between nodes)'},
     'ub20': {'type': 'slurm', 'partition': 'ub20', 'nbcpus': 96,
                 'description': 'SLURM partition ub20'},
     'nice-hpc7': {'type': 'slurm', 'partition': 'nice', 'constraint': 'hpc7', 'nbcpus': 96,
@@ -79,6 +85,8 @@ COMPUTING_RESOURCES = {
     'nice-hpc6': {'type': 'slurm', 'partition': 'nice', 'constraint': 'hpc6', 'nbcpus': 40,
                     'description': 'SLURM partition nice, hpc6 nodes'},
 }
+# cpus of this machine available for LaueTools (cpu quota of a VISA instance or container, SLURM allocation)
+COMPUTING_RESOURCES['local']['description'] = f'this machine ({wf.available_cpus()} cpus)'
 USER_RESOURCES_FILE = os.path.join(os.path.expanduser('~'), '.lauetools', 'computing_resources.json')
 try:
     with open(USER_RESOURCES_FILE, 'r') as _f:
@@ -329,12 +337,33 @@ def _slurm_command(args, submit_host: Optional[str] = None):
             ' '.join(shlex.quote(str(arg)) for arg in args)]
 
 
+def partition_nodecpus(resource: Dict[str, Any], submit_host: Optional[str] = None) -> Optional[int]:
+    """nb of cpus of the nodes of the partition (and constraint) of a SLURM resource: 'nodecpus' of a resource of
+    whole nodes (magnifix: 192, its smaller GPU nodes are not used), else sinfo (smallest node), else 'nodecpus' of
+    the resource, None if unknown"""
+    if resource.get('whole_nodes') and resource.get('nodecpus'):
+        return int(resource['nodecpus'])
+    args = ['sinfo', '-h', '-p', resource['partition'], '-o', '%c %f']
+    try:
+        res = subprocess.run(_slurm_command(args, submit_host), capture_output=True, text=True, timeout=30)
+        cpus = [int(line.split()[0].rstrip('+')) for line in res.stdout.splitlines()
+                if line.split() and line.split()[0].rstrip('+').isdigit()
+                and (not resource.get('constraint') or resource['constraint'] in line)]
+        if res.returncode == 0 and cpus:
+            return min(cpus)
+    except (OSError, subprocess.TimeoutExpired, ValueError):
+        pass
+    return resource.get('nodecpus')
+
+
 def slurm_script(configpath: str, resource: Dict[str, Any], nbcpus: Optional[int], jobname: str,
                     time_limit: str = DEFAULT_TIME_LIMIT, mem_per_cpu: str = DEFAULT_MEM_PER_CPU,
-                    python: Optional[str] = None, nbnodes: int = 1) -> str:
+                    python: Optional[str] = None, nbnodes: int = 1, nodecpus: Optional[int] = None) -> str:
     """content of sbatch script running workflow of configpath
 
     :param nbcpus: nb of cpus per node (None: whole nodes, all their cpus and memory)
+    :param nodecpus: nb of cpus of a node, for whole nodes (nbcpus None): --cpus-per-task and --mem=0 (the
+        cluster rejects --exclusive). Default: 'nodecpus' of resource
     :param nbnodes: nb of nodes. For nbnodes > 1, images are shared between nodes (1 task per node,
         see run_config()) and the parts of results are merged at the end (see merge_parts())
     """
@@ -354,10 +383,14 @@ def slurm_script(configpath: str, resource: Dict[str, Any], nbcpus: Optional[int
         lines += [f'#SBATCH --cpus-per-task={nbcpus}',
                   f'#SBATCH --mem-per-cpu={mem_per_cpu}']
         taskcpus = f'${{SLURM_CPUS_PER_TASK:-{nbcpus}}}'
-    else:  # whole nodes
-        lines += ['#SBATCH --exclusive',
+    else:  # whole nodes: all their cpus and all their memory (--exclusive is rejected by the ESRF cluster)
+        nodecpus = nodecpus or resource.get('nodecpus')
+        if not nodecpus:
+            raise ValueError(f"nb of cpus per node of {resource['partition']} unknown: give nbcpus, or 'nodecpus' "
+                             'in the computing resource')
+        lines += [f'#SBATCH --cpus-per-task={int(nodecpus)}',
                   '#SBATCH --mem=0']
-        taskcpus = '$SLURM_CPUS_ON_NODE'
+        taskcpus = f'${{SLURM_CPUS_PER_TASK:-{int(nodecpus)}}}'
     lines += [f'#SBATCH --time={time_limit}',
               f"#SBATCH --output={files['log']}",
               '',
@@ -635,9 +668,15 @@ def launch(config: Dict[str, Any], resource: str = 'local', nbcpus: Optional[int
     configpath = write_config(config, files['config'])
     python = python or sys.executable
     nbnodes = int(nbnodes or resource_def.get('nodes', 1)) if resource_def['type'] == 'slurm' else 1
-    nbcpus = nbcpus or resource_def.get('nbcpus')
-    if nbcpus or nbnodes == 1:
-        nbcpus = int(nbcpus or wf.available_cpus())
+    if resource_def.get('whole_nodes'):   # all the cpus of the nodes (nbcpus None below: whole nodes)
+        if nbcpus and nbcpus != resource_def.get('nodecpus'):
+            print(f"{resource}: jobs of whole nodes only ({resource_def.get('nodecpus', 'all')} cpus per node): "
+                  f"nbcpus {nbcpus} not used")
+        nbcpus = None
+    else:
+        nbcpus = nbcpus or resource_def.get('nbcpus')
+        if nbcpus or nbnodes == 1:
+            nbcpus = int(nbcpus or wf.available_cpus())
     write_status(files['status'], state='PENDING', resource=resource)
 
     if resource_def['type'] == 'local':
@@ -654,8 +693,9 @@ def launch(config: Dict[str, Any], resource: str = 'local', nbcpus: Optional[int
         raise ValueError(f"unknown type of computing resource {resource_def['type']}")
     jobname = 'lt_' + os.path.splitext(os.path.basename(output))[0][:40]
     with open(files['script'], 'w') as f:
+        nodecpus = None if nbcpus else partition_nodecpus(resource_def, submit_host)   # whole nodes
         f.write(slurm_script(configpath, resource_def, nbcpus, jobname, time_limit, mem_per_cpu, python,
-                                nbnodes))
+                                nbnodes, nodecpus))
     cmd = _slurm_command(['sbatch', '--parsable', files['script']], submit_host)
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=60)

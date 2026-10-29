@@ -19,7 +19,7 @@ From a notebook::
 
 Command line::
 
-    python -m LaueTools.daxm_workflow quickdaxm configs/myscan.yaml --resource magnifix --ncpus 96
+    python -m LaueTools.daxm_workflow quickdaxm configs/myscan.yaml --resource magnifix   # whole node (192 cpus)
 """
 __author__ = "Jean-Sebastien Micha, CRG-IF BM32 @ ESRF"
 
