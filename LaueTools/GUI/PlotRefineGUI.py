@@ -44,6 +44,7 @@ import matplotlib
 
 if sys.version_info.major == 3:
     from .. import CrystalParameters as CP
+    from .. import detectorbands as DB
     from .. import IOLaueTools as IOLT
     from .. import generaltools as GT
     from .. import dict_LaueTools as DictLT
@@ -60,6 +61,7 @@ if sys.version_info.major == 3:
 
 else:
     import CrystalParameters as CP
+    import detectorbands as DB
     import IOLaueTools as IOLT
     import generaltools as GT
     import dict_LaueTools as DictLT
@@ -456,6 +458,11 @@ class Plot_RefineFrame(wx.Frame):
 
         self.switchCoordinatesbtn = wx.Button(self.panel, -1, "Switch Coord.")
         self.switchCoordinatesbtn.Bind(wx.EVT_BUTTON, self.OnSwitchCoords)
+
+        # bands of the detector without data (gaps between modules), drawn in light grey
+        self.showbands = wx.CheckBox(self.panel, -1, "show detector bands")
+        self.showbands.SetValue(True)
+        self.showbands.Bind(wx.EVT_CHECKBOX, lambda evt: self._replot())
         self.datatype_unchanged = True
 
         self.imagescalebtn = wx.Button(self.panel, -1, "Load Image")
@@ -721,6 +728,7 @@ class Plot_RefineFrame(wx.Frame):
         btnSizer0.Add(self.pointButton6, 0, wx.ALL)
         btnSizer0.Add(self.pointButton7, 0, wx.ALL)
         btnSizer0.Add(self.switchCoordinatesbtn, 0, wx.ALL)
+        btnSizer0.Add(self.showbands, 0, wx.ALL | wx.ALIGN_CENTER_VERTICAL)
 
         energy0Sizer = wx.BoxSizer(wx.HORIZONTAL)
         energy0Sizer.Add(self.eminmaxtxt, 0, wx.ALL)
@@ -2255,6 +2263,18 @@ class Plot_RefineFrame(wx.Frame):
             txtB0 += "[%.8f, %.8f, %.8f],\n" % tuple(B0matrix[k])
         texts_dict["B0matrix"] = txtB0[:-2] + "]"
 
+        # UB and B0 referred to the refined lattice parameters (new material with these lattice parameters)
+        UB_new, B0_new, scale, rotdev = CP.refined_UB_B0(UBmat, B0matrix, lattice_parameter_direct_strain)
+        txtUB = "\n\nUB_new in q = UB_new B0_new G* (refined lattice parameters), UB_new = UB B0 inv(B0_new)\n"
+        txtUB += "= scale x rotation: scale %.6f, max |R^T R - I| %.1e\n[" % (scale, rotdev)
+        for k in range(3):
+            txtUB += "[%.8f, %.8f, %.8f],\n" % tuple(UB_new[k])
+        texts_dict["UBmatrix"] += txtUB[:-2] + "]"
+        txtB0 = "\n\nB0_new in q = UB_new B0_new G* (from the refined lattice parameters)\n["
+        for k in range(3):
+            txtB0 += "[%.8f, %.8f, %.8f],\n" % tuple(B0_new[k])
+        texts_dict["B0matrix"] += txtB0[:-2] + "]"
+
         txtHKLxyz_names = "                                 HKL frame coordinates\n"
         listvectors = ["x=[100]_LT :",
                         "y=[010]_LT :",
@@ -3242,6 +3262,15 @@ class Plot_RefineFrame(wx.Frame):
                 YexpHL = self.pixelY[indexHL] - Y_offset
 
             self.axes.scatter(XexpHL, YexpHL, s=100., alpha=0.5, c='k', marker='X')
+
+        # bands of the detector without data (gaps between modules), in the current space
+        if self.showbands.GetValue() and DB.has_bands(self.CCDLabel):
+            try:
+                polygons = DB.band_polygons(self.CCDLabel, self.framedim, self.datatype, self.CCDcalib,
+                                            self.pixelsize, self.kf_direction)
+                DB.draw_bands(self.axes, polygons, offset=(X_offset, Y_offset))
+            except (ValueError, TypeError, IndexError) as error:
+                print("detector bands not shown:", error)
 
         # axes labels
         if self.datatype == "2thetachi":
