@@ -533,7 +533,7 @@ class MainFrame_peaksearch(wx.Frame):
         if folder.ShowModal() == wx.ID_OK:
             abspath = folder.GetPath()
             filename = os.path.split(abspath)[-1]
-            intension, extension = filename.split(".")
+            intension, extension = filename.rsplit(".", 1)
             try:
                 nbdigits = int(self.list_txtctrl[4].GetValue())
             except ValueError:

@@ -18,6 +18,7 @@ import copy
 from copy import deepcopy
 import re
 import io
+import warnings
 
 import numpy as np
 from pathlib import Path
@@ -587,6 +588,7 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
         if guessCCDLabel:
             if 'pixelsize' in CCDcalib:
                 ps = CCDcalib['pixelsize']
+                ccdlabel = None  # no detector matches this pixel size
                 if abs(ps-0.0795) < 0.004:
                     ccdlabel = 'MARCCD165'
                 elif abs(ps-0.073) <= 0.002:
@@ -632,6 +634,42 @@ def readCalibParametersInFile(openfile, Dict_to_update=None, guessCCDLabel=True)
                 CCDcalib['CCDLabel'] = ccdlabel
 
     return CCDcalib
+
+
+def get_pixelsize(CCDcalib: Dict, rtol: float = 1e-4) -> Union[float, None]:
+    """
+    pixel size (mm) to use with the spots of a .cor (or .det) file
+
+    The value written in the file wins over the detector table dict_CCD[CCDLabel][1]:
+    the 2theta and chi of the spots were computed with it (see LaueGeometry.convert2corfile()).
+    The table value is used only when the file has no pixel size.
+
+    :param CCDcalib: dict from readCalibParametersInFile() (keys 'pixelsize', 'xpixelsize',
+        'ypixelsize', 'CCDLabel')
+    :param rtol: relative difference above which a warning is issued when file and table differ
+        (a Python warning: shown once per process, not once per file)
+    :return: pixel size, or None if neither the file nor the CCDLabel gives one
+    """
+    from LaueTools.dict_LaueTools import dict_CCD
+
+    pixelsize = None
+    for key in ('pixelsize', 'xpixelsize', 'ypixelsize'):
+        if CCDcalib.get(key) is not None:
+            pixelsize = float(CCDcalib[key])
+            break
+
+    ccdlabel = CCDcalib.get('CCDLabel')
+    table_pixelsize = None
+    if ccdlabel not in (None, 'None') and ccdlabel in dict_CCD:
+        table_pixelsize = float(dict_CCD[ccdlabel][1])
+
+    if pixelsize is None:
+        return table_pixelsize
+
+    if table_pixelsize is not None and abs(pixelsize - table_pixelsize) > rtol * table_pixelsize:
+        warnings.warn(f'pixel size in file ({pixelsize} mm) differs from the one of detector '
+                      f'{ccdlabel} ({table_pixelsize} mm): using the file value', stacklevel=2)
+    return pixelsize
 
 
 def readCalib_det_file(filename_det):

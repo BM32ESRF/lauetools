@@ -3326,7 +3326,7 @@ class MainCalibrationFrame(wx.Frame):
                                                             verbose=verbose-1)
 
         folder, filename = os.path.split(fullpathfilename)
-        prefix = filename.split(".")[0]
+        prefix = os.path.splitext(filename)[0]
 
         if self.writefolder is None and not os.access(folder, os.W_OK):
             self.writefolder = OSLFGUI.askUserForDirname(self, verbose=verbose-1)
@@ -3366,7 +3366,7 @@ class MainCalibrationFrame(wx.Frame):
             self.savedindex += 1
             suffix = "_%d" % self.savedindex
 
-        outputfilename = self.filename.split(".")[0] + suffix + ".fit"
+        outputfilename = os.path.splitext(self.filename)[0] + suffix + ".fit"
         folder, filename = os.path.split(outputfilename)
 
         if verbose>0:

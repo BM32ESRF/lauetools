@@ -43,6 +43,7 @@ Each kept grain is written in <folders_root>/fitfiles_<folder>/<prefix><index>_g
 With remove_spots: true (default), a spot of the .cor file belongs to one grain only (one .fit file).
 """
 import copy
+import os
 import re
 import shutil
 import tempfile
@@ -266,13 +267,13 @@ def _write_fitfile(trial, cand: dict, folder: Path, local_index: int, filecor: s
     try:
         trial.writeFitFile(cand['grain_index'], corfilename=filecor, dirname=str(tmpdir), addpixdev=True,
                            add_strain_sampleframe=True)
-        written = tmpdir / f"{filecor.split('.')[0]}_g{cand['grain_index']}.fit"
+        written = tmpdir / f"{os.path.splitext(filecor)[0]}_g{cand['grain_index']}.fit"
         lines = written.read_text().splitlines(keepends=True)
         for k in range(len(lines) - 1):   # grain label of the folder
             if lines[k].startswith('#grainIndex') and re.fullmatch(r'#?G_\d+\s*', lines[k + 1]):
                 prefix = '#' if lines[k + 1].startswith('#') else ''
                 lines[k + 1] = f'{prefix}G_{local_index}\n'
-        target = folder / f"{filecor.split('.')[0]}_g{local_index}.fit"
+        target = folder / f"{os.path.splitext(filecor)[0]}_g{local_index}.fit"
         target.write_text(''.join(lines))
     finally:
         shutil.rmtree(tmpdir, ignore_errors=True)
@@ -291,7 +292,7 @@ def run_sequence(dataset, params, filecor: str, image_index: int):
     """
     seq = params.sequence
     steps = seq['steps']
-    stem = filecor.split('.')[0]
+    stem = os.path.splitext(filecor)[0]
     folders = {st['folder']: _image_folder(st['folder_path'], image_index, params) for st in steps}
     pattern = re.compile(rf'{re.escape(stem)}_g\d+\.fit')
 
