@@ -12,7 +12,10 @@ mailto: micha --+at-+- esrf --+dot-+- fr
 
 
 
+import datetime
+import math
 import os
+import re
 import sys
 import time
 
@@ -25,7 +28,7 @@ from matplotlib.backends.backend_wxagg import (FigureCanvasWxAgg as FigCanvas,
 
 import matplotlib.colors as colors
 from matplotlib.axes import Axes
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, MaxNLocator
 
 from pylab import cm as pcm
 
@@ -65,6 +68,8 @@ import LaueTools.MessageCommand as MC
 import LaueTools.IOLaueTools as IOLT
 # import LaueTools.Daxm.contrib.spec_reader as spec_reader
 import LaueTools.logfile_reader as logfile_reader
+import LaueTools.map_workflow as MW
+from LaueTools.GUI.rangeslider import RangeSlider, EVT_RANGE_SLIDER
 
 
 import wx.lib.agw.customtreectrl as CT
@@ -76,17 +81,21 @@ class TreePanel(wx.Panel):
 
     sets granparent scan_index_mesh  or scan_index_ascan to selected item index
     """
-    def __init__(self, parent, scantype=None, _id=wx.ID_ANY, **kwd):
+    def __init__(self, parent, scantype=None, _id=wx.ID_ANY, frameparent=None, **kwd):
         wx.Panel.__init__(self, parent=parent, id=_id, **kwd)
 
         self.parent = parent
         self.scantype = scantype
-        self.frameparent = self.parent.GetParent()
+        # main frame (given when the parent is not the main panel, e.g. a splitter window)
+        self.frameparent = frameparent if frameparent is not None else self.parent.GetParent()
         # self.tree = wx.TreeCtrl(self, -1, wx.DefaultPosition, (-1, -1),
         #                                                     wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS)
         # agwStyle=wx.TR_DEFAULT_STYLE
-        self.tree = CT.CustomTreeCtrl(self, -1, agwStyle=wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS | wx.TR_MULTIPLE, size=(200,-1))
+        self.tree = CT.CustomTreeCtrl(self, -1, agwStyle=wx.TR_HIDE_ROOT | wx.TR_HAS_BUTTONS | wx.TR_MULTIPLE,
+                                      size=(self.MINWIDTH, -1))
         self.tree.DoGetBestSize()
+        self.tree.SetMinSize((self.MINWIDTH, -1))
+        self.SetMinSize((self.MINWIDTH, -1))
 
         self.maketree()
 
@@ -100,6 +109,9 @@ class TreePanel(wx.Panel):
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
         #self.tree.Bind(wx.EVT_TREE_SEL_CHANGING, self.OnSelChanged)
         self.tree.Bind(wx.EVT_TREE_KEY_DOWN, self.OnkeyPressed)
+        # tooltip of the scan under the mouse
+        self.hovereditem = None
+        self.tree.Bind(wx.EVT_MOTION, self.OnMotion)
 
         # wx.EVT_TREE_ITEM_RIGHT_CLICK
         vbox = wx.BoxSizer(wx.VERTICAL)
@@ -107,6 +119,33 @@ class TreePanel(wx.Panel):
         vbox.AddSpacer(1)
 
         self.SetSizer(vbox)
+
+    def OnMotion(self, event):
+        """tooltip of the scan under the mouse (command, date, duration, end reason)"""
+        item, _ = self.tree.HitTest(event.GetPosition())
+        if item != self.hovereditem:
+            self.hovereditem = item
+            tooltip = None
+            if item is not None:
+                tooltip = self.frameparent.scan_tooltip(self.scantype, self.tree.GetItemText(item))
+            self.tree.SetToolTip(tooltip or "")
+        event.Skip()
+
+    MINWIDTH = 200  # pixels
+    MAXWIDTH = 600
+
+    def fit_width(self):
+        """minimum width of the list from its longest scan name (between MINWIDTH and MAXWIDTH)"""
+        names = []
+        item = self.tree.GetFirstChild(self.root)[0]
+        while item is not None and item.IsOk():
+            names.append(self.tree.GetItemText(item))
+            item = self.tree.GetNextSibling(item)
+        textwidth = max((self.tree.GetTextExtent(name)[0] for name in names), default=0)
+        # + indentation of items, margins and vertical scrollbar
+        width = int(min(max(textwidth + 70, self.MINWIDTH), self.MAXWIDTH))
+        self.tree.SetMinSize((width, -1))
+        self.SetMinSize((width, -1))
 
     def maketree(self):
         self.root = self.tree.AddRoot("SpecFiles")
@@ -128,7 +167,7 @@ class TreePanel(wx.Panel):
 
         elif key == wx.WXK_DOWN:
             # arrow down
-            if self.scantype == 'ASCAN':
+            if self.scantype == 'ASCAN' and self.frameparent.filetype == 'spec':
                 nbascans = len(self.frameparent.list_ascanscan_indices)
                 #print('self.frameparent.list_ascanscan_indices', self.frameparent.list_ascanscan_indices)
                 poslastscan = self.frameparent.list_ascanscan_indices.index(self.last_sel_scan_index)
@@ -138,7 +177,7 @@ class TreePanel(wx.Panel):
 
                 self.OnSelChanged(event, scan_index=newascanindex)
 
-            elif self.scantype == 'MESH':
+            elif self.scantype == 'MESH' or self.frameparent.filetype == 'hdf5':
                 if self.frameparent.filetype == 'spec':
                     #print('self.frameparent.list_meshscan_indices',self.frameparent.list_meshscan_indices)
                     #nbmeshes = len(self.frameparent.list_meshscan_indices)
@@ -158,14 +197,14 @@ class TreePanel(wx.Panel):
                         pass
 
         elif key == wx.WXK_UP:
-            if self.scantype == 'ASCAN':
+            if self.scantype == 'ASCAN' and self.frameparent.filetype == 'spec':
                 nbascans = len(self.frameparent.list_ascanscan_indices)
                 poslastscan = self.frameparent.list_ascanscan_indices.index(self.last_sel_scan_index)
                 newascanindex = self.frameparent.list_ascanscan_indices[max(poslastscan - 1, 0)]
 
                 self.OnSelChanged(event, scan_index=newascanindex)
 
-            elif self.scantype == 'MESH':
+            elif self.scantype == 'MESH' or self.frameparent.filetype == 'hdf5':
                 if self.frameparent.filetype == 'spec':
                     #nbmeshes = len(self.frameparent.list_meshscan_indices)
                     poslastscan = self.frameparent.list_meshscan_indices.index(self.last_sel_scan_index)
@@ -206,7 +245,6 @@ class TreePanel(wx.Panel):
 
     def OnSelChanged(self, event, scan_index=None):
         print('***\n OnSelChanged  filetype = %s\n***'%self.frameparent.filetype)
-        self.frameparent.plotmeshpanel.fig.clear() # to do for wxpython 4.1.1
         
         if self.frameparent.filetype == 'spec':
             self.SelChangedSpec(event, scan_index=scan_index)
@@ -232,6 +270,10 @@ class TreePanel(wx.Panel):
         selected_item = self.tree.GetItemText(item)
         #scan_index = int(selected_item)
         print("item selected: ", selected_item)
+        if selected_item == str(self.scantype):  # 'ASCAN' item: list the 1D scans of the logfile
+            if self.scantype == 'ASCAN':
+                wx.CallAfter(self.frameparent.list_hdf5_scans1D)  # after this event: the tree is rebuilt
+            return
         #print("selected_item ", dir(item))
         
         # multipe selection with ascan's  NOT YET WORKING !!! ....
@@ -272,16 +314,8 @@ class TreePanel(wx.Panel):
             self.last_sel_scan_index = selected_item
             self.last_item = item
 
-        # tooltip----------------
-        speccommand = self.frameparent.scancommand
-        date = self.frameparent.scan_date
-        # print('speccommand', speccommand)
-        # print('date',date)
-        tooltip = "command: %s\n date: %s" % (speccommand, date)
-        #print('tooltip',tooltip)
-        event.GetEventObject().SetToolTipString(tooltip)
+        # tooltip of the scan under the mouse: see OnMotion()
         event.Skip()
-        #------------------
     
     def SelChangedSpec(self, event, scan_index=None):     
         print('\n\n OnSelChangedSpec')
@@ -361,6 +395,15 @@ class MainFrame(wx.Frame):
         self.create_main_panel()
 
         self.listmesh = None
+        # filter of the scans of hdf5 logfiles (words of the dataset name, as in the quickstart notebook,
+        # see map_workflow.scan_filter()), set when a heavy logfile is opened (see choose_lighter_logfile())
+        self.hdf5_scanfilter = ""
+        # 1D scans of hdf5 logfiles (listed when clicking on ASCAN), motor of the 1D plot (scans of several motors)
+        self.listascan = []
+        self.list_ascanscan_indices = []
+        self.motor_ascan = None
+        # data of the plotted 2D scan for the counters maps (see CountersMapsPanel)
+        self.meshscan = None
 
     def setdefaultcounters(self):
         if self.filetype == 'spec':
@@ -442,8 +485,18 @@ class MainFrame(wx.Frame):
                                 posarray_motors=np.arange(150),
                                 absolute_motorposition_unit="mm")
 
-        self.treemesh = TreePanel(self.panel, scantype="MESH", _id=0, size=(250,-1))
-        self.treeascan = TreePanel(self.panel, scantype="ASCAN", _id=1, size=(50,-1))
+        # scans lists, one above the other with a movable bar between them (each one has the width of the
+        # column, widened to the longest scan name, see TreePanel.fit_width())
+        self.listssplitter = wx.SplitterWindow(self.panel, -1, style=wx.SP_LIVE_UPDATE | wx.SP_3D)
+        self.treemesh = TreePanel(self.listssplitter, scantype="MESH", _id=0, frameparent=self,
+                                  size=(TreePanel.MINWIDTH, -1))
+        self.treeascan = TreePanel(self.listssplitter, scantype="ASCAN", _id=1, frameparent=self,
+                                   size=(TreePanel.MINWIDTH, -1))
+        self.listssplitter.SplitHorizontally(self.treemesh, self.treeascan)
+        self.listssplitter.SetMinimumPaneSize(60)  # pixels: each list stays visible
+        self.listssplitter.SetSashGravity(0.5)  # extra height shared by both lists when the window is resized
+        self.listssplitter.SetMinSize((TreePanel.MINWIDTH, 300))
+        self.listssplitter.SetToolTip("Drag the bar between the 2D and 1D scans lists to share their height")
 
         self.updatelistbtn = wx.Button(self.panel, -1, "Update scans list")
         self.updatelistbtn.Bind(wx.EVT_BUTTON, self.onUpdateSpecFile)
@@ -455,6 +508,13 @@ class MainFrame(wx.Frame):
         self.toggleBtn = wx.Button(self.panel, wx.ID_ANY, "Real Time Plot")
         self.toggleBtn.Bind(wx.EVT_BUTTON, self.onToggle)
 
+        # maps of the counters (fluo..., eiger4m_...) of the 2D scan at the place of the 1D plot
+        self.countersmapsbtn = wx.ToggleButton(self.panel, wx.ID_ANY, "Counters maps")
+        self.countersmapsbtn.Bind(wx.EVT_TOGGLEBUTTON, self.OnToggleCountersMaps)
+        self.countersmapsbtn.SetToolTipString("Show at the place of the 1D plot the maps of the counters of the "
+                                              "selected 2D scan (names starting with fluo, eiger4m_, ...)")
+        self.countersmaps = CountersMapsPanel(self.panel, self)
+
         # --- ----------tooltip
         self.updatelistbtn.SetToolTipString("Refresh list of scan from spec file")
         self.toggleBtn.SetToolTipString("On/Off Real time plot")
@@ -464,21 +524,22 @@ class MainFrame(wx.Frame):
         # hbox0.Add(self.treemesh, 1, wx.LEFT | wx.TOP | wx.GROW)
         # hbox0.Add(self.treeascan, 0, wx.EXPAND)
         
-        hbox0 = wx.BoxSizer(wx.HORIZONTAL)
-        hbox0.Add(self.treemesh, 0, wx.EXPAND)
-        hbox0.Add(self.treeascan, 0, wx.EXPAND)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(hbox0, 1, wx.LEFT | wx.TOP | wx.GROW)
+        vbox.Add(self.listssplitter, 1, wx.LEFT | wx.TOP | wx.GROW)
         vbox.Add(self.updatelistbtn, 0, wx.BOTTOM)
         vbox.Add(self.txtselectionmode, 0, wx.BOTTOM)
         vbox.Add(self.toggleBtn, 0, wx.BOTTOM)
+        vbox.Add(self.countersmapsbtn, 0, wx.BOTTOM)
         #         vbox.Add(self.stopbtn, 0, wx.BOTTOM)
 
+        # scans lists: width of their longest scan name; extra width of the window for the plots
         self.hbox = wx.BoxSizer(wx.HORIZONTAL)
-        self.hbox.Add(vbox, 1, wx.LEFT | wx.TOP | wx.GROW)#wx.EXPAND)
-        self.hbox.Add(self.plotmeshpanel, 0, wx.LEFT | wx.TOP | wx.GROW)
-        self.hbox.Add(self.plotascanpanel, 0, wx.LEFT | wx.TOP | wx.GROW)
+        self.hbox.Add(vbox, 0, wx.LEFT | wx.TOP | wx.GROW)#wx.EXPAND)
+        self.hbox.Add(self.plotmeshpanel, 1, wx.LEFT | wx.TOP | wx.GROW)
+        self.hbox.Add(self.plotascanpanel, 1, wx.LEFT | wx.TOP | wx.GROW)
+        self.hbox.Add(self.countersmaps, 1, wx.LEFT | wx.TOP | wx.GROW)
+        self.hbox.Hide(self.countersmaps)
 
         bigvbox = wx.BoxSizer(wx.VERTICAL)
         bigvbox.Add(self.hbox, 1, wx.LEFT | wx.TOP | wx.GROW)
@@ -486,7 +547,18 @@ class MainFrame(wx.Frame):
 
         self.panel.SetSizer(bigvbox)
         bigvbox.Fit(self)
+        # wide enough for the rows of controls of the plots on one line, if the screen allows it
+        self.SetSize((min(self.screen_width(), self.COMFORTABLE_WIDTH), -1))
         self.Layout()
+        # bar between the scans lists at the middle once the window is laid out (the splitter was split small)
+        wx.CallAfter(lambda: self.listssplitter.SetSashPosition(self.listssplitter.GetSize()[1] // 2))
+
+    COMFORTABLE_WIDTH = 1750  # pixels
+
+    def screen_width(self):
+        """width of the screen (client area) where the window is"""
+        index = wx.Display.GetFromWindow(self)
+        return wx.Display(index if index != wx.NOT_FOUND else 0).GetClientArea().width
 
     def OnSaveData(self, _):
 
@@ -595,7 +667,10 @@ class MainFrame(wx.Frame):
         self.last_hdf5filename = self.hdf5filename
         if folder.ShowModal() == wx.ID_OK:
 
-            self.fullpath_hdf5file = folder.GetPath()
+            fullpath = self.choose_lighter_logfile(folder.GetPath())
+            if fullpath is None:  # heavy logfile dialog cancelled
+                return
+            self.fullpath_hdf5file = fullpath
             self.folderpath_hdf5file, self.hdf5filename = os.path.split(self.fullpath_hdf5file)
 
         # simply update list fo scans
@@ -620,6 +695,50 @@ class MainFrame(wx.Frame):
         self.listmeshtoAdd = self.listmesh
         self.listascantoAdd = self.listascan
         wx.CallAfter(self.fill_tree)
+
+    def choose_lighter_logfile(self, fullpath):
+        """fullpath, or the logfile of a sample or dataset chosen in a dialog when fullpath has more than
+        logfile_reader.HEAVY_LOGFILE_NBSCANS scans (slow listing). None if the dialog is cancelled."""
+        try:
+            nbscans = logfile_reader.nb_scans_in_logfile(fullpath)
+        except OSError:  # not an hdf5 file: reported when listing the scans
+            return fullpath
+        if nbscans <= logfile_reader.HEAVY_LOGFILE_NBSCANS:
+            return fullpath
+        wx.BeginBusyCursor()
+        try:
+            candidates = logfile_reader.lighter_logfiles(fullpath)
+        finally:
+            wx.EndBusyCursor()
+        if not candidates:
+            return fullpath
+        seconds = nbscans * logfile_reader.LISTING_SECONDS_PER_SCAN
+        folder, filename = os.path.split(fullpath)
+        choices = ["open %s anyway (%d scans, up to about %d s)" % (filename, nbscans, seconds),
+                   "open %s, only the datasets whose name contains some words (filter)" % filename]
+        choices += [os.path.relpath(path, folder) + ("   (%d scans)" % n if n is not None else "")
+                    for path, n in candidates]
+        dlg = wx.SingleChoiceDialog(self, "%s contains %d scans: listing them takes up to about %d s.\n"
+                                    "Filter them, or open instead a logfile of a sample or dataset (most recent first)?"
+                                    % (filename, nbscans, seconds), "Heavy logfile", choices)
+        dlg.SetSelection(2)
+        chosen = None
+        self.hdf5_scanfilter = ""
+        if dlg.ShowModal() == wx.ID_OK:
+            index = dlg.GetSelection()
+            if index == 0:
+                chosen = fullpath
+            elif index == 1:
+                filterdlg = wx.TextEntryDialog(self, "Words of the dataset name (case insensitive), '-word': "
+                                               "without it.\ne.g.  map2D -align", "Filter of the scans")
+                if filterdlg.ShowModal() == wx.ID_OK:
+                    self.hdf5_scanfilter = filterdlg.GetValue().strip()
+                    chosen = fullpath
+                filterdlg.Destroy()
+            else:
+                chosen = candidates[index - 2][0]
+        dlg.Destroy()
+        return chosen
 
     def OnOpenSpecFile(self, _):
         """ in menu :  File/open spec file  """
@@ -659,10 +778,68 @@ class MainFrame(wx.Frame):
         wx.CallAfter(self.fill_tree)
 
     def fill_tree(self):
-        for meshelems in self.listmeshtoAdd:
-            self.treemesh.tree.AppendItem(self.treemesh.root, str(meshelems[0]))
-        for ascanelems in self.listascantoAdd:
-            self.treeascan.tree.AppendItem(self.treeascan.root, str(ascanelems[0]))
+        self.append_scan_items(self.treemesh, self.listmeshtoAdd)
+        self.append_scan_items(self.treeascan, self.listascantoAdd)
+
+    def append_scan_items(self, treepanel, listprops):
+        """add the scans of listprops to a scans list, colored by end reason (hdf5 logfiles, see endreason_colour())"""
+        for props in listprops:
+            item = treepanel.tree.AppendItem(treepanel.root, str(props[0]))
+            colour = endreason_colour(props[7]) if self.filetype == 'hdf5' and len(props) > 7 else None
+            if colour is not None:
+                treepanel.tree.SetItemTextColour(item, colour)
+        treepanel.fit_width()
+        # the splitter window does not take the minimum widths of its lists into account
+        self.listssplitter.SetMinSize((max(self.treemesh.GetMinSize()[0], self.treeascan.GetMinSize()[0]), 300))
+        self.fit_scans_lists()
+
+    def OnToggleCountersMaps(self, _):
+        """show the maps of the counters of the 2D scan instead of the 1D plot, or the 1D plot again"""
+        show = self.countersmapsbtn.GetValue()
+        self.hbox.Show(self.plotascanpanel, not show)
+        self.hbox.Show(self.countersmaps, show)
+        if show:
+            self.countersmaps.set_scan(self.meshscan)
+        self.panel.Layout()
+
+    def monitor_normalization(self, data, tit):
+        """divisor of the counters of a scan for the normalization by monitor (monitor counts per second minus
+        offset), None if the scan has no monitor"""
+        offset = getattr(self, "MonitorOffset", 0.)
+        if self.filetype == 'spec':
+            if "Monitor" not in data or "Seconds" not in data:
+                return None
+            return np.asarray(data["Monitor"], dtype=float) / np.asarray(data["Seconds"], dtype=float) - offset
+        monitorname = logfile_reader.find_monitor_counter(data)
+        if monitorname is None:
+            return None
+        monitor = np.asarray(data[monitorname], dtype=float)
+        exposure = data.get("integration_time")
+        if exposure is None or len(exposure) != len(monitor):
+            exposure = scan_exposure_time(tit)
+        return monitor / np.asarray(exposure, dtype=float) - offset
+
+    def fit_scans_lists(self):
+        """layout after a change of the scans lists widths: window widened if it is too narrow to show them"""
+        self.panel.Layout()
+        best = self.panel.GetSizer().GetMinSize()
+        width, height = self.GetClientSize()
+        newwidth = min(best.width, self.screen_width() - (self.GetSize()[0] - width))  # not wider than the screen
+        if width < newwidth:
+            self.SetClientSize((newwidth, max(height, best.height)))
+            self.panel.Layout()
+
+    def scan_tooltip(self, scantype, key):
+        """tooltip of a scan of the MESH or ASCAN list: command, light date and duration, end reason"""
+        listprops = self.listmesh if scantype == 'MESH' else self.listascan
+        for props in (listprops if listprops is not None else []):
+            if str(props[0]) != key:
+                continue
+            if self.filetype != 'hdf5' or len(props) < 8:  # SPEC file: '#S n command' line
+                return str(props[-1]).strip()
+            command = str(props[5]).split(' ', 1)[-1]
+            return "%s\n%s\n%s" % (command, scan_dates_text(props[3], props[4]), props[7] or "end reason unknown")
+        return None
 
 
     def get_listmesh(self):
@@ -694,7 +871,7 @@ class MainFrame(wx.Frame):
         if self.filetype == 'spec':
             listmeshall = getmeshscan_from_specfile(fullpathfilename)
 
-            if listmeshall == []:
+            if len(listmeshall) == 0:
                 print('No mesh scan in %s'%fullpathfilename)
                 self.listmesh = []
                 return
@@ -722,9 +899,9 @@ class MainFrame(wx.Frame):
             print('self.list_meshscan_indices', self.list_meshscan_indices)
         
         if self.filetype == 'hdf5':
-            listmeshall  = logfile_reader.getmeshscan_from_hdf5file(fullpathfilename)
+            listmeshall = self.list_hdf5_scans(fullpathfilename, onlymesh=True)
 
-            if listmeshall == []:
+            if len(listmeshall) == 0:
                 print('No mesh scan in %s'%fullpathfilename)
                 self.listmesh = []
                 return
@@ -751,6 +928,33 @@ class MainFrame(wx.Frame):
             print('hdf5 self.listmesh', self.listmesh)
             print('hdf5 self.list_meshscan_indices', self.list_meshscan_indices)
 
+    def list_hdf5_scans(self, fullpathfilename, onlymesh=False, onlyscan1D=False):
+        """meshes or 1D scans of a hdf5 logfile whose names pass self.hdf5_scanfilter (names filtered before
+        reading the scans, as map_workflow.list_maps(): faster for large logfiles)"""
+        flt = MW.scan_filter(self.hdf5_scanfilter)
+        return logfile_reader.getscans_from_hdf5file(
+            fullpathfilename, collectallscans=False, onlymesh=onlymesh, onlyscan1D=onlyscan1D,
+            n_last=int(flt['last']) if flt['last'] else None, node_prefix=flt['prefix'] or None,
+            node_substrings=flt['include'] or None, substrings_logic=flt['logic'],
+            exclude_substrings=flt['exclude'] or None,
+            node_filter=(lambda name: MW._words_match(name, flt['contains'])) if flt['contains'] else None)[0]
+
+    def list_hdf5_scans1D(self):
+        """list in the ASCAN tree the 1D scans (ascan, a2scan, ..., dscan, fscan) of the hdf5 logfile"""
+        if self.filetype != 'hdf5' or not getattr(self, 'fullpath_hdf5file', None):
+            return
+        wx.BeginBusyCursor()
+        try:
+            self.listascan = self.list_hdf5_scans(self.fullpath_hdf5file, onlyscan1D=True)
+        finally:
+            wx.EndBusyCursor()
+        self.list_ascanscan_indices = [props[0] for props in self.listascan]
+        self.treeascan.tree.DeleteAllItems()
+        self.treeascan.maketree()
+        self.append_scan_items(self.treeascan, self.listascan)
+        self.stbar0.SetStatusText("%d 1D scans in %s%s" % (len(self.listascan), self.hdf5filename,
+                                  " (filter: %s)" % self.hdf5_scanfilter if self.hdf5_scanfilter else ""))
+
     def get_listascan(self, fullpathspecfilename):
         samefile = False
         if self.specfilename != self.last_specfilename:
@@ -771,7 +975,7 @@ class MainFrame(wx.Frame):
 
         listascanall = getascan_from_specfile(fullpathspecfilename)
 
-        if listascanall == []:
+        if len(listascanall) == 0:
             print('No mesh scan in %s'%fullpathspecfilename)
             self.listascan = []
             return
@@ -859,7 +1063,7 @@ class MainFrame(wx.Frame):
 
                 # self.MonitorOffset  in counts / sec
 
-                counterintensity1D = datay / (data_I0 / (exposureTime / 1.0) - self.MonitorOffset)
+                counterintensity1D = normalized_by_monitor(datay, data_I0, exposureTime, self.MonitorOffset)
 
             print("building arrays [multiple scans]")
             if nb1 == nbacc:
@@ -878,7 +1082,7 @@ class MainFrame(wx.Frame):
                 print("filling data with zeros...")
                 # intensity array
                 zz = np.zeros(nb1)
-                zz.put(range(nbacc), counterintensity1D)
+                zz.put(range(min(nbacc, len(counterintensity1D))), counterintensity1D[:nbacc])  # (counters of unfinished scans may have one value less)
                 data_z_values = zz
                 # image index array
                 data_img = np.zeros(nb1)
@@ -950,8 +1154,7 @@ class MainFrame(wx.Frame):
             # counter and key name of data
             columns_name = list(data.keys())
             columns_name = sorted(columns_name)
-            self.plotascanpanel.combocounters.Clear()
-            self.plotascanpanel.combocounters.AppendItems(columns_name)
+            set_counters_menu(self.plotascanpanel.combocounters, columns_name, detectorname_ascan)
 
         return scan_in_progress
 
@@ -988,6 +1191,8 @@ class MainFrame(wx.Frame):
         detectorname_ascan = self.detectorname_ascan
         detectorname_mesh = self.detectorname_mesh
 
+        self.scan_subtitle = ""  # scan folder (from RAW_DATA) above the plots titles
+        self.scan_folder_path = None  # scan folder (or dataset folder) of hdf5 scans, see figures_folder()
         if self.filetype=='spec':
             scanheader, data, self.scan_date = ReadSpec(self.fullpath_specfile, scan_index, outputdate=True)
             tit = str(scanheader)
@@ -997,16 +1202,27 @@ class MainFrame(wx.Frame):
             print('in ReadScan_SpecFile for hdf5 branch')
 
             print('scan_index',scan_index)
-            tit, data, posmotors, fullpath, self.scan_date= readdata_from_hdf5key(self.listmesh, scan_index, outputdate=True)
+            scan1D = scan_index in self.list_ascanscan_indices  # from the ASCAN list, else from the MESH list
+            listprops = self.listascan if scan1D else self.listmesh
+            tit, data, posmotors, fullpath, self.scan_date = readdata_from_hdf5key(listprops, scan_index,
+                                                                                    outputdate=True)
+            scanindex = next((props[1] for props in listprops if str(props[0]) == str(scan_index)), None)
+            folder = logfile_reader.scan_folder(fullpath, scanindex) if scanindex is not None else None
+            if folder is not None:
+                self.scan_subtitle = logfile_reader.path_from_raw_data(folder)
+            self.scan_folder_path = folder or os.path.dirname(str(fullpath))
             print('tit',tit)
             # scanheader, data, self.scan_date = ReadHdf5(self.fullpath_hdf5file, scan_index, outputdate=True)
-            
-            self.scantype = 'amesh'
+
+            self.scantype = 'scan1D' if scan1D else 'amesh'
 
         # print("splec/bliss" command    :", tit)
         # print("scan type  :", self.scantype)
 
         Apptitle = ''
+
+        if self.scantype == 'scan1D':
+            return self.plot_hdf5_scan1D(scan_index, tit, data, resetlistcounters)
 
         if self.scantype in ('ascan',):
 
@@ -1040,7 +1256,7 @@ class MainFrame(wx.Frame):
 
                 # self.MonitorOffset  in counts / sec
 
-                counterintensity1D = datay / (data_I0 / (exposureTime / 1.0) - self.MonitorOffset)
+                counterintensity1D = normalized_by_monitor(datay, data_I0, exposureTime, self.MonitorOffset)
 
             print("building arrays")
             print('nb1',nb1,'nbacc',nbacc)
@@ -1062,7 +1278,7 @@ class MainFrame(wx.Frame):
                 print("filling data with zeros...")
                 # intensity array
                 zz = np.zeros(nb1)
-                zz.put(range(nbacc), counterintensity1D)
+                zz.put(range(min(nbacc, len(counterintensity1D))), counterintensity1D[:nbacc])  # (counters of unfinished scans may have one value less)
                 data_z_values = zz
                 # image index array
                 data_img = np.zeros(nb1)
@@ -1086,7 +1302,7 @@ class MainFrame(wx.Frame):
 
             datatype = "scalar"
 
-            Apptitle += "%s\nascan #%d" % (self.specfilename, scan_index)
+            Apptitle += "%s #%d\n%s" % (self.specfilename, scan_index, " ".join(tit.split()[2:]))
 
             # print("Apptitle ", Apptitle)
 
@@ -1104,8 +1320,7 @@ class MainFrame(wx.Frame):
                 # counter and key name of data
                 columns_name = list(data.keys())
                 columns_name = sorted(columns_name)
-                self.plotascanpanel.combocounters.Clear()
-                self.plotascanpanel.combocounters.AppendItems(columns_name)
+                set_counters_menu(self.plotascanpanel.combocounters, columns_name, detectorname_ascan)
 
             self.update_fig_1D(data_z_values,
                                 posmotorsinfo,
@@ -1135,20 +1350,16 @@ class MainFrame(wx.Frame):
                 nb1 = int(tit.split()[6]) + 1
                 nb2 = int(tit.split()[10]) + 1
             else:
-                # motor names
-                motor1 = tit.split()[1]
-                motor2 = tit.split()[5]
-
-
-                # nb of steps in both directions
-                nb1 = int(tit.split()[4]) + 1
-                nb2 = int(tit.split()[8]) + 1
+                # amesh, dmesh, fscan2d (fscan2d: start step npoints, first motor is the slow one)
+                dictcommand = logfile_reader.read_fullcommand(tit)
+                motor1, motor2 = dictcommand['fastmotor'], dictcommand['slowmotor']
+                nb1, nb2 = dictcommand['npts_fast'], dictcommand['npts_slow']
 
             # motor positions
             posmotor1 = np.fix(data[motor1] * 100000) / 100000
             posmotor2 = np.fix(data[motor2] * 100000) / 100000
-            # current nb of collected points in the mesh
-            nbacc = len(data[list(data.keys())[0]])
+            # current nb of collected points in the mesh (counters such as Nbunch_raw of fscan2d have other lengths)
+            nbacc = len(data[motor1]) if self.filetype == 'hdf5' else len(data[list(data.keys())[0]])
             print("nb of points accumulated  :", nbacc)
 
             if detectorname_mesh not in data:
@@ -1157,7 +1368,7 @@ class MainFrame(wx.Frame):
                     detectorname_mesh = 'Monitor'
                 
                 else:
-                    detectorname_mesh = 'epoch'
+                    detectorname_mesh = logfile_reader.find_monitor_counter(data) or 'epoch'
 
             counterintensity1D = data[detectorname_mesh]
 
@@ -1165,26 +1376,30 @@ class MainFrame(wx.Frame):
                 if self.filetype == 'spec':
                     data_I0 = data["Monitor"]
                     exposureTime = data["Seconds"]
-                else:
-                    data_I0 = data["mon"]
-                    exposureTime = data["integration_time"]
+                else:  # monitor found by name; fscan2d has no integration_time counter: exposure of the command
+                    monitorname = logfile_reader.find_monitor_counter(data)
+                    if monitorname is None:
+                        wx.MessageBox("No monitor counter (mon, i0, io, ...) in this scan: data not normalized",
+                                      "Normalization")
+                        data_I0, exposureTime = 1., self.MonitorOffset + 1.  # datay / 1
+                    else:
+                        data_I0 = data[monitorname]
+                        exposureTime = data.get("integration_time", dictcommand.get('expotime', 1.))
                 datay = counterintensity1D
 
                 # self.MonitorOffset  in counts / sec
 
-                counterintensity1D = datay / (data_I0 / (exposureTime / 1.0) - self.MonitorOffset)
+                counterintensity1D = normalized_by_monitor(datay, data_I0, exposureTime, self.MonitorOffset)
 
             print("building arrays")
             if nb2 * nb1 == nbacc:
                 print("scan is finished")
                 data_z_values = np.reshape(counterintensity1D, (nb2, nb1))
-                if 'img' in data:
-                    data_img = np.reshape(data["img"], (nb2, nb1))
-                elif 'img_scmos' in data:
-                    data_img = np.reshape(data["img_scmos"], (nb2, nb1))
-                else:
-                    print("'img' column doesn't exist! Add fake dummy 0 value")
-                    data_img = np.zeros((nb2, nb1))
+                imagecounter = logfile_reader.find_image_counter(data)
+                if imagecounter is not None:
+                    data_img = np.reshape(data[imagecounter], (nb2, nb1))
+                else:  # e.g. EIGER: image index = point index
+                    data_img = np.arange(nb2 * nb1).reshape((nb2, nb1))
                 posmotorsinfo = np.reshape(np.array([posmotor1, posmotor2]).T, (nb2, nb1, 2))
                 scan_in_progress = False
 
@@ -1193,17 +1408,13 @@ class MainFrame(wx.Frame):
                 print("filling data with zeros...")
                 # intensity array
                 zz = np.zeros(nb2 * nb1)
-                zz.put(range(nbacc), counterintensity1D)
+                zz.put(range(min(nbacc, len(counterintensity1D))), counterintensity1D[:nbacc])  # (counters of unfinished scans may have one value less)
                 data_z_values = np.reshape(zz, (nb2, nb1))
                 # image index array
-                data_img = np.zeros(nb2 * nb1)
-                if 'img' in data:
-                    data_img.put(range(nbacc), data["img"])
-                elif 'img_scmos' in data:
-                    data_img.put(range(nbacc), data["img_scmos"])
-                else:
-                    print("'img' column doesn't exist! Add fake dummy 0 value")
-                    data_img.put(range(nbacc), 0)
+                data_img = np.arange(nb2 * nb1, dtype=float)  # image index = point index (e.g. EIGER)
+                imagecounter = logfile_reader.find_image_counter(data)
+                if imagecounter is not None:
+                    data_img.put(range(nbacc), data[imagecounter])
                 data_img = np.reshape(data_img, (nb2, nb1))
                 # motors positions
                 ar_posmotor1 = np.zeros(nb2 * nb1)
@@ -1229,9 +1440,9 @@ class MainFrame(wx.Frame):
 
             #         print "posmotorsinfo", posmotorsinfo
             if self.filetype=='spec':
-                Apptitle += "%s\nmesh scan #%d" % (self.specfilename, scan_index)
+                Apptitle += "%s #%d\n%s" % (self.specfilename, scan_index, " ".join(tit.split()[2:]))
             else:
-                Apptitle += "%s\nmesh scan #%s" % (self.hdf5filename, scan_index)
+                Apptitle += "%s\n%s" % (scan_index, tit)  # scan name, BLISS command
                 
             #print("title", Apptitle)
 
@@ -1247,10 +1458,8 @@ class MainFrame(wx.Frame):
                 self.minmotor2 = float(titlesplit[8])
                 self.maxmotor2 = float(titlesplit[9])
             else:
-                self.minmotor1 = float(titlesplit[2])
-                self.maxmotor1 = float(titlesplit[3])
-                self.minmotor2 = float(titlesplit[6])
-                self.maxmotor2 = float(titlesplit[7])
+                self.minmotor1, self.maxmotor1 = dictcommand['fmotmin'], dictcommand['fmotmax']
+                self.minmotor2, self.maxmotor2 = dictcommand['smotmin'], dictcommand['smotmax']
 
             scancommandextremmotorspositions = [self.minmotor1,
                                                 self.maxmotor1,
@@ -1261,8 +1470,15 @@ class MainFrame(wx.Frame):
                 # counter and key name of data
                 columns_name = list(data.keys())
                 columns_name = sorted(columns_name)
-                self.plotmeshpanel.combocounters.Clear()
-                self.plotmeshpanel.combocounters.AppendItems(columns_name)
+                set_counters_menu(self.plotmeshpanel.combocounters, columns_name, detectorname_mesh)
+
+            # all the counters of the scan for the counters maps (fast motor along the lines of the arrays)
+            self.meshscan = dict(data=data, nb1=nb1, nb2=nb2, fastmotor=motor1, slowmotor=motor2,
+                                 imageindices=data_img, scan_index=scan_index, command=tit,
+                                 subtitle=self.scan_subtitle, scanfolder=self.scan_folder_path,
+                                 divisor=self.monitor_normalization(data, tit) if self.normalizeintensity else None)
+            if self.countersmapsbtn.GetValue():
+                self.countersmaps.set_scan(self.meshscan)
 
             self.update_fig_2D(data_z_values,
                                 posmotorsinfo,
@@ -1275,6 +1491,55 @@ class MainFrame(wx.Frame):
                                 imshowmode=True)
 
             return scan_in_progress
+
+    def plot_hdf5_scan1D(self, scan_index, tit, data, resetlistcounters=True):
+        """plot a counter of a 1D scan of hdf5 logfile (ascan, a2scan, ..., dscan, fscan) as a function of one of
+        its motors (self.motor_ascan if it is a motor of the scan, else the first one). The counter
+        self.detectorname_ascan is kept from one scan to another (monitor if the scan has no such counter)."""
+        Apptitle = ''
+        counters1D = {name: values for name, values in data.items() if np.ndim(values) == 1}
+        motors = [motor for motor in logfile_reader.scan1D_motors(tit) if motor in counters1D]
+        if not motors:  # no motor dataset: time
+            motors = [name for name in ('elapsed_time', 'epoch') if name in counters1D][:1]
+        if not motors:
+            wx.MessageBox("No motor positions in scan %s:\n%s" % (scan_index, tit), "1D scan")
+            return False
+        motor = self.motor_ascan if self.motor_ascan in motors else motors[0]
+        xvalues = np.asarray(counters1D[motor], dtype=float)
+        nbpoints = len(xvalues)
+        # counters with one value per point (in fscan, Nbunch_raw for example has more values)
+        counters = sorted(name for name, values in counters1D.items() if len(values) == nbpoints)
+
+        detectorname = self.detectorname_ascan
+        if detectorname not in counters:
+            Apptitle += '%s NOT AVAILABLE\n' % detectorname
+            detectorname = logfile_reader.find_monitor_counter(counters) or counters[0]
+        yvalues = np.asarray(counters1D[detectorname], dtype=float)
+
+        if self.normalizeintensity:
+            monitorname = logfile_reader.find_monitor_counter(counters)
+            if monitorname is None:
+                wx.MessageBox("No monitor counter (mon, i0, io, ...) in this scan: data not normalized",
+                              "Normalization")
+            else:
+                exposure = counters1D.get("integration_time")
+                if exposure is None or len(exposure) != nbpoints:
+                    exposure = scan_exposure_time(tit)
+                yvalues = yvalues / (np.asarray(counters1D[monitorname], dtype=float) / exposure
+                                     - self.MonitorOffset)
+
+        imagecounter = logfile_reader.find_image_counter(counters)
+        imageindices = np.asarray(counters1D[imagecounter]) if imagecounter else np.arange(nbpoints)
+
+        Apptitle += "%s\n%s" % (scan_index, tit)  # scan name, BLISS command
+        self.scancommand = tit
+        self.flat_data_z_values, self.flat_motor1 = yvalues, xvalues
+        set_counters_menu(self.plotascanpanel.combocounters, counters if resetlistcounters else None, detectorname)
+        self.plotascanpanel.set_motors(motors, motor)
+
+        self.update_fig_1D(yvalues, xvalues, motor, Apptitle, imageindices, detectorname,
+                           (np.nanmin(xvalues), np.nanmax(xvalues)))
+        return False
 
     def update_fig_1D(self,
                     data_z_values,
@@ -1295,6 +1560,7 @@ class MainFrame(wx.Frame):
         self.plotascanpanel.posmotorname = motor1
         self.plotascanpanel.absolute_motorposition_unit = "mm"
         self.plotascanpanel.title = Apptitle
+        self.plotascanpanel.subtitle = getattr(self, "scan_subtitle", "")
         self.plotascanpanel.detectorname = detectorname
         self.plotascanpanel.Imageindices = data_img
         self.plotascanpanel.multipleplots = multipleplots
@@ -1342,11 +1608,23 @@ class MainFrame(wx.Frame):
         index along y axis and also obviously data_z_values = list of z values and   posmotorsinfo list of x values"""
         #         self.plot.fig.clear()
 
+        # y motor (yech, yps, sy) along the vertical axis whatever the fast motor, as in mosaic.py
+        # (see generaltools.map_transposed()): arrays (slow, fast) transposed, motors 1 and 2 swapped
+        self.plotmeshpanel.fastmotorname = motor1
+        if imshowmode and GT.map_transposed(motor1, motor2):
+            data_z_values = np.transpose(data_z_values)
+            posmotorsinfo = np.transpose(posmotorsinfo, (1, 0, 2))[:, :, ::-1]  # (horizontal, vertical) positions
+            data_img = np.transpose(data_img)
+            motor1, motor2 = motor2, motor1
+            scancommandextremmotorspositions = (tuple(scancommandextremmotorspositions[2:])
+                                                + tuple(scancommandextremmotorspositions[:2]))
+
         self.plotmeshpanel.data = data_z_values
         self.plotmeshpanel.posarray_twomotors = posmotorsinfo
         self.plotmeshpanel.motor1name, self.plotmeshpanel.motor2name = motor1, motor2
         self.plotmeshpanel.absolute_motorposition_unit = "mm"
         self.plotmeshpanel.title = Apptitle
+        self.plotmeshpanel.subtitle = getattr(self, "scan_subtitle", "")
         self.plotmeshpanel.Imageindices = data_img
         self.plotmeshpanel.detectorname = detectorname
         self.plotmeshpanel.imshowmode = imshowmode
@@ -1421,6 +1699,139 @@ class MainFrame(wx.Frame):
             print("waiting for data  for scan :%d" % scan_index)
             # stop the first timer
             return False
+
+def tick_label(value, step):
+    """text of a tick of motor positions, rounded at the precision of the step between map points
+    (2 significant digits of the step) without trailing zeros: 4.99995 with step 0.99999 -> '5'"""
+    step = abs(float(step))
+    decimals = max(0, 1 - int(np.floor(np.log10(step)))) if step > 0 and np.isfinite(step) else 4
+    text = "%.*f" % (decimals, value)
+    if "." in text:
+        text = text.rstrip("0").rstrip(".")
+    return "0" if text in ("-0", "") else text
+
+
+def normalized_by_monitor(values, monitor, exposure, offset=0.):
+    """values / (monitor / exposure - offset), on the points recorded by all the counters (counters of an
+    unfinished scan may have one value less)"""
+    values = np.asarray(values, dtype=float)
+    monitor = np.asarray(monitor, dtype=float)
+    exposure = np.asarray(exposure, dtype=float)
+    nb = min(len(values), len(monitor), len(exposure) if exposure.ndim else len(values))
+    if exposure.ndim:
+        exposure = exposure[:nb]
+    return values[:nb] / (monitor[:nb] / exposure - offset)
+
+
+def figures_folder(scanfolder):
+    """folder where to save figures of a scan: mirror in PROCESSED_DATA of its RAW_DATA folder
+    (RAW_DATA/<sample>/<dataset>/scanNNNN -> PROCESSED_DATA/<sample>/<dataset>/scanNNNN, created if needed),
+    else the scan folder itself if it can be written, else None.
+
+    :return: folder, list of the folders created (deepest first, see remove_empty_folders())
+    """
+    if not scanfolder:
+        return None, []
+    scanfolder = os.path.normpath(str(scanfolder))
+    parts = scanfolder.split(os.sep)
+    if "RAW_DATA" in parts:
+        parts[parts.index("RAW_DATA")] = "PROCESSED_DATA"
+        mirror = os.sep.join(parts)
+        missing = []
+        folder = mirror
+        while folder and not os.path.isdir(folder):
+            missing.append(folder)
+            folder = os.path.dirname(folder)
+        try:
+            os.makedirs(mirror, exist_ok=True)
+            return mirror, missing
+        except OSError:  # PROCESSED_DATA not writable
+            remove_empty_folders(missing)
+    if os.path.isdir(scanfolder) and os.access(scanfolder, os.W_OK):
+        return scanfolder, []
+    return None, []
+
+
+def remove_empty_folders(folders):
+    """remove the folders (deepest first) that are empty, e.g. created by figures_folder() for nothing"""
+    for folder in folders:
+        try:
+            os.rmdir(folder)
+        except OSError:  # not empty, or already removed
+            break
+
+
+def set_counters_menu(combo, counters=None, value=""):
+    """counters menu: items (if counters is not None) and displayed value, i.e. the plotted counter
+    (Clear() of the menu erases its value: the menu was left blank)"""
+    if counters is not None:
+        names = [str(name) for name in counters]
+        combo.Clear()
+        combo.AppendItems(names)
+        # width of the longest counter name (+ drop-down button)
+        width = max((combo.GetTextExtent(name)[0] for name in names + [str(value)]), default=0) + 50
+        combo.SetMinSize((int(min(max(width, 100), 450)), -1))
+        combo.GetParent().Layout()
+    combo.SetValue(str(value))
+
+
+def plot_title(title, counter, normalized=False):
+    """title of the plots: title lines (scan name, command) and the plotted counter"""
+    if not counter:
+        return title
+    return "%s\n%s%s" % (title, counter, " (normalized by monitor)" if normalized else "")
+
+
+# colors of the items of the scans lists from the end reason of the scans (BLISS hdf5 logfiles)
+ENDREASON_COLOURS = {"SUCCESS": (0, 140, 0), "USER_ABORT": (230, 120, 0)}
+ENDREASON_ERROR_COLOUR = (200, 0, 0)  # FAILURE, ...
+
+
+def endreason_colour(endreason):
+    """wx.Colour of a scan item: green SUCCESS, orange USER_ABORT, red other end reason (error),
+    None if unknown (scan running, SPEC file)"""
+    if endreason is None or endreason == "":
+        return None
+    if isinstance(endreason, bytes):
+        endreason = endreason.decode()
+    return wx.Colour(*ENDREASON_COLOURS.get(str(endreason).upper(), ENDREASON_ERROR_COLOUR))
+
+
+def duration_text(seconds):
+    """'25 s', '3 min 25 s', '2 h 05 min'"""
+    seconds = int(round(seconds))
+    if seconds < 60:
+        return "%d s" % seconds
+    if seconds < 3600:
+        return "%d min %02d s" % divmod(seconds, 60)
+    return "%d h %02d min" % (seconds // 3600, (seconds % 3600) // 60)
+
+
+def scan_dates_text(start, end=None):
+    """light text of the dates of a scan: '11 Jul 2026 21:06, 3 min 25 s' (from ISO dates)"""
+    try:
+        t0 = datetime.datetime.fromisoformat(str(start))
+    except ValueError:
+        return str(start)
+    text = t0.strftime("%d %b %Y %H:%M")
+    try:
+        text += ", " + duration_text((datetime.datetime.fromisoformat(str(end)) - t0).total_seconds())
+    except (ValueError, TypeError):
+        pass
+    return text
+
+
+def scan_exposure_time(command, default=1.):
+    """exposure time of a BLISS scan command (last argument for ascan, a2scan, ...), default if not found"""
+    try:
+        return float(logfile_reader.read_fullcommand(command)['expotime'])
+    except (ValueError, KeyError, IndexError):
+        pass
+    try:
+        return float(command.split()[-1])
+    except (ValueError, IndexError):
+        return default
+
 
 def makefig_update(fig, myplot, cbar, data, datadim=2):
     if myplot:
@@ -1542,12 +1953,13 @@ class PlotPanel(wx.Panel):
     def init_figurecanvas(self):
         self.dpi = 100
         self.figsize = 4
-        self.fig = Figure((self.figsize, self.figsize), dpi=self.dpi)
+        self.fig = Figure((self.figsize, self.figsize), dpi=self.dpi, layout="constrained")
         self.canvas = FigCanvas(self, -1, self.fig)
         self.canvas.mpl_connect("key_press_event", self.onKeyPressed)
         self.canvas.mpl_connect("button_press_event", self.onClick)
 
     def create_axes(self):
+        self.fig.clear()
         self.axes = self.fig.add_subplot(111)
 
     def create_main_panel(self):
@@ -1581,15 +1993,26 @@ class PlotPanel(wx.Panel):
         self.combocounters.Bind(wx.EVT_COMBOBOX, self.OnChangeCounter)
         self.combocounters.Bind(wx.EVT_TEXT_ENTER, self.OnChangeCounter)
 
+        # motor of the horizontal axis, for scans of several motors (a2scan, ...)
+        motortxt = wx.StaticText(self, -1, "motor")
+        self.combomotors = wx.ComboBox(self, -1, "", choices=[], size=(-1, 40), style=wx.CB_READONLY)
+        self.combomotors.Bind(wx.EVT_COMBOBOX, self.OnChangeMotor)
+        self.combomotors.Enable(False)
+        tipmotor = "Motor along the horizontal axis (scans of several motors: a2scan, a3scan, ...)"
+        motortxt.SetToolTipString(tipmotor)
+        self.combomotors.SetToolTipString(tipmotor)
+
         # --- --------layout
-        htoolbar2 = wx.BoxSizer(wx.HORIZONTAL)
+        htoolbar2 = wx.WrapSizer(wx.HORIZONTAL)
         htoolbar2.Add(countertxt, 0)
         htoolbar2.Add(self.combocounters, 0)
+        htoolbar2.Add(motortxt, 0)
+        htoolbar2.Add(self.combomotors, 0)
         htoolbar2.Add(self.normalizechckbox, 0)
         htoolbar2.Add(self.I0offsettxt, 0)
         htoolbar2.Add(self.I0offsetctrl, 0)
 
-        htoolbar = wx.BoxSizer(wx.HORIZONTAL)
+        htoolbar = wx.WrapSizer(wx.HORIZONTAL)
         htoolbar.Add(self.toolbar, 0)
         htoolbar.Add(scaletxt, 0)
         htoolbar.Add(self.comboscale, 0)
@@ -1637,6 +2060,18 @@ class PlotPanel(wx.Panel):
         else:
             self.frameparent.ReadMultipleScans(self.frameparent.treeascan.set_selected_indices, resetlistcounters=False)
 
+    def set_motors(self, motors, current):
+        """motors of the plotted 1D scan in the motor menu (enabled for scans of several motors)"""
+        if list(self.combomotors.GetItems()) != list(motors):
+            self.combomotors.SetItems(list(motors))
+        self.combomotors.SetValue(current or "")
+        self.combomotors.Enable(len(motors) > 1)
+
+    def OnChangeMotor(self, _):
+        """motor of the horizontal axis chosen in the menu (kept for the next scans that have it)"""
+        self.frameparent.motor_ascan = self.combomotors.GetValue()
+        self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index_ascan, resetlistcounters=False)
+
     def normalizeplot(self):
         #TODO:
         pass
@@ -1660,7 +2095,10 @@ class PlotPanel(wx.Panel):
 
         # clear the axes and replot everything
         self.axes.cla()
-        self.axes.set_title(self.title)
+        self.axes.set_title(plot_title(self.title, self.detectorname, self.frameparent.normalizeintensity),
+                            fontsize="small")
+        # scan folder (from RAW_DATA) in smaller letters above the title
+        self.fig.suptitle(getattr(self, "subtitle", ""), fontsize="x-small", color="dimgray")
         #         self.axes.set_autoscale_on(True)
         if self.datatype == "scalar":
 
@@ -1689,9 +2127,257 @@ class PlotPanel(wx.Panel):
 
 
     def format_coord_single(self, x, y):
+        """hover text: nearest point of the plotted scan (index, motor position, counter value, image index)"""
+        text = '(x,y) = (%f, %f)' % (x, y)
+        xs = None if self.multipleplots else np.asarray(self.posarray_motors, dtype=float)
+        if xs is not None and xs.ndim == 1 and np.isfinite(xs).any():
+            k = int(np.nanargmin(np.abs(xs - x)))
+            text = "point %d: %s=%.6g, %s=%.6g" % (k, self.posmotorname, xs[k], self.detectorname,
+                                                  np.asarray(self.data_to_Display, dtype=float)[k])
+            imageindices = getattr(self, "Imageindices", None)
+            if imageindices is not None and np.ndim(imageindices) == 1 and k < len(imageindices):
+                text += ", image %d" % imageindices[k]
+        self.frameparent.stbar.SetStatusText(text, 3)
+        return text
 
-        self.frameparent.stbar.SetStatusText('(x,y) = (%f, %f)' % (x, y), 3)
-        return
+def natural_key(name):
+    """sort key of names with numbers: eiger4m_roi2 before eiger4m_roi10"""
+    return [int(part) if part.isdigit() else part for part in re.split(r"(\d+)", str(name))]
+
+
+class CountersMapsPanel(wx.Panel):
+    """maps of all the counters of a 2D scan whose names start with given prefixes (fluo, eiger4m_, ...), by
+    pages of 4, 9 or 16 maps, at the place of the 1D plot (toggle button 'Counters maps' of MainFrame).
+    Same orientation (y motor vertical), colormap and normalization as the main 2D plot.
+    Mouse over a map: point, image index and value in the status bar. Click on a map: its counter is plotted
+    in the main 2D plot."""
+    DEFAULT_PREFIXES = "fluo eiger4m_ xia_sum_fluo"
+    PAGE_SIZES = ("4", "9", "16")
+
+    def __init__(self, parent, frameparent):
+        wx.Panel.__init__(self, parent, -1)
+        self.frameparent = frameparent
+        self.meshscan = None
+        self.counters = []
+        self.page = 0
+        self.axes_counters = {}
+
+        self.fig = Figure((5, 5), dpi=100, layout="constrained")
+        self.fig.get_layout_engine().set(w_pad=0.02, h_pad=0.02, wspace=0.02, hspace=0.02)
+        self.canvas = FigCanvas(self, -1, self.fig)
+        self.canvas.SetMinSize((400, 400))
+        self.canvas.mpl_connect("button_press_event", self.OnClick)
+        self.canvas.mpl_connect("motion_notify_event", self.OnMotion)
+
+        prefixtxt = wx.StaticText(self, -1, "counters starting with")
+        self.prefixesctrl = wx.TextCtrl(self, -1, self.DEFAULT_PREFIXES, size=(200, -1), style=wx.TE_PROCESS_ENTER)
+        self.prefixesctrl.Bind(wx.EVT_TEXT_ENTER, self.OnChangePrefixes)
+        tip = "Beginnings of the names of the counters to map, separated by spaces (press Enter)"
+        prefixtxt.SetToolTipString(tip)
+        self.prefixesctrl.SetToolTipString(tip)
+
+        perpagetxt = wx.StaticText(self, -1, "maps per page")
+        screenheight = wx.Display(0).GetClientArea().height
+        self.comboperpage = wx.ComboBox(self, -1, "16" if screenheight >= 1000 else "9",
+                                        choices=list(self.PAGE_SIZES), style=wx.CB_READONLY)
+        self.comboperpage.Bind(wx.EVT_COMBOBOX, self.OnChangePerPage)
+
+        self.prevbtn = wx.Button(self, -1, "<", size=(40, -1))
+        self.nextbtn = wx.Button(self, -1, ">", size=(40, -1))
+        self.prevbtn.Bind(wx.EVT_BUTTON, lambda _: self.change_page(-1))
+        self.nextbtn.Bind(wx.EVT_BUTTON, lambda _: self.change_page(1))
+        self.prevbtn.SetToolTipString("Previous page of maps")
+        self.nextbtn.SetToolTipString("Next page of maps")
+        self.pagetxt = wx.StaticText(self, -1, "")
+        self.savebtn = wx.Button(self, -1, "Save figure")
+        self.savebtn.Bind(wx.EVT_BUTTON, self.OnSave)
+        self.savebtn.SetToolTipString("Save the maps of this page (png, pdf or svg)")
+
+        controls = wx.WrapSizer(wx.HORIZONTAL)
+        for widget in (prefixtxt, self.prefixesctrl, perpagetxt, self.comboperpage):
+            controls.Add(widget, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 4)
+        pages = wx.BoxSizer(wx.HORIZONTAL)
+        pages.Add(self.prevbtn, 0)
+        pages.Add(self.pagetxt, 0, wx.ALIGN_CENTER_VERTICAL | wx.LEFT | wx.RIGHT, 8)
+        pages.Add(self.nextbtn, 0)
+        pages.Add(self.savebtn, 0, wx.LEFT, 16)
+
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.canvas, 1, wx.GROW)
+        vbox.Add(pages, 0, wx.ALIGN_CENTER_HORIZONTAL | wx.TOP, 2)
+        vbox.Add(controls, 0, wx.EXPAND | wx.TOP, 2)
+        self.SetSizer(vbox)
+
+    def matching_counters(self):
+        """counters of the scan (1D) whose names start with one of the prefixes, natural order"""
+        if self.meshscan is None:
+            return []
+        prefixes = tuple(self.prefixesctrl.GetValue().split())
+        return sorted((name for name, values in self.meshscan["data"].items()
+                       if prefixes and name.startswith(prefixes) and np.ndim(values) == 1 and len(values)),
+                      key=natural_key)
+
+    def set_scan(self, meshscan):
+        """maps of the counters of a 2D scan (see MainFrame.meshscan); same page if the counters are the same"""
+        self.meshscan = meshscan
+        counters = self.matching_counters()
+        if counters != self.counters:
+            self.page = 0
+        self.counters = counters
+        self.draw()
+
+    def OnChangePrefixes(self, _):
+        self.counters = self.matching_counters()
+        self.page = 0
+        self.draw()
+
+    def OnChangePerPage(self, _):
+        self.page = 0
+        self.draw()
+
+    def change_page(self, step):
+        self.page += step
+        self.draw()
+
+    def map_of_counter(self, name):
+        """2D array (slow, fast) of the values of a counter (NaN for points not recorded), normalized by monitor
+        as the main 2D plot"""
+        ms = self.meshscan
+        nb1, nb2 = ms["nb1"], ms["nb2"]
+        values = np.asarray(ms["data"][name], dtype=float)[:nb1 * nb2]
+        divisor = ms.get("divisor")
+        if divisor is not None and len(divisor) >= len(values):
+            values = values / np.asarray(divisor, dtype=float)[:len(values)]
+        full = np.full(nb1 * nb2, np.nan)
+        full[:len(values)] = values
+        return full.reshape((nb2, nb1))
+
+    def draw(self):
+        """draw the maps of the current page"""
+        self.fig.clear()
+        self.axes_counters = {}
+        perpage = int(self.comboperpage.GetValue())
+        nbpages = max(1, math.ceil(len(self.counters) / perpage))
+        self.page = min(max(self.page, 0), nbpages - 1)
+        first = self.page * perpage
+        pagecounters = self.counters[first:first + perpage]
+        self.pagetxt.SetLabel("page %d/%d, counters %d-%d of %d" % (self.page + 1, nbpages, first + 1 if pagecounters else 0,
+                                                                     first + len(pagecounters), len(self.counters)))
+        self.prevbtn.Enable(self.page > 0)
+        self.nextbtn.Enable(self.page < nbpages - 1)
+        self.Layout()
+        if self.meshscan is None or not pagecounters:
+            message = ("Select a scan of the 2D scans list" if self.meshscan is None else
+                       "No counter starting with: %s" % self.prefixesctrl.GetValue())
+            self.fig.text(0.5, 0.5, message, ha="center", va="center")
+            self.canvas.draw()
+            return
+
+        ms = self.meshscan
+        self.transposed = GT.map_transposed(ms["fastmotor"], ms["slowmotor"])
+        mainplot = self.frameparent.plotmeshpanel
+        ncols = math.ceil(math.sqrt(perpage))
+        nrows = math.ceil(perpage / ncols)
+        # axes: positions (micron) from the corner of the map; tick labels on the left column and the bottom row
+        steps = self.map_steps()
+        hmotor, vmotor = ((ms["slowmotor"], ms["fastmotor"]) if self.transposed
+                          else (ms["fastmotor"], ms["slowmotor"]))
+        for k, name in enumerate(pagecounters):
+            map2D = self.map_of_counter(name)
+            display = map2D.T if self.transposed else map2D  # y motor along the vertical axis
+            ax = self.fig.add_subplot(nrows, ncols, k + 1)
+            ax.imshow(display, cmap=mainplot.cmap, interpolation="nearest", origin=mainplot.origin, aspect="equal")
+            ax.set_title(name, fontsize=7)
+            self.axes_counters[ax] = (name, display)
+            if steps is None:
+                ax.set_xticks([])
+                ax.set_yticks([])
+                continue
+            leftcolumn = k % ncols == 0
+            bottomrow = k + ncols >= len(pagecounters)  # no map below
+            for axis, step in ((ax.xaxis, steps[0]), (ax.yaxis, steps[1])):
+                axis.set_major_locator(MaxNLocator(3, integer=True))
+                axis.set_major_formatter(FuncFormatter(lambda index, _, step=step: tick_label(index * step, step)))
+            ax.tick_params(labelsize=6, length=2, pad=1, labelbottom=bottomrow, labelleft=leftcolumn)
+            if leftcolumn and bottomrow:
+                fast = ms["fastmotor"]
+                ax.set_xlabel("%s (micron, %s)" % (hmotor, "fast" if hmotor == fast else "slow"), fontsize=6, labelpad=1)
+                ax.set_ylabel("%s (micron, %s)" % (vmotor, "fast" if vmotor == fast else "slow"), fontsize=6, labelpad=1)
+        command = ms["command"]
+        title = "%s\n%s" % (ms["scan_index"], command.split(None, 2)[2] if command.startswith("#S") else command)
+        if ms["subtitle"]:
+            title += "\n" + ms["subtitle"]
+        self.fig.suptitle(title, fontsize=7)
+        self.canvas.draw()
+
+    def map_steps(self):
+        """(horizontal, vertical) steps between the map points (micron) from the scan command, None if unknown"""
+        ms = self.meshscan
+        try:
+            dc = logfile_reader.read_fullcommand(ms["command"])
+            fast = abs(dc["fmotmax"] - dc["fmotmin"]) / max(dc["fmotnbsteps"], 1) * 1000.
+            slow = abs(dc["smotmax"] - dc["smotmin"]) / max(dc["smotnbsteps"], 1) * 1000.
+        except (ValueError, KeyError, IndexError):  # e.g. SPEC command
+            return None
+        return (slow, fast) if self.transposed else (fast, slow)
+
+    def OnSave(self, _):
+        """save the maps of the current page (default: <scan name>_counters_maps_page<n>.png in the mirror in
+        PROCESSED_DATA of the RAW_DATA folder of the scan, created if needed, see figures_folder())"""
+        if self.meshscan is None or not self.axes_counters:
+            wx.MessageBox("No maps to save: select a scan of the 2D scans list", "Save figure")
+            return
+        folder, created = figures_folder(self.meshscan.get("scanfolder"))
+        if folder is None:
+            folder = os.getcwd()
+        name = "".join(c if c.isalnum() or c in "-_" else "_" for c in str(self.meshscan["scan_index"]))
+        dlg = wx.FileDialog(self, "Save the counters maps", defaultDir=str(folder),
+                            defaultFile="%s_counters_maps_page%d.png" % (name, self.page + 1),
+                            wildcard="PNG image (*.png)|*.png|PDF (*.pdf)|*.pdf|SVG (*.svg)|*.svg",
+                            style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        if dlg.ShowModal() == wx.ID_OK:
+            path = dlg.GetPath()
+            if os.path.splitext(path)[1].lower() not in (".png", ".pdf", ".svg"):
+                path += (".png", ".pdf", ".svg")[dlg.GetFilterIndex()]
+            try:
+                self.fig.savefig(path, dpi=150)
+                self.frameparent.stbar0.SetStatusText("counters maps saved in %s" % path)
+            except OSError as exc:  # e.g. folder without write permission
+                wx.MessageBox("Cannot save %s:\n%s" % (path, exc), "Save figure")
+        remove_empty_folders(created)  # mirror folder created for nothing (cancelled, saved elsewhere)
+        dlg.Destroy()
+
+    def point_of(self, ax, x, y):
+        """(counter name, value, fast index, slow index) of the map point under (x, y) of ax, None outside"""
+        if ax not in self.axes_counters or x is None or y is None:
+            return None
+        name, display = self.axes_counters[ax]
+        col, row = int(np.floor(x + 0.5)), int(np.floor(y + 0.5))
+        if not (0 <= row < display.shape[0] and 0 <= col < display.shape[1]):
+            return None
+        fast, slow = (row, col) if self.transposed else (col, row)
+        return name, display[row, col], fast, slow
+
+    def OnMotion(self, event):
+        """status bar: counter, motors indices, image index and value of the point under the mouse"""
+        point = self.point_of(event.inaxes, event.xdata, event.ydata)
+        if point is None:
+            return
+        name, value, fast, slow = point
+        ms = self.meshscan
+        image = np.asarray(ms["imageindices"])[slow, fast]
+        self.frameparent.stbar0.SetStatusText("%s: %s #%d, %s #%d, image %d, value %.6g"
+                                              % (name, ms["fastmotor"], fast, ms["slowmotor"], slow, image, value))
+
+    def OnClick(self, event):
+        """click on a map: its counter is plotted in the main 2D plot"""
+        if event.inaxes not in self.axes_counters:
+            return
+        name = self.axes_counters[event.inaxes][0]
+        mainplot = self.frameparent.plotmeshpanel
+        mainplot.combocounters.SetValue(name)
+        mainplot.OnChangeCounter(None)
+
 
 class ImshowPanel(wx.Panel):
     """
@@ -1808,8 +2494,9 @@ class ImshowPanel(wx.Panel):
         elif TICKS_FORMATTER_TYPE == "RELATIVE_CORNER":
             formatterfunc_x = self.fromindex_to_pixelpos_x_relative_corner
             formatterfunc_y = self.fromindex_to_pixelpos_y_relative_corner
-            self.axes.set_xlabel("%s (micron)" % self.motor1name)
-            self.axes.set_ylabel("%s (micron)" % self.motor2name)
+            fast = getattr(self, "fastmotorname", None)
+            self.axes.set_xlabel("%s (micron, %s motor)" % (self.motor1name, "fast" if self.motor1name == fast else "slow"))
+            self.axes.set_ylabel("%s (micron, %s motor)" % (self.motor2name, "fast" if self.motor2name == fast else "slow"))
 
         self.axes.get_xaxis().set_major_formatter(FuncFormatter(formatterfunc_x))
         self.axes.get_yaxis().set_major_formatter(FuncFormatter(formatterfunc_y))
@@ -1823,12 +2510,13 @@ class ImshowPanel(wx.Panel):
     def init_figurecanvas(self):
         self.dpi = 100
         self.figsize = 4
-        self.fig = Figure((self.figsize, self.figsize), dpi=self.dpi)
+        self.fig = Figure((self.figsize, self.figsize), dpi=self.dpi, layout="constrained")
         self.canvas = FigCanvas(self, -1, self.fig)
         self.canvas.mpl_connect("key_press_event", self.onKeyPressed)
         self.canvas.mpl_connect("button_press_event", self.onClick)
 
     def create_axes(self):
+        self.fig.clear()
         self.axes = self.fig.add_subplot(111)
 
     def create_main_panel(self):
@@ -1837,30 +2525,12 @@ class ImshowPanel(wx.Panel):
         """
         self.toolbar = NavigationToolbar(self.canvas)
 
-        self.IminDisplayed = 0
-        self.ImaxDisplayed = 100
-        #         if self.datatype == 'scalar':
-        self.slidertxt_min = wx.StaticText(self, -1, "Min :")
-        self.slider_min = wx.Slider(self, -1, size=(200, 50), value=self.IminDisplayed,
-                                                                minValue=0,
-                                                                maxValue=99,
-                                                                style=wx.SL_AUTOTICKS | wx.SL_LABELS)
-        if WXPYTHON4:
-            self.slider_min.SetTickFreq(50)
-        else:
-            self.slider_min.SetTickFreq(50, 1)
-        self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMin, self.slider_min)
-
-        self.slidertxt_max = wx.StaticText(self, -1, "Max :")
-        self.slider_max = wx.Slider(self, -1, size=(200, 50), value=self.ImaxDisplayed,
-                                                            minValue=1,
-                                                            maxValue=100,
-                                                            style=wx.SL_AUTOTICKS | wx.SL_LABELS)
-        if WXPYTHON4:
-            self.slider_max.SetTickFreq(50)
-        else:
-            self.slider_max.SetTickFreq(50, 1)
-        self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.OnSliderMax, self.slider_max)
+        # color scale limits: one slider with two thumbs (min, max), as in mosaic.py. Limits are kept as
+        # fractions of the data range from one plot to another
+        self.colorscalefractions = (0., 1.)
+        self.rangetxt = wx.StaticText(self, -1, "Color scale")
+        self.rangeslider = RangeSlider(self, 0., 1.)
+        self.rangeslider.Bind(EVT_RANGE_SLIDER, self.OnColorRange)
 
         # loading LUTS
         self.mapsLUT = [m for m in pcm.datad if not m.endswith("_r")]
@@ -1919,30 +2589,24 @@ class ImshowPanel(wx.Panel):
         luttxt.SetToolTipString(tiplut)
         self.comboLUT.SetToolTipString(tiplut)
 
-        tipmin = "Minimum of intensity mapping"
-        self.slidertxt_min.SetToolTipString(tipmin)
-        self.slider_min.SetToolTipString(tipmin)
-        tipmax = "Maximum of intensity mapping"
-        self.slidertxt_max.SetToolTipString(tipmax)
-        self.slider_max.SetToolTipString(tipmax)
+        self.rangetxt.SetToolTipString("Minimum and maximum of intensity mapping")
         # --- --------layout
-        self.slidersbox = wx.BoxSizer(wx.HORIZONTAL)
-        self.slidersbox.Add(self.slidertxt_min, 0)
-        self.slidersbox.Add(self.slider_min, 0)
-        self.slidersbox.Add(self.slidertxt_max, 0)
-        self.slidersbox.Add(self.slider_max, 0)
+        # rows of controls wrap when the window is narrow (small screens): the scans lists keep their width
+        self.slidersbox = wx.WrapSizer(wx.HORIZONTAL)
+        self.slidersbox.Add(self.rangetxt, 0, wx.ALIGN_CENTER_VERTICAL | wx.RIGHT, 5)
+        self.slidersbox.Add(self.rangeslider, 0, wx.ALIGN_CENTER_VERTICAL)
         self.slidersbox.AddSpacer(5)
         self.slidersbox.Add(luttxt, 0)
         self.slidersbox.Add(self.comboLUT, 0)
 
-        htoolbar2 = wx.BoxSizer(wx.HORIZONTAL)
+        htoolbar2 = wx.WrapSizer(wx.HORIZONTAL)
         htoolbar2.Add(countertxt, 0)
         htoolbar2.Add(self.combocounters, 0)
         htoolbar2.Add(self.normalizechckbox, 0)
         htoolbar2.Add(self.I0offsettxt, 0)
         htoolbar2.Add(self.I0offsetctrl, 0)
 
-        htoolbar = wx.BoxSizer(wx.HORIZONTAL)
+        htoolbar = wx.WrapSizer(wx.HORIZONTAL)
         htoolbar.Add(self.toolbar, 0)
         htoolbar.Add(scaletxt, 0)
         htoolbar.Add(self.comboscale, 0)
@@ -2076,45 +2740,31 @@ class ImshowPanel(wx.Panel):
 
         self.frameparent.ReadScan_SpecFile(self.frameparent.scan_index_mesh, resetlistcounters=False)
 
-    def OnSliderMin(self, _):
-        """ normalize plot according to vmin"""
-        self.IminDisplayed = int(self.slider_min.GetValue())
-        if self.IminDisplayed > self.ImaxDisplayed:
-            self.slider_min.SetValue(self.ImaxDisplayed - 1)
-            self.IminDisplayed = self.ImaxDisplayed - 1
-
+    def OnColorRange(self, _):
+        """color scale limits changed with the range slider (kept as fractions of the data range)"""
+        low, high = self.rangeslider.GetValues()
+        span = (self.maxvals - self.minvals) or 1.
+        self.colorscalefractions = ((low - self.minvals) / span, (high - self.minvals) / span)
         self.normalizeplot()
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
-    def OnSliderMax(self, _):
-        """ normalize plot according to vmax"""
-        self.ImaxDisplayed = int(self.slider_max.GetValue())
-        if self.ImaxDisplayed < self.IminDisplayed:
-            self.slider_max.SetValue(self.IminDisplayed + 1)
-            self.ImaxDisplayed = self.IminDisplayed + 1
-        self.normalizeplot()
-        self.canvas.draw()
+    def colorscale_norm(self, vmin, vmax):
+        """matplotlib normalization of the color scale between vmin and vmax for the scale type"""
+        if self.scaletype == "Log10":
+            values = np.asarray(self.data_to_Display, dtype=float)
+            positive = values[np.isfinite(values) & (values > 0)]
+            lowest = float(positive.min()) if positive.size else 1.
+            vmin = max(vmin, lowest)
+            return colors.LogNorm(vmin=vmin, vmax=max(vmax, vmin * 10))
+        return colors.Normalize(vmin=vmin, vmax=vmax)
 
     def normalizeplot(self):
         """normalize intensity scale according to GUI widgets parameters"""
 
         # print('self.minvals', self.minvals)
         # print('self.maxvals', self.maxvals)
-        # print('self.IminDisplayed', self.IminDisplayed)
-        # print('self.ImaxDisplayed', self.ImaxDisplayed)
 
-        vmin = self.minvals + self.IminDisplayed * self.deltavals
-        vmax = self.minvals + self.ImaxDisplayed * self.deltavals
-
-        if self.scaletype == "Linear":
-
-            self.cNorm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-        elif self.scaletype == "Log10":
-            self.cNorm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
-
-        else:
-            self.cNorm = None
-
+        self.cNorm = self.colorscale_norm(*self.rangeslider.GetValues())
         self.myplot.set_norm(self.cNorm)
 
     def OnSave(self, _):
@@ -2191,12 +2841,16 @@ class ImshowPanel(wx.Panel):
 
             self.data_to_Display = zi
 
-        data_wo_nan = self.data_to_Display[np.logical_not(np.isnan(self.data_to_Display))]
-        self.maxvals = np.amax(data_wo_nan)
-        self.minvals = np.amin(data_wo_nan)
-        self.deltavals = (self.maxvals - self.minvals) / 100.0
-
-        self.cNorm = colors.Normalize(vmin=self.minvals, vmax=self.maxvals)
+        finite = np.asarray(self.data_to_Display, dtype=float)
+        finite = finite[np.isfinite(finite)]
+        self.minvals, self.maxvals = (float(finite.min()), float(finite.max())) if finite.size else (0., 1.)
+        # color scale limits: same fractions of the data range as for the previous plot
+        f0, f1 = self.colorscalefractions
+        span = self.maxvals - self.minvals
+        low, high = self.minvals + f0 * span, self.minvals + f1 * span
+        self.rangeslider.SetValues(low, high)  # (SetValues() extends the range to include the values)
+        self.rangeslider.SetRange(self.minvals, self.maxvals)
+        self.cNorm = self.colorscale_norm(low, high)
 
 
     # def forceAspect(self, aspect=1.0):
@@ -2219,7 +2873,10 @@ class ImshowPanel(wx.Panel):
 
         # clear the axes and replot everything
         self.axes.cla()
-        self.axes.set_title(self.title)
+        self.axes.set_title(plot_title(self.title, self.detectorname, self.frameparent.normalizeintensity),
+                            fontsize="small")
+        # scan folder (from RAW_DATA) in smaller letters above the title
+        self.fig.suptitle(getattr(self, "subtitle", ""), fontsize="x-small", color="dimgray")
         #         self.axes.set_autoscale_on(True)
         if self.datatype == "scalar":
             if imshowmode:
@@ -2253,10 +2910,9 @@ class ImshowPanel(wx.Panel):
                         transform=self.axes.transAxes)
 
     def fromindex_to_pixelpos_x_absolute(self, index, _):
-        # absolute positions ticks
+        # absolute positions ticks (mm)
         step_factor = self.step_factor
-        return (np.fix((index * self.step_x / step_factor + self.posmotor1[0]) * 100000.0)
-            / 100000.0)
+        return tick_label(index * self.step_x / step_factor + self.posmotor1[0], self.step_x / step_factor)
 
     def fromindex_to_pixelpos_x_relative_corner(self, index, _):
 
@@ -2265,17 +2921,14 @@ class ImshowPanel(wx.Panel):
 
         # print("self.step_x", self.step_x)
 
-        return np.fix((index * self.step_x) * 10000.0) / 10000.0
-
-    #         return np.fix((index * self.step_x) * 100.) / 100.
+        return tick_label(index * self.step_x, self.step_x)
 
     def fromindex_to_pixelpos_y_absolute(self, index, _):
         # absolute positions ticks
         step_factor = self.step_factor
         # print("step_factor", step_factor)
         # print("self.step_x", self.step_x)
-        return (np.fix((index * self.step_y / step_factor + self.posmotor2[0]) * 100000.0)
-            / 100000.0)
+        return tick_label(index * self.step_y / step_factor + self.posmotor2[0], self.step_y / step_factor)
 
     def fromindex_to_pixelpos_y_relative_corner(self, index, _):
 
@@ -2284,9 +2937,7 @@ class ImshowPanel(wx.Panel):
 
         # print("self.step_y", self.step_y)
 
-        return np.fix((index * self.step_y) * 10000.0) / 10000.0
-
-    #         return np.fix((index * self.step_y) * 100.) / 100.
+        return tick_label(index * self.step_y, self.step_y)
 
     def set_motorspositions_parameters(self, verbose=0):
         self.posmotors = self.posarray_twomotors
@@ -2375,9 +3026,9 @@ class ImshowPanel(wx.Panel):
                 sentence_center = ""
                 sentence = "No motors positions"
             else:
-                sentence0 = ("j=%d, i=%d, ABSOLUTE=[%s=%.5f,%s=%.5f], z_intensity = %s, ImageIndex: %d"
+                sentence0 = ("j=%d, i=%d, ABSOLUTE=[%s=%.5f,%s=%.5f], %s = %.6g, ImageIndex: %d"
                                 % (col, row, self.motor1name, posmotor1[col],
-                                    self.motor2name, posmotor2[row], str(z), Imageindex))
+                                    self.motor2name, posmotor2[row], self.detectorname, z, Imageindex))
 
                 sentence = "POSITION (micron) from: "
                 sentence_corner = "CORNER =[[%s=%.2f,%s=%.2f]]" % (self.motor1name,
@@ -2419,7 +3070,7 @@ class MyRectilinearAxes(Axes):
 
 class MyApp(wx.App):
     def OnInit(self):
-        frame = MainFrame(None, -1, "plotmeshspecGUI.py")
+        frame = MainFrame(None, -1, "plotmeshGUI.py")
         frame.Show(True)
         self.SetTopWindow(frame)
         return True
@@ -2428,7 +3079,7 @@ class MyApp(wx.App):
 def start():
     """ launcher of plotmeshspecGUI as module"""
     GUIApp = wx.App()
-    frame = MainFrame(None, -1, "plotmeshspecGUI.py")
+    frame = MainFrame(None, -1, "plotmeshGUI.py")
     frame.Show()
     GUIApp.MainLoop()
 

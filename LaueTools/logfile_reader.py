@@ -7,7 +7,7 @@
 
 """ this file in intended to be name logfilereader.py and be located in main lauetools folder"""
 
-import copy, os, time
+import copy, os, re, time
 import numpy as np
 import datetime
 
@@ -1288,6 +1288,101 @@ class Scan_hdf5(SpecFile):
             #multi = MultiCursor(fig.canvas, axs, color='r', lw=3, horizOn=True)
 
 
+# listing the scans of a BLISS logfile (getscans_from_hdf5file()) takes about 23 ms per scan on /data
+# (a321217_bm32.h5: 5284 scans in 123 s): above HEAVY_LOGFILE_NBSCANS, lighter logfiles are proposed
+LISTING_SECONDS_PER_SCAN = 0.023
+HEAVY_LOGFILE_NBSCANS = 300
+
+
+def nb_scans_in_logfile(filename) -> int:
+    """number of scans (top level entries) of a BLISS hdf5 logfile, without reading them"""
+    with h5py.File(filename, 'r', locking=False) as f:
+        return len(f)
+
+
+def lighter_logfiles(filename, count_scans_max: int = 200) -> list:
+    """BLISS logfiles one folder level below that of filename: sample logfiles below the experiment
+    logfile (RAW_DATA/<sample>/<proposal>_<sample>.h5), dataset logfiles below a sample logfile
+    (<sample>/<dataset>/<dataset>.h5). Detector files (in scanNNNN folders, e.g. eiger4m_0000.h5) are not listed.
+
+    :param count_scans_max: number of scans of each file counted only if there are at most that many files
+    :return: list of (fullpath, nb of scans or None), most recent first
+    """
+    folder = os.path.dirname(os.path.abspath(filename))
+    found = []
+    for entry in os.scandir(folder):
+        if not entry.is_dir() or re.fullmatch(r'scan\d+', entry.name):
+            continue
+        try:
+            names = os.listdir(entry.path)
+        except OSError:
+            continue
+        found += [os.path.join(entry.path, name) for name in names if name.endswith('.h5')]
+    found.sort(key=os.path.getmtime, reverse=True)
+    results = []
+    for path in found:
+        nbscans = None
+        if len(found) <= count_scans_max:
+            try:
+                nbscans = nb_scans_in_logfile(path)
+            except OSError:  # being written, or not an hdf5 file
+                continue
+        results.append((path, nbscans))
+    return results
+
+
+def scan_folder(datasetfile, scanindex):
+    """folder of the files of a scan of a BLISS dataset logfile (<dataset>/scanNNNN, e.g. images),
+    None if it does not exist"""
+    folder = os.path.join(os.path.dirname(str(datasetfile)), 'scan%04d' % int(scanindex))
+    return folder if os.path.isdir(folder) else None
+
+
+def path_from_raw_data(path) -> str:
+    """part of path from its RAW_DATA folder (whole path if it has no RAW_DATA folder)"""
+    path = str(path)
+    index = path.find('RAW_DATA')
+    return path[index:] if index >= 0 else path
+
+
+def is_scan1D_command(command: str) -> bool:
+    """True for scans along one or several motors with one series of points: ascan, a2scan, ..., aNscan,
+    dscan, d2scan, ..., fscan (not amesh, fscan2d, loopscan, timescan, ct)"""
+    words = command.split()
+    return bool(words) and re.fullmatch(r'[ad]\d*scan|fscan', words[0]) is not None
+
+
+def scan1D_motors(command: str) -> list:
+    """motors of a 1D scan command (see is_scan1D_command()):
+    'a2scan xech 0 1 yech 0 1 10 0.1' -> ['xech', 'yech'], 'fscan xech 0 0.01 50 0.1' -> ['xech']"""
+    words = command.split()
+    if not is_scan1D_command(command):
+        return []
+    if words[0] == 'fscan':
+        return words[1:2]
+    nbmotors = int(words[0][1:-4] or 1)  # a2scan -> 2
+    return [words[1 + 3 * k] for k in range(nbmotors) if 1 + 3 * k < len(words)]
+
+
+def find_image_counter(counters):
+    """name of the counter of image numbers (img, img_scmos, img_cam, ...) among counters, None if none"""
+    return next((name for name in counters if name.lower().startswith('img')), None)
+
+
+MONITOR_COUNTERS = ('mon', 'i0', 'io')  # names of the monitor counter (case insensitive), by priority
+
+
+def find_monitor_counter(counters):
+    """name of the monitor counter among counters (names of the measurement group of a BLISS scan):
+    one of MONITOR_COUNTERS (case insensitive), else the first name containing 'mon' (e.g. ct2_mon), else None"""
+    names = list(counters)
+    lower = [name.lower() for name in names]
+    for candidate in MONITOR_COUNTERS:
+        if candidate in lower:
+            return names[lower.index(candidate)]
+    return next((name for name, low in zip(names, lower) if 'mon' in low), None)
+
+
 def getmeshscan_from_hdf5file(filename, verbose:int=0):
     return getscans_from_hdf5file(filename, collectallscans=False,
                                     onlymesh=True,
@@ -1335,7 +1430,8 @@ def getscans_from_hdf5file(
     node_substrings: list = None,
     substrings_logic: str = "OR",
     exclude_substrings: list = None,
-    node_filter=None
+    node_filter=None,
+    onlyscan1D: bool = False
 ):
     """
     Retrieve and filter scan properties from an HDF5 file, with support for sorting by recency,
@@ -1344,10 +1440,13 @@ def getscans_from_hdf5file(
     Args:
         exclude_substrings (list, optional): Exclude nodes containing any of these substrings. Defaults to None.
         node_filter (function, optional): function(node name) -> bool, nodes kept if True. Defaults to None.
+        onlyscan1D (bool, optional): only scans along motors (ascan, a2scan, ..., dscan, fscan, see
+            is_scan1D_command()). Defaults to False.
     """
     if collectallscans:
         onlymesh = False
         onlywirescan = False
+        onlyscan1D = False
 
     if verbose > 0:
         print(f"\n ***** In getscans_from_hdf5file (logfile_reader) filename is {filename}")
@@ -1421,7 +1520,8 @@ def getscans_from_hdf5file(
                         collectallscans=collectallscans,
                         onlymesh=onlymesh,
                         onlywirescan=onlywirescan,
-                        collectall=collectall
+                        collectall=collectall,
+                        onlyscan1D=onlyscan1D
                     )
             elif isinstance(objlink, h5py._hl.group.HardLink):
                 if verbose > 1:
@@ -1431,7 +1531,8 @@ def getscans_from_hdf5file(
                     collectallscans=collectallscans,
                     onlymesh=onlymesh,
                     onlywirescan=onlywirescan,
-                    collectall=collectall
+                    collectall=collectall,
+                    onlyscan1D=onlyscan1D
                 )
 
             if props is not None:
@@ -1443,7 +1544,7 @@ def getscans_from_hdf5file(
         if listprops == []:
             print('\n\n*******\n!! No scan in the file: %s\n**********' % filename)
             print(f'with filter: onlymesh: {onlymesh}, onlywirescan: {onlywirescan}, collectallscans: {collectallscans}')
-            return []
+            return [], []  # (selected scans, all scans) as below: callers unpack two lists
 
         ar_lp = np.array(listprops, dtype=object)
         s_ix = np.argsort(ar_lp[:, 3])
@@ -1637,7 +1738,8 @@ def getscanprops_lowest_hdf5(filename, key,
                             collectallscans=True, onlymesh=False,
                             onlywirescan=False,
                             verbose:int=0,
-                            collectall=False):
+                            collectall=False,
+                            onlyscan1D=False):
     """ get scan properties from hdf5 file and filter optionally wrt scan type (mesh or wirescan)"""
     _, ext = filename.rsplit('.', 1)
     headname, ffname = os.path.split(filename)
@@ -1690,6 +1792,11 @@ def getscanprops_lowest_hdf5(filename, key,
 
         if onlymesh:
             if any(cmd in scancommand for cmd in ("amesh", 'fscan2d')):
+                keyfilename = ffname[:-3]  # removing .h5
+                props = ['%s_%s' % (keyfilename, idx), idx, postfix, startdate, enddate, '%s_%s %s' % (keyfilename, idx, scancommand), filename, end_reason, samplename]
+                isselected = True
+        elif onlyscan1D:
+            if is_scan1D_command(scancommand):
                 keyfilename = ffname[:-3]  # removing .h5
                 props = ['%s_%s' % (keyfilename, idx), idx, postfix, startdate, enddate, '%s_%s %s' % (keyfilename, idx, scancommand), filename, end_reason, samplename]
                 isselected = True
@@ -1982,10 +2089,11 @@ def read_fullcommand(fullcommand:str)->dict:
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
     
     elif scancommand in ('fscan2d',):
-        listparams = ('slowmotor', 'smotmin', 'smotmax', 'smotnbsteps',
-                      'fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps',
+        # fscan2d slow_motor slow_start slow_step slow_npoints fast_motor fast_start fast_step fast_npoints acq_time ...
+        # (first motor is the slow one; arg[3] and arg[7] are nb of images)
+        listparams = ('slowmotor', 'smotmin', 'smotstep', 'smotnbsteps',
+                      'fastmotor', 'fmotmin', 'fmotstep', 'fmotnbsteps',
                     'expotime','unknown')
-        # warning  arg[3] and arg[7]  are nb of images
         listfmt = (str, float, float, int,
                     str, float, float, int, float, float)
         
@@ -1993,6 +2101,9 @@ def read_fullcommand(fullcommand:str)->dict:
 
         dict_command['smotnbsteps']-=1
         dict_command['fmotnbsteps']-=1
+        # last positions (the step was returned as smotmax and fmotmax before Oct. 2026)
+        dict_command['smotmax'] = dict_command['smotmin'] + dict_command['smotstep'] * dict_command['smotnbsteps']
+        dict_command['fmotmax'] = dict_command['fmotmin'] + dict_command['fmotstep'] * dict_command['fmotnbsteps']
         
     elif scancommand in ('ascan','dscan'):
         listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps', 'expotime')
@@ -2002,13 +2113,14 @@ def read_fullcommand(fullcommand:str)->dict:
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
     
     elif scancommand in ('fscan',):
-        # warning  arg[3]  is nb of images
-        listparams = ('fastmotor', 'fmotmin', 'fmotmax', 'fmotnbsteps', 'expotime', 'unknown')
+        # fscan motor start step npoints acq_time ... (arg[3] is nb of images)
+        listparams = ('fastmotor', 'fmotmin', 'fmotstep', 'fmotnbsteps', 'expotime', 'unknown')
         
         listfmt = (str, float, float, int, float, float)
         
         dict_command = {key: fmt.__call__(value) for key, value, fmt in zip(listparams,sc[1:], listfmt)}
         dict_command['fmotnbsteps']=dict_command['fmotnbsteps']-1
+        dict_command['fmotmax'] = dict_command['fmotmin'] + dict_command['fmotstep'] * dict_command['fmotnbsteps']
     
     elif scancommand in ('a2scan','d2scan'):
         listparams = ('fastmotor', 'fmotmin', 'fmotmax',
