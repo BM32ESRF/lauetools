@@ -42,6 +42,7 @@ from matplotlib import __version__ as matplotlibversion
 import matplotlib
 
 from .. import CrystalParameters as CP
+from .. import refinementresults as RR
 from .. import detectorbands as DB
 from .. import IOLaueTools as IOLT
 from .. import generaltools as GT
@@ -2058,7 +2059,7 @@ class Plot_RefineFrame(wx.Frame):
                                         Tsresults=None,
                                         depth=0):
         """
-        evaluate strain and display fitting results
+        evaluate strain and display fitting results (computation: refinementresults.strain_results)
         :param newUBmat: array, 3x3 orientation matrix UBrefined
         :param key_material: str, label for material taht sets the lattice parameters and unit cell shape
         :param residues_non_weighted: array or list,  to estimate the mean pixel deviation
@@ -2066,220 +2067,25 @@ class Plot_RefineFrame(wx.Frame):
         :param constantlength: str, "a", "b", or "c" to set the length having been kept during refinement
         :param depth: int, float, depth of the scattering grain normal to the sample surface in microns (10-3 mm), positive below the surface
         """
-        # compute new lattice parameters  -----
-        latticeparams = self.dict_Materials[key_material][1]
-        B0matrix = CP.calc_B_RR(latticeparams)
+        results = RR.strain_results(newUBmat, key_material, constantlength=constantlength,
+                                    dictmaterials=self.dict_Materials, verbose=1)
 
-        UBmat = copy.copy(newUBmat)
+        # for further use (.fit file, plots)
+        self.new_latticeparameters = results["new_latticeparameters"]
+        self.deviatoricstrain = results["devstrain"]
+        self.deviatoricstrain_sampleframe = results["devstrain_sampleframe"]
+        self.deviatoricstrain_sampleframe_old = results["devstrain_sampleframe_old"]  # TEMPORARY-STRAINFIX
+        self.fullstrain_results = results["fullstrain_results"]
+        self.UBB0mat = results["UBB0mat"]
+        # U and B of the refined UB matrix (before: of self.UBmat, the UB matrix before this refinement)
+        self.Umat2 = results["Umat"]
+        self.Bmat_tri = results["Bmat_tri"]
+        self.HKLxyz_names = results["HKLxyz_names"]
+        self.HKLxyz = results["HKLxyz"]
 
-        (devstrain, lattice_parameter_direct_strain) = CP.compute_deviatoricstrain(
-                                                                UBmat, B0matrix, latticeparams)
-        # overwrite and rescale possibly lattice lengthes
-        lattice_parameter_direct_strain = CP.computeLatticeParameters_from_UB(
-                                                            UBmat, key_material, constantlength,
-                                                            dictmaterials=self.dict_Materials)
-
-        print("final lattice_parameter_direct_strain", lattice_parameter_direct_strain)
-
-        # latticeparams: strain of compute_deviatoricstrain() is in direct crystal frame (x // a)
-        deviatoricstrain_sampleframe = CP.strain_from_crystal_to_sample_frame2(
-                                                                        devstrain, UBmat,
-                                                                        latticeparams=latticeparams)
-
-        devstrain_sampleframe_round = np.round(deviatoricstrain_sampleframe * 1000, decimals=3)
-
-        # TEMPORARY-STRAINFIX: OLD deviatoric strain in sample frame as computed before Oct. 2026
-        deviatoricstrain_sampleframe_old = CP.strain_from_crystal_to_sample_frame_OLD(devstrain, UBmat)
-        devstrain_sampleframe_old_round = np.round(deviatoricstrain_sampleframe_old * 1000, decimals=3)
-        CP.print_devstrain_sample_comparison(deviatoricstrain_sampleframe_old,
-                                            deviatoricstrain_sampleframe, label=key_material, verbose=1)
-
-        # full strain and stress assuming stress_zz = 0 in sample frame (needs elastic constants of material)
-        fullstrain_results = CP.fullstrain_from_deviatoricstrain(devstrain, UBmat, key_material,
-                                                                 dictmaterials=self.dict_Materials)
-        fullstrain_txt = CP.fullstrain_text(fullstrain_results, key_material)
-        if CP.PRINT_FULLSTRAIN:
-            print(fullstrain_txt)
-        devstrain_round = np.round(devstrain * 1000, decimals=3)
-
-        self.new_latticeparameters = lattice_parameter_direct_strain
-        self.deviatoricstrain = devstrain
-        self.deviatoricstrain_sampleframe = deviatoricstrain_sampleframe
-        self.deviatoricstrain_sampleframe_old = deviatoricstrain_sampleframe_old  # TEMPORARY-STRAINFIX
-        self.fullstrain_results = fullstrain_results
-
-
-        # ADDONS: strain in lauetools frame:
-        devstrain_LTframe = np.round(CP.strain_from_crystal_to_LaueToolsframe(devstrain, UBmat, latticeparams=latticeparams)*1000,decimals=3)
-        print('====> **** devstrain_LTframe',devstrain_LTframe)
-        print('*************************************\n')
-
-        # TODO: to complete ---------------------
-        # devstrain_crystal_voigt = np.take(np.ravel(np.array(devstrain)), (0, 4, 8, 5, 2, 1))
-
-        self.UBB0mat = np.dot(self.newUBmat, B0matrix)
-
-        Umat = None
-
-        Umat = CP.matstarlab_to_matstarlabOND(matstarlab=None, matLT3x3=np.array(self.UBmat))
-        # TODO to be translated !----------------------
-        # conversion in np array is necessary from automatic indexation results, but not necessary from check orientation results
-
-        print("**********test U ****************************")
-        print("U matrix = ")
-        print(Umat.round(decimals=9))
-        print("norms :")
-        for i in range(3):
-            print(i, GT.norme_vec(Umat[:, i]).round(decimals=5))
-        print("scalar products")
-        for i in range(3):
-            j = np.mod(i + 1, 3)
-            print(i, j, np.inner(Umat[:, i], Umat[:, j]).round(decimals=5))
-        print("determinant")
-        print(np.linalg.det(Umat).round(decimals=5))
-
-        Bmat_triang_up = np.dot(np.transpose(Umat), self.UBmat)
-
-        print(" Bmat_triang_up= ")
-        print(Bmat_triang_up.round(decimals=9))
-
-        self.Umat2 = Umat
-        self.Bmat_tri = Bmat_triang_up
-
-        (list_HKL_names,
-        HKL_xyz) = CP.matrix_to_HKLs_along_xyz_sample_and_along_xyz_lab(
-                                                        matstarlab=None,  # OR
-                                                        UBmat=self.UBB0mat,  # LT , UBB0 ici
-                                                        omega=None,  # was MG.PAR.omega_sample_frame,
-                                                        mat_from_lab_to_sample_frame=None,
-                                                        results_in_OR_frames=0,
-                                                        results_in_LT_frames=1,
-                                                        sampletilt=40.0)
-        self.HKLxyz_names = list_HKL_names
-        self.HKLxyz = HKL_xyz
-
-        texts_dict = {}
-
-        txt0 = "Filename: %s\t\t\tDate: %s\t\tPlotRefineGUI.py\n" % (self.DataPlot_filename,
-                                                                    time.asctime())
-        txt0 += 'Folder: %s\n'%self.dirname
-        txt0 += "Mean Pixel Deviation: %.3f\n" % np.mean(residues_non_weighted)
-        txt0 += "Number of refined Laue spots: %d\n" % nb_pairs
-        txt0 += "Normal sample depth (microns): %.1f\n" % depth
-        texts_dict["NbspotsResidues"] = txt0
-
-        txt1 = "Deviatoric Strain (10-3 units) in crystal frame (direct space) \n"
-        for k in range(3):
-            txt1 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_round[k])
-        equivalentstrain = CP.equivalent_strain(devstrain)
-        txt1 += "Equivalent (von Mises) strain (10-3 units, frame independent): %.3f\n" % (equivalentstrain * 1000)
-        print("Equivalent (von Mises) strain (10-3 units, frame independent): %.3f" % (equivalentstrain * 1000))
-        texts_dict["devstrain_crystal"] = txt1
-
-        txt2 = "Deviatoric Strain (10-3 units) in sample frame (tilt=40deg)\n"
-        for k in range(3):
-            txt2 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_sampleframe_round[k])
-        # TEMPORARY-STRAINFIX: OLD values (before Oct. 2026, wrong for non orthogonal cells)
-        txt2 += "[TEMPORARY] OLD values (before Oct. 2026, wrong for hexagonal, trigonal, monoclinic, triclinic)\n"
-        for k in range(3):
-            txt2 += "%.3f   %.3f   %.3f\n" % tuple(devstrain_sampleframe_old_round[k])
-        texts_dict["devstrain_sample"] = txt2
-
-        #         txt3 = 'Full Strain (10-3 units) sample frame (tilt=40deg)\n'
-        #         txt3 += 'Assumption: cubic material + stress33=0\n'
-        #         for k in range(3):
-        #             txt3 += '%.3f   %.3f   %.3f\n' % tuple(fullstrain_round[k])
-        txt3 = ""
-        txt3 = fullstrain_txt
-        texts_dict["fullstrain_sample"] = txt3
-
-        txtinitlattice = "Initial Lattice Parameters\n"
-        paramcellname = ["  a", "  b", "  c", "alpha", "beta", "gamma"]
-        for name, val in zip(paramcellname, latticeparams):
-            txtinitlattice += "%s\t\t%.6f\n" % (name, val)
-
-        texts_dict["Initial lattice"] = txtinitlattice
-
-        txtfinallattice = "Refined Lattice Parameters\n"
-        paramcellname = ["  a", "  b", "  c", "alpha", "beta", "gamma"]
-        for name, val in zip(paramcellname, lattice_parameter_direct_strain):
-            txtfinallattice += "%s\t\t%.6f\n" % (name, val)
-
-        texts_dict["Refined lattice"] = txtfinallattice
-
-        if Tsresults is not None:
-
-            Ts = Tsresults[2]
-
-            Tsvalues = [Ts[0, 0], Ts[0, 1], Ts[0, 2], Ts[1, 1], Ts[1, 2], Ts[2, 2]]
-
-            Tsmat = [[Ts[0, 0], Ts[0, 1], Ts[0, 2]],
-                    [0.0, Ts[1, 1], Ts[1, 2]],
-                    [0.0, 0.0, Ts[2, 2]]]
-
-            txtTs = "Final Transform Parameters\n"
-            transformelements = ["  Ts00", "  Ts01", "  Ts02", " Ts11", " Ts12", " Ts22"]
-            for name in transformelements:
-                txtTs += name
-            txtTs += " = ["
-            for val in Tsvalues:
-                txtTs += "%.6f, " % val
-            txtTs = txtTs[:-2] + "]\n"
-            txtTs += "Ts matrix in q = P Ts P-1 U B0 G*\n"
-            txtTs += "["
-            for k in range(3):
-                txtTs += "[%.8f, %.8f, %.8f],\n" % tuple(Tsmat[k])
-            #             for name, val in zip(transformelements, Tsvalues):
-            #                 txtTs += '%s\t\t%.6f\n' % (name, val)
-
-            texts_dict["Ts parameters"] = txtTs[:-2] + "]"
-
-        txtUB = "UB matrix in q = UB B0 G*\n"
-        txtUB += "["
-        for k in range(3):
-            txtUB += "[%.8f, %.8f, %.8f],\n" % tuple(UBmat[k])
-        texts_dict["UBmatrix"] = txtUB[:-2] + "]"
-
-        txtB0 = "B0 matrix in q = UB B0 G*\n"
-        txtB0 += "["
-        for k in range(3):
-            txtB0 += "[%.8f, %.8f, %.8f],\n" % tuple(B0matrix[k])
-        texts_dict["B0matrix"] = txtB0[:-2] + "]"
-
-        # UB and B0 referred to the refined lattice parameters (new material with these lattice parameters)
-        UB_new, B0_new, scale, rotdev = CP.refined_UB_B0(UBmat, B0matrix, lattice_parameter_direct_strain)
-        txtUB = "\n\nUB_new in q = UB_new B0_new G* (refined lattice parameters), UB_new = UB B0 inv(B0_new)\n"
-        txtUB += "= scale x rotation: scale %.6f, max |R^T R - I| %.1e\n[" % (scale, rotdev)
-        for k in range(3):
-            txtUB += "[%.8f, %.8f, %.8f],\n" % tuple(UB_new[k])
-        texts_dict["UBmatrix"] += txtUB[:-2] + "]"
-        txtB0 = "\n\nB0_new in q = UB_new B0_new G* (from the refined lattice parameters)\n["
-        for k in range(3):
-            txtB0 += "[%.8f, %.8f, %.8f],\n" % tuple(B0_new[k])
-        texts_dict["B0matrix"] += txtB0[:-2] + "]"
-
-        txtHKLxyz_names = "                                 HKL frame coordinates\n"
-        listvectors = ["x=[100]_LT :",
-                        "y=[010]_LT :",
-                        "z=[001]_LT :",
-                        "xs=[100]_LTsample :",
-                        "ys=[010]_LTsample :",
-                        "zs=[001]_LTsample :"]
-        for k in range(6):
-            txtHKLxyz_names += listvectors[k] + "\t [%.3f, %.3f, %.3f]\n" % tuple(
-                self.HKLxyz[k])
-            texts_dict["HKLxyz_names"] = txtHKLxyz_names
-
-        print(txtHKLxyz_names)
-
-        # if 0:
-        #     txtHKLxyz = "HKL = \n"
-        #     txtHKLxyz += "["
-        #     for k in range(6):
-        #         txtHKLxyz += "[%.3f, %.3f, %.3f],\n" % tuple(self.HKLxyz[k])
-        #         texts_dict["HKLxyz"] = txtHKLxyz[:-2] + "]"
-        #     print(txtHKLxyz)
-        texts_dict["HKLxyz"] = ""
+        texts_dict = RR.results_texts(results, residues_non_weighted, nb_pairs,
+                                      filename=self.DataPlot_filename, folder=self.dirname,
+                                      depth=depth, Tsresults=Tsresults)
 
         frb = FitResultsBoard(self, -1, "REFINEMENT RESULTS", texts_dict)
         frb.ShowModal()
