@@ -6,7 +6,7 @@ header as before Oct. 2026) and roicounters .h5 files of workflows.ROICountersWo
 import numpy as np
 import pytest
 
-MOS = pytest.importorskip("LaueTools.GUI.mosaic")
+import LaueTools.mosaicdata as MOS  # moved from GUI/mosaic.py (no GUI)
 
 DICT_PARAM = {"pixelX_center": 995.0, "pixelY_center": 847.0, "imagesfolder": "/data/RAW_DATA/scan0001",
               "filename_representative": "eiger4m_0003.h5", "CCDLabel": "EIGER_4MCdTe", "NormalizeWithMonitor": False}
