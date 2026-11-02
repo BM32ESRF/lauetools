@@ -64,7 +64,7 @@ except ImportError:
 import LaueTools.generaltools as GT
 # from LaueTools.Daxm.contrib.spec_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
 from LaueTools.logfile_reader import ReadSpec, ReadHdf5, readdata_from_hdf5key
-import LaueTools.MessageCommand as MC
+import LaueTools.GUI.MessageCommand as MC
 import LaueTools.IOLaueTools as IOLT
 # import LaueTools.Daxm.contrib.spec_reader as spec_reader
 import LaueTools.logfile_reader as logfile_reader

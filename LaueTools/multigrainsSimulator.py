@@ -21,12 +21,6 @@ from . import LaueGeometry as LTGeo
 from . import CrystalParameters as CP
 
 
-try:
-    WXPYTHON = True
-    import wx
-except ImportError:
-    WXPYTHON = False
-
 def Read_GrainListparameter(param):
     r"""
     Read dictionary of  input key parameters for simulation
@@ -145,9 +139,9 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
     # list of [Parent grain index,Number of corresponding transforms, transform_type]
     list_ParentGrain_transforms = []
 
-    if gauge and WXPYTHON:
+    if gauge:
         gaugecount = 0
-        gauge.SetValue(gaugecount)
+        GT.update_progress(gauge, gaugecount)
         # gauge count max has been set to 1000*Number_ParentGrains
 
     # loop over parent grains
@@ -223,11 +217,10 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
 
         # Qvectors_ParentGrain, HKLs_ParentGrain = spots2pi
 
-        if gauge and WXPYTHON:
+        if gauge:
             gaugecount += 100
             # print "gaugecount += 100",gaugecount
-            gauge.SetValue(gaugecount)
-            wx.Yield()
+            GT.update_progress(gauge, gaugecount)
 
         # --- Calculating small deviations(rotations and strain)
         # --- from parent grains according to transform
@@ -451,10 +444,9 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
                     # print "Laue_spot_list[0][0].Twicetheta"
                     # print Laue_spot_list[0][0].Twicetheta
 
-                    if gauge and WXPYTHON:
+                    if gauge:
                         gaugecount = gaugecount + int(900 / nb_transforms)
-                        gauge.SetValue(gaugecount)
-                        wx.Yield()
+                        GT.update_progress(gauge, gaugecount)
                         # print "ChildGrain_index 900%nb_transforms",ChildGrain_index, gaugecount
 
                     Listspots = Laue_spot_list[0]
@@ -503,10 +495,9 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
 
                     # print "Laue_spot_list[0][0].Twicetheta"
                     # print Laue_spot_list[0][0].Twicetheta
-                    if gauge and WXPYTHON:
+                    if gauge:
                         gaugecount = gaugecount + 900 / nb_transforms
-                        gauge.SetValue(gaugecount)
-                        wx.Yield()
+                        GT.update_progress(gauge, gaugecount)
                         # print "ChildGrain_index 900%nb_transforms",ChildGrain_index, gaugecount
 
                     twicetheta = [spot.Twicetheta for spot in Laue_spot_list[0]]
@@ -563,10 +554,9 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
 
                     # print "Laue_spot_list[0][0].Twicetheta"
                     # print Laue_spot_list[0][0].Twicetheta
-                    if gauge and WXPYTHON:
+                    if gauge:
                         gaugecount = gaugecount + 900 / nb_transforms
-                        gauge.SetValue(gaugecount)
-                        wx.Yield()
+                        GT.update_progress(gauge, gaugecount)
                         # print "ChildGrain_index 900%nb_transforms",ChildGrain_index, gaugecount
 
                     twicetheta = [spot.Twicetheta for spot in Laue_spot_list[0]]
@@ -611,10 +601,9 @@ def dosimulation_parametric(_list_param, Transform_params=None, SelectGrains=Non
         list_ParentGrain_transforms.append([parentgrain_index, nb_transforms, transform_type])
         total_nb_grains += nb_transforms
 
-        if gauge and WXPYTHON:
+        if gauge:
             gaugecount += (parentgrain_index + 1) * 1000
-            gauge.SetValue(gaugecount)
-            wx.Yield()
+            GT.update_progress(gauge, gaugecount)
             # print "(parentgrain_index+1)*1000",gaugecount
 
     # end of loop over parent grains-------------------------------

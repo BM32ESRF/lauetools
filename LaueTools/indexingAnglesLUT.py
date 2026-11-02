@@ -46,11 +46,6 @@ except ImportError:
     #print("-- warning. Cython compiled module for fast computation of angular distance is not installed!")
     USE_CYTHON = False
 
-try:
-    import wx
-except (ImportError, AttributeError):
-    print("wx is not installed! Could be some trouble from this lack... If on jupyter-slurm it is ok")
-
 from typing import Iterable, Dict, Tuple, List, Union
 
 # --- ------------ CONSTANTS
@@ -2408,8 +2403,7 @@ def getOrientMatrices(spot_index_central: Union[Iterable[int], int],
             # TODO: VERY DIRTY...
             gaugecount = (k_centspot_index + 1) * nbofpeaks
             # print "gaugecount += 100",gaugecount
-            gauge.SetValue(gaugecount)
-            wx.Yield()
+            GT.update_progress(gauge, gaugecount)
 
         solutions_matorient_index = []
         solutions_spotscouple = []

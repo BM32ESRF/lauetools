@@ -16,7 +16,6 @@ import traceback
 sys.path.append("..")
 
 import matplotlib
-matplotlib.use("WXAgg")
 
 import wx
 
@@ -610,6 +609,7 @@ DEFAULT_FILE = os.path.join(initialparameters["IndexRefine PeakList Folder"],
                                             "nanox2_400_0000.fit")
 
 def start():
+    matplotlib.use("WXAgg")  # plots in wx windows (set here, not on import: importing must not change the backend)
     BuildSummaryApp = wx.App()
     BSFrame = MainFrame_BuildSummary(None, -1,
                                 "Build Summary Parameters Board", list_valueparamBS)
