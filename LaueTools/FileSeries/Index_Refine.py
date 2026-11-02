@@ -16,7 +16,6 @@ sys.path.append("..")
 
 # this is for running through ipython
 import matplotlib
-matplotlib.use("WXAgg")
 #------------------------
 
 import wx
@@ -1505,6 +1504,7 @@ list_valueparamIR = fill_list_valueparamIR(initialparameters)
 
 def start():
     """ start of GUI for module launch"""
+    matplotlib.use("WXAgg")  # plots in wx windows (set here, not on import: importing must not change the backend)
     #Stock_INDEXREFINE = Stock_parameters_IndexRefine(LIST_TXTPARAM_FILE_INDEXREFINE, list_valueparamIR)
 
     # print("Stock_INDEXREFINE", Stock_INDEXREFINE.list_txtparamIR)

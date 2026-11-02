@@ -12,9 +12,9 @@ if wx.__version__ < "4.":
 else:
     WXPYTHON4 = True
     wx.OPEN = wx.FD_OPEN
-from . import graingraph as GraGra
-from . import findorient as FO
-from . import dict_LaueTools as DictLT
+from .. import graingraph as GraGra
+from .. import findorient as FO
+from .. import dict_LaueTools as DictLT
 
 # --- ---------------------  CLIQUES board
 class CliquesFindingBoard(wx.Frame):

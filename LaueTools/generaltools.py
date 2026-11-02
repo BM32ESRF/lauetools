@@ -52,6 +52,21 @@ try:
 except ImportError:
     NUMBAINSTALLED = False
 
+def update_progress(gauge, value):
+    """report progress of a long computation: gauge is None, a function called with value, or a GUI progress bar
+    with SetValue (wx.Gauge). With a wx GUI (wx already imported by it), lets the window refresh (wx.Yield);
+    the core modules themselves do not import wx"""
+    if gauge is None:
+        return
+    if hasattr(gauge, "SetValue"):
+        gauge.SetValue(value)
+        wx = sys.modules.get("wx")
+        if wx is not None:
+            wx.Yield()
+    else:
+        gauge(value)
+
+
 # --- --------------  Vectors
 def AngleBetweenVectors(Vectors1, Vectors2, metrics=IDENTITYMATRIX, verbose=False):
     """compute angles between all pairs of vectors from Vectors1 and Vectors2

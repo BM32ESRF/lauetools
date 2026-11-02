@@ -63,7 +63,7 @@ from .. import imageprocessing as ImProc
 import LaueTools.blissdatafolderstructure as bf
 if WXPYTHON:
     from . import Plot1DFrame as PLOT1D
-    from .. import MessageCommand as MC
+    from . import MessageCommand as MC
     from .rangeslider import RangeSlider, EVT_RANGE_SLIDER
 
 if WXPYTHON:

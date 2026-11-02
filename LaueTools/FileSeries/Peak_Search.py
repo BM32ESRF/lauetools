@@ -15,7 +15,6 @@ import wx
 
 # this is for running through ipython
 import matplotlib
-matplotlib.use("WXAgg")
 #------------------------
 
 if wx.__version__ < "4.":
@@ -826,6 +825,7 @@ list_valueparamPS = [initialparameters["ImageFolder"],
 
 def start():
     """ launcher """
+    matplotlib.use("WXAgg")  # plots in wx windows (set here, not on import: importing must not change the backend)
     Stock_PS = Stock_parameters_PeakSearch(LIST_TXTPARAM_FILE_PS, list_valueparamPS)
 
     PeakSearchSeriesApp = wx.App()

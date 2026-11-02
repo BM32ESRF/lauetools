@@ -5,6 +5,7 @@ Created on Tue Jun 18 13:40:27 2013
 @author: guest
 """
 
+import matplotlib
 import wx
 import os
 
@@ -452,6 +453,7 @@ if 0:
     #     calc = IR.calcul(Stock_IR)
 
 def start():
+    matplotlib.use("WXAgg")  # plots in wx windows (set here, not on import: importing must not change the backend)
     app = wx.App()
 
 
