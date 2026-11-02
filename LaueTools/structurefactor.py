@@ -83,3 +83,84 @@ def general_allowed(hkl, spacegroup, seed=0):
             _CACHE.pop(next(iter(_CACHE)))
         _CACHE[key] = allowed
     return _CACHE[key].copy()
+
+
+# --- -------------------- extinctions of a crystal structure (atom positions)
+SNAP = 24  # coordinates within SNAP_TOLERANCE of a multiple of 1/24 (1/2, 1/3, 1/4, 1/6, 1/8...) are snapped to it
+SNAP_TOLERANCE = 2e-4
+MERGE_TOLERANCE = 1e-3  # equivalent positions closer than this (fractional) are the same position
+STRUCTURES = {}  # extinction code 'atoms:<label>' -> label: structure registered by register_structure()
+
+
+def _snap(values):
+    values = np.asarray(values, dtype=float)
+    snapped = np.round(values * SNAP) / SNAP
+    return np.where(np.abs(values - snapped) < SNAP_TOLERANCE, snapped, values)
+
+
+def same_symops(ops1, ops2):
+    """True if the two lists of (R, t) are the same set of operations (translations modulo 1)"""
+    key = lambda ops: {(tuple(np.rint(R).astype(int).ravel()), tuple(np.round(np.mod(t, 1), 4) % 1))
+                       for R, t in ops}
+    return key(ops1) == key(ops2)
+
+
+def equivalent_positions(position, ops):
+    """distinct positions (array (n, 3), in [0, 1)) equivalent to position by the symmetry operations"""
+    points = np.mod(_snap([R @ _snap(position) + t for R, t in ops]), 1.0)
+    distinct = []
+    for point in points:
+        if not any(np.all(np.abs((point - other + 0.5) % 1 - 0.5) < MERGE_TOLERANCE) for other in distinct):
+            distinct.append(point)
+    return np.array(distinct)
+
+
+def expand_structure(atoms, spacegroup=None, symops=None):
+    """atoms of the unit cell, grouped by element
+
+    :param atoms: list of (element, x, y, z, occupancy) of the asymmetric unit
+    :param spacegroup: space group code ('227:1') used if symops is None
+    :param symops: list of symmetry operations ('x, y, z', ...) of the CIF, or None
+    :return: dict {element: (positions array (n, 3), occupancies array (n))}
+    """
+    ops = [parse_symop(op) for op in symops] if symops else spacegroup_symops(spacegroup)
+    cell = {}
+    for element, x, y, z, occupancy in atoms:
+        positions = equivalent_positions((x, y, z), ops)
+        previous = cell.get(element, (np.zeros((0, 3)), np.zeros(0)))
+        cell[element] = (np.vstack([previous[0], positions]),
+                         np.concatenate([previous[1], np.full(len(positions), float(occupancy))]))
+    return cell
+
+
+def register_structure(label, atoms, spacegroup=None, symops=None):
+    """register the crystal structure of material label (extinction code 'atoms:<label>')"""
+    content = (tuple(tuple(atom) for atom in atoms), spacegroup, tuple(symops) if symops else None)
+    if label in STRUCTURES and STRUCTURES[label]["content"] == content:
+        return
+    STRUCTURES[label] = {"content": content, "cell": expand_structure(atoms, spacegroup, symops)}
+
+
+def structure_allowed(hkl, label):
+    """boolean mask of reflections with a non zero structure factor, for any atomic scattering factors:
+    a reflection is absent if, for each element, the sum over its positions of occupancy x phase vanishes
+
+    :param label: material registered by register_structure()
+    """
+    if label not in STRUCTURES:
+        raise KeyError("no crystal structure (atoms) registered for material '%s'" % label)
+    hkl = np.ascontiguousarray(hkl)
+    entry = STRUCTURES[label]
+    key = ("atoms", entry["content"], hkl.shape, hash(hkl.tobytes()))
+    if key not in _CACHE:
+        allowed = np.zeros(len(hkl), dtype=bool)
+        hklf = hkl.astype(float)
+        for positions, occupancies in entry["cell"].values():
+            for start in range(0, len(hkl), 20000):
+                phases = 2 * np.pi * hklf[start:start + 20000] @ positions.T
+                total = np.abs(np.exp(1j * phases) @ occupancies) / occupancies.sum()
+                allowed[start:start + 20000] |= total > TOLERANCE
+        if len(_CACHE) >= _CACHE_SIZE:
+            _CACHE.pop(next(iter(_CACHE)))
+        _CACHE[key] = allowed
+    return _CACHE[key].copy()

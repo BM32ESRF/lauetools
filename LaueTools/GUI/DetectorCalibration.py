@@ -3890,7 +3890,10 @@ class MainCalibrationFrame(wx.Frame):
 
         self.strainxtal.update_latticeparameters()
         # update extinctions rules
-        extinc = DictLT.dict_Extinc_inv[DictLT.dict_Materials[key_material][2]]
+        # name of the extinction rules, or code without name (space group number, atoms:<label>)
+        extinc = CP.extinction_name(DictLT.dict_Materials[key_material][2])
+        if self.crystalparampanel.comboExtinctions.FindString(extinc) == wx.NOT_FOUND:
+            self.crystalparampanel.comboExtinctions.Append(extinc)
         self.crystalparampanel.comboExtinctions.SetValue(extinc)
         self._replot(event)
         self.display_current()
@@ -4138,7 +4141,7 @@ class MainCalibrationFrame(wx.Frame):
         # print('self.kf_direction', self.kf_direction)
         ResolutionAngstrom = None
 
-        self.Extinctions = DictLT.dict_Extinc[self.crystalparampanel.comboExtinctions.GetValue()]
+        self.Extinctions = CP.extinction_code(self.crystalparampanel.comboExtinctions.GetValue())
 
         # default
         # (deltamatrix can be updated step by step by buttons)

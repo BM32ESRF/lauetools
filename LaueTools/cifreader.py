@@ -9,6 +9,10 @@ Read crystal structures from CIF files (Crystallographic Information File) to cr
 
 The extinction code is the space group number with its setting when the CIF gives one ('227:1', '167:H', '14:b'):
 LaueTools then applies the general reflection conditions of this space group (wyckpos_lauetools.py).
+With the atom positions, the extinctions are those of the crystal structure (e.g. 222 of silicon):
+
+    structure = CIF.structure_from_cif("Si.cif")
+    DictLT.dict_Materials.add_or_update_material(label, lattice, "atoms", **structure)
 
 Self-contained parser (no dependency) of the CIF 1.1 syntax: data blocks, tags and values, loops, quoted values,
 multi-line text fields; numbers with standard uncertainty (5.43088(5)).
@@ -238,3 +242,33 @@ def material_from_cif(path, label=None, block_name=None):
     else:
         extinction = "no"
     return label, structure["lattice"], extinction
+
+
+def structure_from_cif(path, block_name=None):
+    """crystal structure of a CIF file for a LaueTools material with extinctions computed from atom positions
+
+    :return: dict with 'atoms' (list of (element, x, y, z, occupancy) of the asymmetric unit), 'spacegroup'
+        (code, e.g. '227:1', or None) and 'symops' (the symmetry operations of the CIF if they are a complete set
+        different from those of wyckpos_lauetools for this space group code, or if the space group is unknown;
+        else None)
+    :raises ValueError: if the CIF has no atom positions, or neither symmetry operations nor space group
+    """
+    from . import structurefactor as SF
+    structure = read_cif(path, block_name)
+    if not structure["atoms"]:
+        raise ValueError("%s: no atom positions (_atom_site_fract_x)" % path)
+    spacegroup = "%d%s" % (structure["spacegroup"], structure["setting"]) if structure["spacegroup"] else None
+    symops = structure["symops"] or None
+    if spacegroup is None and symops is None:
+        raise ValueError("%s: no space group nor symmetry operations" % path)
+    if symops and spacegroup:
+        # symmetry operations of the CIF kept only if they are a complete set different from those of the space
+        # group code (other origin or axes); an incomplete list (fewer operations) is replaced by the latter
+        try:
+            cifops, groupops = [SF.parse_symop(op) for op in symops], SF.spacegroup_symops(spacegroup)
+            if len(cifops) < len(groupops) or SF.same_symops(cifops, groupops):
+                symops = None
+        except ValueError:  # symmetry operation that cannot be read: keep them to report it when used
+            pass
+    atoms = [(atom["element"], atom["x"], atom["y"], atom["z"], atom["occupancy"]) for atom in structure["atoms"]]
+    return {"atoms": atoms, "spacegroup": spacegroup, "symops": symops}

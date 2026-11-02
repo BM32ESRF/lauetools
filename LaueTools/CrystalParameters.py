@@ -26,7 +26,7 @@ except (ImportError, ValueError):
     print("elasticity.py module is missing. You may need it for very few usages")
     ELASTICITYMODULE = False
 
-from . dict_LaueTools import dict_Materials, dict_Stiffness, dict_Extinc
+from . dict_LaueTools import dict_Materials, dict_Stiffness, dict_Extinc, dict_Extinc_inv
 from . import generaltools as GT
 from . wyckpos_lauetools import testhklcond_generalrules_array, is_spacegroup_code
 from . import structurefactor as SF
@@ -138,7 +138,31 @@ def is_extinction_code(Extinc):
     its setting, e.g. '227:2', '167:R')"""
     if isinstance(Extinc, (int, np.integer)) and not isinstance(Extinc, bool):
         Extinc = str(Extinc)
+    if isinstance(Extinc, str) and Extinc.startswith("atoms:"):
+        return _structure_registered(Extinc[len("atoms:"):])
     return Extinc in dict_Extinc.values() or is_spacegroup_code(Extinc)
+
+
+def _structure_registered(label):
+    """True if the crystal structure of material label is known (registered by the materials library when it
+    gives the extinction code 'atoms:<label>' of a material with atom positions)"""
+    if label not in SF.STRUCTURES:
+        from . import dict_LaueTools as DictLT
+        library = DictLT.dict_Materials
+        if hasattr(library, "get_extinction") and label in library:
+            library.get_extinction(label)  # registers the structure
+    return label in SF.STRUCTURES
+
+
+def extinction_name(Extinc):
+    """name of an extinction code for the GUIs ('fcc' -> 'FaceCenteredCubic'); codes without name (space group
+    numbers, 'atoms:<label>') are returned as they are"""
+    return dict_Extinc_inv.get(Extinc, Extinc)
+
+
+def extinction_code(name):
+    """extinction code of a name of the GUIs ('FaceCenteredCubic' -> 'fcc'), or name if it is already a code"""
+    return dict_Extinc.get(name, name)
 
 
 def ApplyExtinctionrules(HKL, Extinc, verbose=0):
@@ -149,6 +173,8 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
     :param Extinc: label for extinction (see genHKL_np())
              or a space group number (eg. '152', or 152), optionally with its setting ('227:2', '167:R'):
              then the general reflection conditions of this space group are applied (wyckpos_lauetools.py)
+             or 'atoms:<label>': reflections with a zero structure factor of the crystal structure (atom
+             positions) of material label (see dict_LaueTools.Materials and structurefactor.py)
 
     :returns: numpy array (m,3) of [H,K,L]  m<=n
     """
@@ -738,6 +764,12 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
             list_HKL_eq = np.column_stack((list_HKL_mart[:,0],-list_HKL_mart[:,1],list_HKL_mart[:,2]))  # H -K L plan miroir
             array_hkl = np.vstack((list_HKL_mart, -list_HKL_mart, list_HKL_eq, -list_HKL_eq))
     
+    elif isinstance(Extinc, str) and Extinc.startswith("atoms:"):  # crystal structure (atom positions)
+        label = Extinc[len("atoms:"):]
+        if not _structure_registered(label):
+            raise ValueError("Unknown extinction rule '%s': no atom positions for material '%s'" % (Extinc, label))
+        array_hkl = HKL[SF.structure_allowed(HKL, label)]
+
     elif is_spacegroup_code(Extinc):  # space group number, optionally with setting ('227:2', '167:R')
         # general reflection conditions computed from the symmetry operations (any setting, and including the
         # conditions on symmetry-equivalent reflections that testhklcond_generalrules_array() misses)
@@ -811,7 +843,7 @@ def GrainParameter_from_Material(key_material, dictmaterials=dict_Materials, ver
             raise KeyError(f"Unknown key '{key_material}' for material")
         elem_key = material_data.get("label", key_material)
         unitCellparameters = material_data["lattice"]
-        Structure_extinction = material_data["extinction"]
+        Structure_extinction = dictmaterials.get_extinction(key_material)  # 'atoms' -> 'atoms:<label>'
 
     # --- Ensure all unitCellparameters are numeric ---
     unitCellparameters = [evaluate_lattice_param(param) for param in unitCellparameters]

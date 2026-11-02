@@ -276,7 +276,7 @@ class B0MatrixEditor(wx.Frame):
     def OnStoreRefCell(self, _):
         key_material = str(self.namestore.GetValue())
         # factor structure peak extinction
-        struct_extinc = self.parent.dict_Extinc[self.comboExtinc.GetValue()]
+        struct_extinc = self.parent.dict_Extinc.get(self.comboExtinc.GetValue(), self.comboExtinc.GetValue())
 
         # UnitCellParameters is either [a,b,c,alpha,beta,gamma] or list of 4 matrices [Da,U,Dc,B]
         Da = self.parent.dict_Transforms[self.comboDa.GetValue()]
