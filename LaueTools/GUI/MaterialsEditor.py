@@ -10,9 +10,13 @@ This module belongs to the open source LaueTools project
 JS Micha   October 2026
 """
 
+import os
+
 import wx
 
 from .. import dict_LaueTools as DictLT
+from .. import CrystalParameters as CP
+from .. import cifreader as CIF
 
 COLUMNS = ["name", "a", "b", "c", "alpha", "beta", "gamma", "extinction"]
 LATTICE_LABELS = COLUMNS[1:7]
@@ -329,6 +333,8 @@ class MaterialsEditorFrame(wx.Frame):
         deletebtn.Bind(wx.EVT_BUTTON, self.OnDeleteMaterial)
         clearbtn = wx.Button(panel, -1, "Clear")
         clearbtn.Bind(wx.EVT_BUTTON, self.OnClear)
+        cifbtn = wx.Button(panel, -1, "Import CIF...")
+        cifbtn.Bind(wx.EVT_BUTTON, self.OnImportCIF)
         closebtn = wx.Button(panel, -1, "Close")
         closebtn.Bind(wx.EVT_BUTTON, lambda _: self.Close())
 
@@ -339,8 +345,11 @@ class MaterialsEditorFrame(wx.Frame):
         for ctrl in self.latticectrls:
             ctrl.SetToolTip("Lengths in Angstrom, angles in degree. "
                             "Arithmetical expressions are accepted, e.g.: 5.982*5.05/5")
-        self.extinctionctrl.SetToolTip("Label of the extinction rules (see CrystalParameters.ApplyExtinctionrules()). "
-                                       "'no' for no extinction")
+        self.extinctionctrl.SetToolTip("Label of the extinction rules (see CrystalParameters.ApplyExtinctionrules()), "
+                                       "'no' for no extinction, or space group number (general reflection "
+                                       "conditions), optionally with its setting: e.g. 225, 227:1, 167:H")
+        cifbtn.SetToolTip("Fill the form from a CIF file: name (chemical formula), lattice parameters and space "
+                          "group (extinction). Then check and click on Add / Update")
         addbtn.SetToolTip("Add the material (or update the material with the same name) and save the materials file")
         deletebtn.SetToolTip("Delete the material with the name of the form and save the materials file")
 
@@ -359,7 +368,7 @@ class MaterialsEditorFrame(wx.Frame):
         grid.Add(self.extinctionctrl)
 
         hbtns = wx.BoxSizer(wx.HORIZONTAL)
-        for btn in (addbtn, deletebtn, clearbtn):
+        for btn in (addbtn, deletebtn, clearbtn, cifbtn):
             hbtns.Add(btn, 0, wx.RIGHT, 10)
         hbtns.AddStretchSpacer()
         hbtns.Add(closebtn)
@@ -484,6 +493,29 @@ class MaterialsEditorFrame(wx.Frame):
         self.extinctionctrl.SetValue(row[7])
 
     # --- form
+    def OnImportCIF(self, _):
+        """fill the form from a CIF file (the material is added with Add / Update)"""
+        with wx.FileDialog(self, "Select a CIF file", wildcard="CIF files (*.cif)|*.cif;*.CIF|All files (*)|*",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dialog:
+            if dialog.ShowModal() != wx.ID_OK:
+                return
+            path = dialog.GetPath()
+        try:
+            label, lattice, extinction = CIF.material_from_cif(path)
+        except (OSError, ValueError) as error:
+            wx.MessageBox("Cannot read %s:\n%s" % (path, error), "Materials Editor", wx.OK | wx.ICON_ERROR)
+            return
+        self.namectrl.SetValue(label)
+        for ctrl, value in zip(self.latticectrls, lattice):
+            ctrl.SetValue("%.10g" % value)
+        self.extinctionctrl.SetValue(extinction)
+        if extinction == "no":
+            message = "no space group in the CIF file: extinction set to 'no'"
+        else:
+            message = "extinction: general reflection conditions of space group %s" % extinction
+        self.sb.SetStatusText("%s read. %s. Check the form and click on Add / Update" % (os.path.basename(path),
+                                                                                          message))
+
     def OnClear(self, _):
         self.namectrl.SetValue("")
         for ctrl in self.latticectrls:
@@ -530,9 +562,10 @@ class MaterialsEditorFrame(wx.Frame):
             wx.MessageBox(str(error), "Materials Editor", wx.OK | wx.ICON_ERROR)
             return
 
-        if extinction not in DictLT.dict_Extinc_inv:
+        if not CP.is_extinction_code(extinction):
             answer = wx.MessageBox("Extinction '%s' is not a known label of extinction rules (dict_Extinc in "
-                                   "dict_LaueTools.py):\nsome LaueTools modules will fail with this material."
+                                   "dict_LaueTools.py) nor a space group number (e.g. 225, 227:1, 167:H):"
+                                   "\nsome LaueTools modules will fail with this material."
                                    "\n\nAdd the material anyway?" % extinction,
                                    "Materials Editor", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING)
             if answer != wx.YES:

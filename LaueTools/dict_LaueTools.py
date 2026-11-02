@@ -132,6 +132,17 @@ def evaluate_arithmetic(expression):
         raise ValueError(f"'{expression}' is not a number or an arithmetical expression") from err
 
 
+def _extinction_from_yaml(value):
+    """extinction code read in materials.yaml, as a str: a space group number written without quotes is read
+    as an int (extinction: 227), and with its origin choice as a base 60 int (YAML 1.1: 227:1 -> 13621)"""
+    if isinstance(value, int) and not isinstance(value, bool) and value > 230:
+        from .wyckpos_lauetools import is_spacegroup_code
+        number, setting = divmod(value, 60)
+        if is_spacegroup_code("%d:%d" % (number, setting)):
+            return "%d:%d" % (number, setting)
+    return str(value)
+
+
 class Materials:
     def __init__(self, key_material=None, yaml_file_path=None, use_user_yaml_file=USE_USER_MATERIALS_YAML_FILE):
         """
@@ -298,6 +309,7 @@ class Materials:
             if not isinstance(material, dict) or 'lattice' not in material or 'extinction' not in material:
                 raise ValueError(f"material '{label}' in {yaml_file_path} must have 'lattice' and 'extinction'")
             material['lattice'] = [evaluate_yaml_value(item) for item in material['lattice']]
+            material['extinction'] = _extinction_from_yaml(material['extinction'])
         self.materials = loaded_data
         self.session_labels = set()
         self.file_versions = {}

@@ -28,7 +28,8 @@ except (ImportError, ValueError):
 
 from . dict_LaueTools import dict_Materials, dict_Stiffness, dict_Extinc
 from . import generaltools as GT
-from . wyckpos_lauetools import testhklcond_generalrules_array
+from . wyckpos_lauetools import testhklcond_generalrules_array, is_spacegroup_code
+from . import structurefactor as SF
     
 DEG = np.pi / 180.0
 RAD = 1 / DEG
@@ -131,19 +132,30 @@ def isAragonite(latticeparameters, dictmaterials=dict_Materials):
     return GT.are_all_close_elementwise(latticeparameters, unitCellparameters, rel_tol=0.005)
 
 
+def is_extinction_code(Extinc):
+    """True if Extinc is an extinction code accepted by ApplyExtinctionrules(): a label of
+    dict_LaueTools.dict_Extinc ('no', 'fcc', 'dia', ...) or a space group number (1-230, optionally with
+    its setting, e.g. '227:2', '167:R')"""
+    if isinstance(Extinc, (int, np.integer)) and not isinstance(Extinc, bool):
+        Extinc = str(Extinc)
+    return Extinc in dict_Extinc.values() or is_spacegroup_code(Extinc)
+
+
 def ApplyExtinctionrules(HKL, Extinc, verbose=0):
     r"""
     Apply selection rules to hkl reflections to remove forbidden ones
 
     :param HKL: numpy array (n,3) of [H,K,L]
     :param Extinc: label for extinction (see genHKL_np())
-             if Extinc contains only a number (space group number) (eg. '152')
-             then extinctions rules are applied according to wyckpos_lauetools.py module
+             or a space group number (eg. '152', or 152), optionally with its setting ('227:2', '167:R'):
+             then the general reflection conditions of this space group are applied (wyckpos_lauetools.py)
 
     :returns: numpy array (m,3) of [H,K,L]  m<=n
     """
     if not isinstance(HKL, (np.ndarray,)):
         HKL = np.array(HKL)
+    if isinstance(Extinc, (int, np.integer)) and not isinstance(Extinc, bool):
+        Extinc = str(Extinc)  # space group number
 
     H, K, L = HKL.T
 
@@ -726,8 +738,10 @@ def ApplyExtinctionrules(HKL, Extinc, verbose=0):
             list_HKL_eq = np.column_stack((list_HKL_mart[:,0],-list_HKL_mart[:,1],list_HKL_mart[:,2]))  # H -K L plan miroir
             array_hkl = np.vstack((list_HKL_mart, -list_HKL_mart, list_HKL_eq, -list_HKL_eq))
     
-    elif Extinc.isdecimal():  # if Extinc is a string with only digits, it is the extinction number
-            array_hkl = testhklcond_generalrules_array(Extinc, HKL)
+    elif is_spacegroup_code(Extinc):  # space group number, optionally with setting ('227:2', '167:R')
+        # general reflection conditions computed from the symmetry operations (any setting, and including the
+        # conditions on symmetry-equivalent reflections that testhklcond_generalrules_array() misses)
+        array_hkl = HKL[SF.general_allowed(HKL, Extinc)]
     else:
         raise ValueError("Unknown extinction rule '%s'" % str(Extinc))
 

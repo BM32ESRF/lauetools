@@ -277,7 +277,7 @@ def genHKL_np(listn, Extinc):
     if (not isinstance(nbelements, int)) or nbelements <= 0.0:
         raise ValueError("Needs (3,2) list of sorted integers")
 
-    if Extinc not in list(dict_Extinc.values()):
+    if not CP.is_extinction_code(Extinc):
         raise ValueError('Could not understand extinction code: " %s " ' % str(Extinc))
 
     HKLraw = np.mgrid[n_h_min:n_h_max, n_k_min:n_k_max, n_l_min:n_l_max]
@@ -301,7 +301,7 @@ def parse_grainparameters(SingleCrystalParams):
         raise IndexError("List of input parameters for crystal Laue pattern simulation "
                             "has %d elements instead of 4 !" % len(SingleCrystalParams))
 
-    if Extinc not in list(dict_Extinc.values()):
+    if not CP.is_extinction_code(Extinc):
         raise ValueError("wrong code %s for extinction !" % Extinc)
     if np.array(Bmatrix).shape != (3, 3):
         raise ValueError("wrong B matrix format!")
