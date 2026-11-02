@@ -23,7 +23,7 @@ class tuple_2int(Tuple[int, int]):
     pass
 
 def split_filename(filename:str)->str:
-    rule = re.compile(u'([a-zA-Z_0-9]+)\.(\d+)(\S+)')#,add argument flags=re.LOCALE  for python2!!
+    rule = re.compile(r'([a-zA-Z_0-9]+)\.(\d+)(\S+)')#,add argument flags=re.LOCALE  for python2!!
 
     parts = rule.findall(filename[::-1])[0]
 
@@ -56,7 +56,7 @@ def split_linesubfolder(folder:str)->tuple:
     subfolder = os.path.basename(os.path.split(folder)[0])
     print(subfolder)
 
-    rule = re.compile("(\d+)(\S+)")#, flags=re.LOCALE)
+    rule = re.compile(r"(\d+)(\S+)")#, flags=re.LOCALE)
 
     parts = rule.findall(subfolder[::-1])
 

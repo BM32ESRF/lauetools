@@ -3336,7 +3336,7 @@ def plot_Edia_vs_thf(fileEdia, Emin=5.0, Emax=22.0, thf_in_scan=None, ndia_max=N
 
     res = read_dict_Edia_vs_thf(fileEdia, read_calibdia=read_calibdia, verbose=verbose)
 
-    if read_calibdia is not "new":
+    if read_calibdia != "new":
         dict_Edia, dict_values_names, thf_list = res
     else:
         dict_Edia, dict_values_names, thf_list, _ = res

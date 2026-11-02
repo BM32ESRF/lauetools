@@ -1106,7 +1106,7 @@ class parametric_Grain_Dialog3(wx.Frame):
         String_Info += "          STRAIN:\n"
         String_Info += "          three axes of traction can be combined,\n"
         String_Info += "          with frame, vector direction, and amplitude in real space\n"
-        String_Info += "                example: factor of 1.1 means 10\% expansion in real space along the chosen direction\n"
+        String_Info += "                example: factor of 1.1 means 10% expansion in real space along the chosen direction\n"
         String_Info += "4- Select plot/calibration/file parameter and click on simulate button\n"
         return String_Info
 

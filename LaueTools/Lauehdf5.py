@@ -795,7 +795,7 @@ def Add_allspotsSummary_from_fitfiles(Summary_HDF5_filename, prefix_fitfiles, fi
     list_files_in_folder = os.listdir(fitfiles_folder)
     import re
 
-    test = re.compile("\.fit$", re.IGNORECASE)
+    test = re.compile(r"\.fit$", re.IGNORECASE)
     list_fitfiles_in_folder = list(filter(test.search, list_files_in_folder))
 
     if Node_tableallspots_alreadyExists:
