@@ -25,7 +25,10 @@ import LaueTools.generaltools as GT
 import LaueTools.IOLaueTools as IOLT
 import LaueTools.dict_LaueTools as DictLT
 #from mosaic import ImshowFrameNew, ImshowFrame_Scalar, ImshowFrame
-from LaueTools.GUI.mosaic import ImshowFrame_Scalar, ImshowFrame
+try:  # map plotting windows: need wxPython (mosaic defines ImshowFrame only when wx is installed)
+    from LaueTools.GUI.mosaic import ImshowFrame
+except ImportError:
+    ImshowFrame = None
 
 # TODO   to refactor -------------------
 # set invisible parameters for serial_peak_search, serial_index_refine_multigrain

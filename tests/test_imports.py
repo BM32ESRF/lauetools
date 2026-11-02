@@ -40,8 +40,16 @@ def pyproject_commands():
     return commands
 
 
+# modules that need an optional package (not in requirements.txt): skipped when it is not installed
+OPTIONAL_PACKAGE = {"FileSeries.Build_Summary": "wx",  # wxPython GUI (requirements-gui.txt)
+                    "daxm_workflow": "numba",  # pip install "lauetools[daxm]"
+                    "Daxm.quickdaxm": "numba"}
+
+
 @pytest.mark.parametrize("module", MODULES)
 def test_import(module):
+    if module in OPTIONAL_PACKAGE:
+        pytest.importorskip(OPTIONAL_PACKAGE[module])
     importlib.import_module("LaueTools." + module)
 
 
