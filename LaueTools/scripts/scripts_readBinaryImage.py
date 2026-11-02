@@ -878,7 +878,7 @@ def test_peak_search_file_series():
     for kk in indimg:
         filename = prefixname + IOimage.stringint(kk, 4) + filesuffix
         print(filename)
-        prefix = ("D:\Documents and Settings\or208865\Bureau\AAA\AA\\toto_"
+        prefix = (r"D:\Documents and Settings\or208865\Bureau\AAA\AA\toto_"
             + IOimage.stringint(kk, 4))
         print("prefix ", prefix)
         commentaire = "LT rev 437 \n# PixelNearRadius=5, removeedge=2, IntensityThreshold=500, boxsize=5,\n# \

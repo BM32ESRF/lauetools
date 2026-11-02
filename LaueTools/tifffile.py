@@ -1881,7 +1881,7 @@ class TiffSequence(object):
 
     """
 
-    _axes_pattern = """
+    _axes_pattern = r"""
         # matches Olympus OIF and Leica TIFF series
         _?(?:(q|l|p|a|c|t|x|y|z|ch|tp)(\d{1,4}))
         _?(?:(q|l|p|a|c|t|x|y|z|ch|tp)(\d{1,4}))?

@@ -357,7 +357,7 @@ class MatrixEditor_Dialog(wx.Frame):
                 paramraw = _file.read()
                 _file.close()
 
-                listval = re.split("[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
+                listval = re.split(r"[ ()\[\)\;\,\]\n\t\a\b\f\r\v]", paramraw)
                 listelem = []
                 for elem in listval:
                     try:

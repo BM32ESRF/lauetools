@@ -1031,7 +1031,7 @@ def testtwin(
         dictstrain[k] = [0, 0, 0]
         previousResults = None
 
-        if k > nstart and dictMat[k - 1][0] is not 0:
+        if k > nstart and dictMat[k - 1][0] != 0:
             addMatrix = dictMat[k - 1][0]
             previousResults = addMatrix, dictMR[k - 1][0], dictNB[k - 1][0]
 
@@ -1333,7 +1333,7 @@ def index_fileseries(
         dictstrain[k] = [0 for kk in list(range(nbGrainstoFind_Cu))]
         previousResults = None
 
-        if k > nstart and dictMat[k - 1][0] is not 0:
+        if k > nstart and dictMat[k - 1][0] != 0:
             addMatrix = dictMat[k - 1][0]
             previousResults = addMatrix, dictMR[k - 1][0], dictNB[k - 1][0]
 

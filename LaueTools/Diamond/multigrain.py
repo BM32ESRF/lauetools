@@ -809,7 +809,7 @@ def omega_sample_frame_to_mat_from_lab_to_sample_frame() :
 
     # rotation de -omega autour de l'axe x pour repasser dans Rsample
     PAR.mat_from_lab_to_sample_frame = array([[1.0, 0.0, 0.0],
-                                        [0.0, np.cos(omega), np.sin(omega)]
+                                        [0.0, np.cos(omega), np.sin(omega)],
                                         [0.0, -np.sin(omega), np.cos(omega)]])
 
     print("MG.PAR.mat_from_lab_to_sample_frame = \n", PAR.mat_from_lab_to_sample_frame)
@@ -838,7 +838,7 @@ def matstarlab_to_matdirONDsample3x3(matstarlab,
         omega = omega0 * PI / 180.0
         # rotation de -omega autour de l'axe x pour repasser dans Rsample
         mat_from_lab_to_sample_frame = array([[1.0, 0.0, 0.0],
-                                        [0.0, np.cos(omega), np.sin(omega)]
+                                        [0.0, np.cos(omega), np.sin(omega)],
                                         [0.0, -np.sin(omega), np.cos(omega)]])
 
     # matdirONDsample3x3 = uc_dir_OND on sample
