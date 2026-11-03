@@ -42,6 +42,11 @@ wires:
 
 sample:
   tilt: 40.                 # angle (deg) between the beam and the sample surface
+  # microns along the beam: depth zero of the wires calibration (ybeam = 0) relative to the source point of the
+  # detector calibration (.det), added to the source position of 2theta and chi in the .cor files. 'auto': thickness
+  # of the layer of the .calib file (key fluo_layer: Zr fluorescence calibration, Zr surface below the Cr coating
+  # whose top surface is at the Ge calibration point) + its p0 shift (key p0_offset_um); 0 for a Ge or envelope zero
+  detector_offset: auto
 
 output:
   folder: null              # results folder (default: PROCESSED_DATA mirror of image_folder + /daxm)
@@ -54,10 +59,11 @@ quickdaxm:
   peaklist: auto
   spots_threshold: 300.     # [auto] min intensity of a spot above the local background
   spots_max_number: 2000    # [auto] strongest spots kept
-  # intensity profile of a spot = mean of its core - median of the border of a box around it.
-  # Fluorescence is the same in the core and on the border: its smooth dips are removed.
-  boxsize: 5                # half size (pixel) of the box
-  coresize: 1               # half size (pixel) of the core (1: 3x3 pixels)
+  # intensity profile of a spot = mean of a probe box on the spot - median of the border of a box around it.
+  # Fluorescence is the same in the probe box and on the border: its smooth dips are removed.
+  boxsize: 5                # half size (pixel) of the box (11 x 11 pixels)
+  boxsize_probe: 1          # half size (pixel) of the probe box: 1 (3 x 3 pixels) or [along X, along Y]:
+                            # [2, 0] is a 5 x 1 pixels box (sharper dip edges); former name: coresize
   # dip = images where the profile is below low_fraction * plateau, with edges higher than
   # min_edge_fraction * plateau
   low_fraction: 0.3
@@ -73,3 +79,19 @@ quickdaxm:
   slice_step: 5.            # distance (microns of ybeam) between slices
   slice_thickness: null     # thickness of a slice (null: slice_step)
   slice_min_spots: 6        # slices with fewer spots are not written
+
+# -------------------------------------------------------------------------------------
+#  wires calibration from a wire scan of a reference crystal (Ge): approximate wires parameters from the dips of
+#  its Laue spots (quick daxm without calibfile), then refinement with the fluorescence (CalibFluo, as calib.py)
+# -------------------------------------------------------------------------------------
+wirescalib:
+  nb_wires: null            # nb of wires (null: all bands of dips with at least 3 dips)
+  var: [h, p0, f1, R]       # parameters fitted to the dips edges (h, p0, f1, f2 per wire; R, u1, u2 common)
+  ybeam: 0.                 # microns: position along the beam assumed for the sources of the reference crystal
+  fluo_element: Ge          # fluorescence source of the refinement (material of the sample)
+  fluo_thickness: 0.3       # mm, thickness of the fluorescence source
+  fluo_layer: null          # mm along the beam: start thickness of a layer above the fluorescent material whose signal
+                            # passes the detector threshold (e.g. 0.025 for the Cr coating on Zr); null: no layer
+  fluo_layer_max: 0.08      # mm along the beam: largest thickness of this layer
+  fluo_layer_fixed: false   # true: thickness fixed to fluo_layer (refine_wires_local(): the one of the reference)
+  monitor_offset: null      # monitor counts per second without beam (null: 28.3 EIGER, 25 sCMOS)

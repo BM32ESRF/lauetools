@@ -2,22 +2,35 @@
 
 One YAML configuration file per wire scan (`config_template.yaml`), shared by the DAXM workflows. The former notebooks and scripts (`../1_Pre_Calib_wire_1yech.ipynb`, `../daxmreconstruct_*`, the *Quick DAXM* sections of the `../PixelMonitoring*` notebooks, `LaueTools/Daxm/scripts`) are kept unchanged as references to compare the results.
 
-| notebook | input | output |
+| notebook | purpose | output (in `PROCESSED_DATA/<sample>/<dataset>/scanXXXX/daxm`) |
 |---|---|---|
-| `1_quick_daxm.ipynb` | images of a wire scan, detector `.det` file, wires `.calib` file | position along the beam (depth) of each Laue spot: `quickdaxm.h5`, `quickdaxm_spots.cor` (depth column), `depthslices/*.cor` (one peak list per slice, input of `../indexation/`) |
+| `1_wires_calibration.ipynb` | wires calibration with a Ge wire scan or a wire scan of the sample: crude from the Laue spots dips (`dips` for Ge, `envelope` for any sample), fine with the fluorescence (option), comparison | `wirescalib/*.calib` |
+| `2_quick_daxm.ipynb` | one wire scan: dips of the Laue spots and their positions along the beam (depth), without reconstruction | `quickdaxm.h5`, `quickdaxm_spots.cor` (depth column), `depthslices/*.cor` (one peak list per slice, input of `../indexation/`) |
+| `3_quick_daxm_grid.ipynb` | all the wire scans of a raster / grid: quick daxm of every scan with the calibration of notebook 1 and a p0 shift per scan (surface position along the beam), maps of the checks, depth layers of each scan (grains along the beam), their indexation: orientation, strain and lattice parameters averaged over the grain thickness along the beam | `PROCESSED_DATA/<sample>/<sample>_quickdaxm_grid`: `layers/*.cor`, `fitfiles_<material>/` |
+
+The wire scans of a sample folder use the calibration made with a scan of the same folder automatically (`CALIBFILE = 'auto'`).
 
 Code: `LaueTools/Daxm/quickdaxm.py` (profiles, dips, geometry), `LaueTools/daxm_workflow.py` (configuration, jobs, files).
 
-## Quick DAXM
+## Quick start
 
-1. set `SCANFILE` (`.scan` file of the DAXM GUI or of the wires calibration notebook) and `CALIBFILE` (`.calib`) in the first code cell of `1_quick_daxm.ipynb`, or write the configuration yourself:
-   ```python
-   import LaueTools.daxm_workflow as DW
-   cfg = DW.new_config('configs/my_scan.yaml', scanfile='/data/.../my_calib.scan', calibfile='/data/.../my.calib')
-   ```
-   (`hdf5_scan=('/data/.../<dataset>/<dataset>.h5', 1)` instead of `scanfile=` takes scan 1 from the BLISS hdf5 file of the dataset, for sCMOS `.tif` and EIGER `.h5` images, one image per file or stacked; `scandict=logfile.build_dict_scan(i)` takes a scan selected in the logfile; any parameter of the template can be given by name, e.g. `ybeam_range=[-50, 150]`)
-2. run the notebook: `RESOURCE = 'kernel'` (in the notebook), `'local'` (background job) or `'magnifix'`, `'nice-hpc7'` ... (SLURM job, see `LaueTools/scripts/workflowlauncher.py`)
-3. or from a terminal: `python -m LaueTools.daxm_workflow quickdaxm configs/my_scan.yaml --resource magnifix --ncpus 96`
+1. `1_wires_calibration.ipynb`: in SETTINGS, `RAW_DATA_FOLDER` (experiment), `SCAN_FILTER` and `SCAN_INDEX` (a Ge wire scan, or a wire scan of the sample), then run the cells: crude calibration in seconds, fluorescence refinement with `REFINE_FLUO = True`
+2. `2_quick_daxm.ipynb`: same SETTINGS for a wire scan of the sample (`CALIBFILE = 'auto'`: calibration of step 1 found automatically), then run the cells: depth of the Laue spots, peak lists per slice along the beam, browser of the peak lists (gnomonic projection)
+3. `3_quick_daxm_grid.ipynb`: `GRID_FILTER` (dataset names of the wire scans of the grid), `MATERIALS`; `MAX_SCANS = 28` to test on the first row; `RESOURCE = 'magnifix3'`: the scans shared between 3 SLURM jobs
+4. or from a terminal: `python -m LaueTools.daxm_workflow quickdaxm <results folder>/configs/daxm.yaml --resource magnifix`
+
+### Calibration and p0 shift of each scan
+
+The wires parameters (h, f1, f2, R, u1, u2) describe the wires relative to the beam and the detector: they hold for all the scans as long as wires, beam and detector are not moved. The depth zero is local: it is where the beam enters the reference surface. At another point of the sample, the surface height changes, and the entry point moves along the beam: p0 of all the wires is shifted by this distance (wires moving along the beam). Notebook 3 measures it on each scan: position along the beam of its shallowest grains (envelope of its dips) with the calibration, minus the same for the scan the calibration was made with.
+
+Without notebook:
+```python
+import LaueTools.daxm_workflow as DW
+table = DW.list_wire_scans('/data/visitor/<proposal>/bm32/<date>/RAW_DATA', contains='Zr5_griddaxm_grid')
+cfg = DW.config_for_scan(table, DW.scan_index(table, '<dataset>_1'), calibfile='auto')
+results = DW.run_quickdaxm(cfg, resource='magnifix')
+DW.write_quickdaxm_files(cfg, results)
+```
 
 ### How the dips are found
 

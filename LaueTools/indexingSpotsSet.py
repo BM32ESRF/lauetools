@@ -1803,15 +1803,19 @@ class spotsset:
 
                 if verbose>2:
                     print('\n\njust before self.refineUBSpotsFamily(grain_index,------>>  '
-                    'self.dict_grain_matrix[grain_index]', self.dict_grain_matrix[grain_index])
+                    'self.dict_grain_matrix[grain_index]', self.dict_grain_matrix.get(grain_index))
                     print('and material   :', self.key_material)
-                # --- ------- Refine with old strain model (varying strain at the right of UB)
-                refinedMatrix, devstrain = self.refineUBSpotsFamily(grain_index,
-                                                                    self.dict_grain_matrix[grain_index],
-                                                                    use_weights=self.UseIntensityWeights,
-                                                                    nbSpotsToIndex=self.nbSpotsToIndex,
-                                                                    verbose=verbose-2,
-                                                                    depth=depth)
+                if self.dict_grain_matrix.get(grain_index) is None:
+                    # AssignHKL() found too few spots (no matrix for this grain): no refinement, grain rejected below
+                    refinedMatrix, devstrain = None, None
+                else:
+                    # --- ------- Refine with old strain model (varying strain at the right of UB)
+                    refinedMatrix, devstrain = self.refineUBSpotsFamily(grain_index,
+                                                                        self.dict_grain_matrix[grain_index],
+                                                                        use_weights=self.UseIntensityWeights,
+                                                                        nbSpotsToIndex=self.nbSpotsToIndex,
+                                                                        verbose=verbose-2,
+                                                                        depth=depth)
                 refinedTs = None
                 # --- ----------------------------
 

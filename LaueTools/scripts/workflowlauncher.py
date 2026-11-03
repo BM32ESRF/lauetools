@@ -226,7 +226,7 @@ def write_config(config: Dict[str, Any], path: Optional[str] = None) -> str:
 
 # workflows of run_config(): 'roi_counters' (workflows.ROICountersWorkflow),
 # 'quickdaxm' (daxm_workflow.compute_quickdaxm, params: daxm configuration)
-WORKFLOWS = ('roi_counters', 'quickdaxm')
+WORKFLOWS = ('roi_counters', 'quickdaxm', 'quickdaxm_grid', 'wirescalib')
 
 
 def _run_quickdaxm(params, output, nb_cpus, progress, statuspath, jobinfo) -> Dict[str, Any]:
@@ -247,6 +247,30 @@ def read_config(config) -> Dict[str, Any]:
         with open(config, 'r') as f:
             return json.load(f)
     return config
+
+
+def _run_quickdaxm_grid(params, output, nb_cpus, progress, statuspath, jobinfo) -> list:
+    # wire scans of a DAXM grid one after the other (daxm_workflow.compute_quickdaxm_grid); summary in output (json)
+    import LaueTools.daxm_workflow as DW
+    summaries = DW.compute_quickdaxm_grid(dict(params), nb_cpus, progress)
+    with open(output, 'w') as f:
+        json.dump(summaries, f, indent=1, default=str)
+    write_status(statuspath, state='COMPLETED', done=len(summaries), total=len(summaries), output=output, **jobinfo)
+    print(f'summaries saved in {output}', flush=True)
+    return summaries
+
+
+def _run_wirescalib(params, output, nb_cpus, progress, statuspath, jobinfo) -> list:
+    # fluorescence calibration of the DAXM wires (daxm_workflow.refine_wires_fluo, params: {'cfg', 'kwargs'});
+    # summary of the stages in output (json), .calib files in the wirescalib folder of cfg
+    import LaueTools.daxm_workflow as DW
+    kwargs = dict(params.get('kwargs') or {})
+    stages = DW.refine_wires_fluo(params['cfg'], nb_cpus=nb_cpus, **kwargs)
+    with open(output, 'w') as f:
+        json.dump(stages, f, indent=1, default=str)
+    write_status(statuspath, state='COMPLETED', done=len(stages), total=len(stages), output=output, **jobinfo)
+    print(f'calibration stages saved in {output}', flush=True)
+    return stages
 
 
 def run_config(config, nb_cpus: Optional[int] = None, part: Optional[int] = None,
@@ -278,6 +302,10 @@ def run_config(config, nb_cpus: Optional[int] = None, part: Optional[int] = None
 
         if workflow == 'quickdaxm':
             return _run_quickdaxm(params, output, nb_cpus, progress, statuspath, jobinfo)
+        if workflow == 'quickdaxm_grid':
+            return _run_quickdaxm_grid(params, output, nb_cpus, progress, statuspath, jobinfo)
+        if workflow == 'wirescalib':
+            return _run_wirescalib(params, output, nb_cpus, progress, statuspath, jobinfo)
         # progress bar in a terminal, progress lines in log file of job
         results = wf.ROICountersWorkflow(params).run_roi_counters_workflow(nb_cpus,
                                                     progressbar=sys.stderr.isatty(),
@@ -515,6 +543,9 @@ class WorkflowJob:
         if workflow == 'quickdaxm':
             from LaueTools.Daxm import quickdaxm as QD
             return QD.load_results(self.output)
+        if workflow in ('quickdaxm_grid', 'wirescalib'):
+            with open(self.output, 'r') as f:
+                return json.load(f)
         return wf.load_results(self.output)
 
     def remove_files(self):
