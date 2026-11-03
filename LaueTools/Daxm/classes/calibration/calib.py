@@ -10,6 +10,7 @@ __version__ = '$Revision$'
 import os
 import json
 
+import math
 import numpy as np
 
 from LaueTools.Daxm.classes.wire import CircularWire
@@ -85,12 +86,12 @@ class CalibManager:
 
         traj_dict, wires_dict = tmp['traj'], tmp['wires']
 
-        traj_dict['u1'] = np.deg2rad(traj_dict['u1'])
-        traj_dict['u2'] = np.deg2rad(traj_dict['u2'])
+        traj_dict['u1'] = math.radians(traj_dict['u1'])
+        traj_dict['u2'] = math.radians(traj_dict['u2'])
 
         for i in range(len(wires_dict)):
-            wires_dict[i]['f1'] = np.deg2rad(wires_dict[i]['f1'])
-            wires_dict[i]['f2'] = np.deg2rad(wires_dict[i]['f2'])
+            wires_dict[i]['f1'] = math.radians(wires_dict[i]['f1'])
+            wires_dict[i]['f2'] = math.radians(wires_dict[i]['f2'])
 
         for i in range(len(wires_dict)):
             wires_dict[i].update(traj_dict)

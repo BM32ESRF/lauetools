@@ -37,8 +37,20 @@ from typing import List, Tuple, Union, Dict, Iterable
 keV=float
 
 
+def to_float(value)->float:
+    """plain python float of a number, a numpy scalar or a one-element array"""
+    return float(np.asarray(value).item())
+
+
+def float_params(params:Dict)->Dict:
+    """copy of a dict of wire parameters with plain python floats for its numbers ('material' kept)"""
+    return {key: (val if key == 'material' or isinstance(val, str) else to_float(val))
+            for key, val in params.items()}
+
+
 def new_dict(material="W", R=0.025, h=1., p0=0., f1=0., f2=0., u1=0., u2=0., include_material=True)->Dict:
     """create dict of input parameters including of not the item of key 'material' """
+    R, h, p0, f1, f2, u1, u2 = (to_float(v) for v in (R, h, p0, f1, f2, u1, u2))
     if include_material:
         return {'material': material,
                 'R': R,
@@ -58,9 +70,9 @@ def new_dict(material="W", R=0.025, h=1., p0=0., f1=0., f2=0., u1=0., u2=0., inc
                 'u2': u2}
 
 
-def new_dict_traj(u1=0, u2=0)->Dict:
-    return {'u1': u1,
-            'u2': u2}
+def new_dict_traj(u1=0., u2=0.)->Dict:
+    return {'u1': to_float(u1),
+            'u2': to_float(u2)}
 
 
 def load_dict(filename, directory="", material:str=None)->Dict:
@@ -219,6 +231,7 @@ class CircularWire:
     def set_par(self, R:float, f1:float, f2:float, u1:float, u2:float, h:float, p0:float, material=None, verbose=0):
         if verbose>0:
             print('In set_par(), R, f1, f2, u1, u2, h, p0', R, f1, f2, u1, u2, h, p0)
+        R, f1, f2, u1, u2, h, p0 = (to_float(v) for v in (R, f1, f2, u1, u2, h, p0))
         self.set_radius(R)
 
         self.set_axis(f1, f2)

@@ -108,6 +108,24 @@ class ScanError(Exception):
     pass
 
 
+def scan_cmd_from_command(fullcommand: str):
+    """scan command [start, end, nb steps, exposure] (ascan convention: nb of images = nb steps + 1) and wire motor
+    from a BLISS command of a wire scan:
+    'ascan zf <start> <end> <nb steps> <exposure>' or 'fscan zf <start> <step> <nb points> <exposure> [latency]'
+    (fscan: nb of images = nb points, end = start + (nb points - 1) * step)"""
+    parts = fullcommand.split()
+    scantype, motor = parts[0], parts[1]
+    if scantype == 'ascan':
+        start, end, nbsteps, expo = float(parts[2]), float(parts[3]), int(parts[4]), float(parts[5])
+    elif scantype == 'fscan':
+        start, step, nbpoints, expo = float(parts[2]), float(parts[3]), int(parts[4]), float(parts[5])
+        nbsteps = nbpoints - 1
+        end = start + nbsteps * step
+    else:
+        raise ValueError(f'scan command not handled (ascan or fscan of the wire motor): {fullcommand}')
+    return [start, end, nbsteps, expo], motor
+
+
 class StaticPointScan(object):
     """General scan class"""
     # Constructors and initialization
@@ -138,6 +156,7 @@ class StaticPointScan(object):
 
         self.scan_cmd_fastscan = None
         self.scan_cmd = None  # scan command
+        self.localhdf5file = None  # hdf5 file of the dataset (None: spec file or no file, e.g. simulation)
         self.scantype = None  # ascan or fscan, mesh ?
         self.scan_fullcommand = None
 
@@ -534,14 +553,28 @@ class StaticPointScan(object):
         - Logs the custom command in the format:
         `"ascan yf {start} {end} {num_steps} {exposure_time}"`.
         """
-        self.spec_motor = "yf"
+        # no spec or hdf5 file (e.g. simulation): scan command [start, end, nb steps, exposure] (ascan convention)
+        # from the BLISS command of the input if any (ascan or fscan), else from input['scanCmd']
+        fullcommand = self.input.get('fullcommand')
+        motor = 'yf'
+        if fullcommand and fullcommand.split()[0] in ('ascan', 'fscan'):
+            self.scan_cmd, motor = scan_cmd_from_command(fullcommand)
+            self.scantype = fullcommand.split()[0]
+            self.scan_fullcommand = fullcommand
+        else:
+            cmd = self.input['scanCmd']
+            if cmd is None or len(cmd) < 4:
+                raise ValueError(f"no spec/hdf5 file: scanCmd [start, end, nb steps, exposure] or 'fullcommand' needed, not {cmd}")
+            self.scan_cmd = [float(cmd[0]), float(cmd[1]), int(cmd[2]), float(cmd[3])]
+            self.scantype = self.scantype or 'ascan'
+        self.spec_motor = motor
         self.spec_monitor = np.ones(self.scan_cmd[2] + 1)
         self.spec_expo = self.scan_cmd[3]
 
         self.wire_position = np.linspace(self.scan_cmd[0], self.scan_cmd[1], self.scan_cmd[2] + 1)
 
         # Printing stuff
-        self.print_msg("   custom command: ascan yf {:f} {:f} {:d} {:f}", fmt=self.scan_cmd)
+        self.print_msg("   custom command: ascan " + self.spec_motor + " {:f} {:f} {:d} {:f}", fmt=self.scan_cmd)
 
     def init_detector(self):
 
@@ -743,7 +776,7 @@ class StaticPointScan(object):
             res.append(self.detector_params[k])
 
             if k in ('xbet', 'xgam'):
-                res[-1] = np.degrees(res[-1])
+                res[-1] = math.degrees(res[-1])
 
         if len(res) == 1:
             res = res[0]
@@ -836,7 +869,7 @@ class StaticPointScan(object):
             res.append(par[k])
 
             if k in ('f1', 'f2', 'u1', 'u2'):
-                res[-1] = np.degrees(res[-1])
+                res[-1] = math.degrees(res[-1])
 
         if len(res) == 1:
             res = res[0]
@@ -849,7 +882,7 @@ class StaticPointScan(object):
 
     def get_wire_traj_angle_deg(self):
 
-        return np.degrees(self.get_wire_traj_angle())
+        return math.degrees(self.get_wire_traj_angle())
 
     def set_wires(self, wires_dict):
 
@@ -860,8 +893,8 @@ class StaticPointScan(object):
 
         for i in range(len(wires_dict)):
             wires_dict[i] = dict(wires_dict[i])
-            wires_dict[i]['f1'] = np.deg2rad(wires_dict[i]['f1'])
-            wires_dict[i]['f2'] = np.deg2rad(wires_dict[i]['f2'])
+            wires_dict[i]['f1'] = math.radians(wires_dict[i]['f1'])
+            wires_dict[i]['f2'] = math.radians(wires_dict[i]['f2'])
 
         self.set_wires(wires_dict)
 
@@ -884,7 +917,7 @@ class StaticPointScan(object):
         else:
             pass
 
-    def set_wire(self, wid:int, wire_dict:dict, verbose:int=3):
+    def set_wire(self, wid:int, wire_dict:dict, verbose:int=0):
 
         """
         Set the parameters of a wire.
@@ -896,12 +929,15 @@ class StaticPointScan(object):
         wire_dict : dict
             A dictionary containing the parameters to set.
         verbose : int, optional
-            The verbosity level (default is 1).
+            The verbosity level (default is 0).
 
         Notes
         -----
         This function updates the wire parameters and calls `set_par` on the wire object to apply the new parameters.
+        Numbers (numpy scalars, one-element arrays from the optimizer) are stored as python floats.
         """
+        wire_dict = mywire.float_params(wire_dict)
+
         self.wire_params[wid].update(wire_dict)
 
         new_dict = self.get_wire_dict(wid)
@@ -923,6 +959,8 @@ class StaticPointScan(object):
 
     def set_wire_traj(self, traj_dict):
 
+        traj_dict = mywire.float_params(traj_dict)
+
         self.wire_traj.update(traj_dict)
 
         for wire in self.wire:
@@ -931,8 +969,8 @@ class StaticPointScan(object):
     def set_wire_traj_deg(self, traj_dict):
 
         traj_dict = dict(traj_dict)
-        traj_dict['u1'] = np.deg2rad(traj_dict['u1'])
-        traj_dict['u2'] = np.deg2rad(traj_dict['u2'])
+        traj_dict['u1'] = math.radians(traj_dict['u1'])
+        traj_dict['u2'] = math.radians(traj_dict['u2'])
 
         self.set_wire_traj(traj_dict)
 

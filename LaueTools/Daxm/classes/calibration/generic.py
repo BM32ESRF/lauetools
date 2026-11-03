@@ -14,6 +14,7 @@ try:
 except ImportError:
     pass
 
+import math
 import numpy as np
 
 # np.trapz was renamed np.trapezoid in numpy 2.0 (np.trapz removed later)
@@ -289,12 +290,13 @@ class Calib:
 
             wires_dict = self.get_wires(keys=['material', 'R', 'p0', 'h', 'f1', 'f2'])
 
-            traj_dict['u1'] = np.rad2deg(traj_dict['u1'])
-            traj_dict['u2'] = np.rad2deg(traj_dict['u2'])
+            traj_dict['u1'] = math.degrees(traj_dict['u1'])
+            traj_dict['u2'] = math.degrees(traj_dict['u2'])
 
             for i in range(len(wires_dict)):
-                wires_dict[i]['f1'] = np.rad2deg(wires_dict[i]['f1'])
-                wires_dict[i]['f2'] = np.rad2deg(wires_dict[i]['f2'])
+                wires_dict[i] = mywire.float_params(wires_dict[i])
+                wires_dict[i]['f1'] = math.degrees(wires_dict[i]['f1'])
+                wires_dict[i]['f2'] = math.degrees(wires_dict[i]['f2'])
 
             self.print_msg("Saving wire parameters to: {}", fmt=(fn,))
 
@@ -320,12 +322,12 @@ class Calib:
 
             traj_dict, wires_dict = tmp['traj'], tmp['wires']
 
-            traj_dict['u1'] = np.deg2rad(traj_dict['u1'])
-            traj_dict['u2'] = np.deg2rad(traj_dict['u2'])
+            traj_dict['u1'] = math.radians(traj_dict['u1'])
+            traj_dict['u2'] = math.radians(traj_dict['u2'])
 
             for i in range(len(wires_dict)):
-                wires_dict[i]['f1'] = np.deg2rad(wires_dict[i]['f1'])
-                wires_dict[i]['f2'] = np.deg2rad(wires_dict[i]['f2'])
+                wires_dict[i]['f1'] = math.radians(wires_dict[i]['f1'])
+                wires_dict[i]['f2'] = math.radians(wires_dict[i]['f2'])
 
             if verbose:
                 self.print_msg("Loaded parameters: ")
@@ -539,7 +541,8 @@ class Calib:
 
         if 'dm' in var:
             keys.append('dm')
-            if self.log_select:
+            # previous fitted depth, if any (none after load_wires(): start from half the source depth)
+            if self.log_select and self.log_dm[self.log_select] is not None:
                 dm0 = self.log_dm[self.log_select]
             else:
                 dm0 = np.max(self.model_src.source_ysrc)*0.5
@@ -707,11 +710,11 @@ class Calib:
         for i, lut in enumerate(self.var_lut):
             for key in lut.keys():
                 if lut[key] is not None:
-                    self.var_cur[i][key] = x[lut[key]]
+                    self.var_cur[i][key] = float(x[lut[key]])
 
         if 'dm' in self.opt_var:
             if abs(-2 * self.exp_qty - 1) < len(x): 
-                self.var_dm = x[-2 * self.exp_qty - 1]
+                self.var_dm = float(x[-2 * self.exp_qty - 1])
 
         kMkm = x[-2 * self.exp_qty:]
 
