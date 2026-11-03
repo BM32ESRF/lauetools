@@ -12,7 +12,7 @@ SCIKITLEARN = True
 try:
     import sklearn.metrics as sm
 except ImportError:
-    print("-- warning: sklearn.metrics is not installed. For matchingrate.py module, it could be useful... but not necessary")
+    # print("-- warning: sklearn.metrics is not installed. For matchingrate.py module, it could be useful... but not necessary")
     SCIKITLEARN = False
 
 

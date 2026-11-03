@@ -697,7 +697,7 @@ def matrices_from_onespot_new(spot_index, ang_tol, table_angdist, twiceTheta, Ch
         print("cubicSymmetry is False for an exhaustive LUT")
         LUT = build_AnglesLUT(B0, n, MaxRadiusHKL=MaxRadiusHKL, cubicSymmetry=False,
                                                         applyExtinctionRules=applyExtinctionRules, verbose=verbose-1)
-    print('still in in matrices_from_onespot_new()-----------------')
+    if verbose>0: print('still in in matrices_from_onespot_new()-----------------')
     for spotindex_2, angle in enumerate(Distances_from_central_spot):
         if STOP_REQUEST.is_set():   # stop requested (request_stop())
             break
