@@ -1186,7 +1186,12 @@ class parametric_Grain_Dialog3(wx.Frame):
         # set extinction code corresponding to key_material
         extinction_code = self.dict_Materials[key_material][2]
         #        print "extinction_code", extinction_code
-        self.comboExtinc.SetValue(DictLT.dict_Extinc_inv[extinction_code])
+        # name of the extinction rules, or code without name (space group number, atoms:<label>)
+        extinction_name = CP.extinction_name(extinction_code)
+        if extinction_name not in self.list_of_Extinc:
+            self.list_of_Extinc.append(extinction_name)
+            self.comboExtinc.Append(extinction_name)
+        self.comboExtinc.SetValue(extinction_name)
         event.Skip()
 
     def EnterComboExtinc(self, event):

@@ -132,6 +132,36 @@ def evaluate_arithmetic(expression):
         raise ValueError(f"'{expression}' is not a number or an arithmetical expression") from err
 
 
+def _extinction_from_yaml(value):
+    """extinction code read in materials.yaml, as a str: a space group number written without quotes is read
+    as an int (extinction: 227), and with its origin choice as a base 60 int (YAML 1.1: 227:1 -> 13621)"""
+    if isinstance(value, int) and not isinstance(value, bool) and value > 230:
+        from .wyckpos_lauetools import is_spacegroup_code
+        number, setting = divmod(value, 60)
+        if is_spacegroup_code("%d:%d" % (number, setting)):
+            return "%d:%d" % (number, setting)
+    return str(value)
+
+
+def format_atom(element, x, y, z, occupancy=1.0):
+    """atom site as written in materials.yaml: 'element x y z occupancy' (fractional coordinates)"""
+    return "%s %.10g %.10g %.10g %.10g" % (element, x, y, z, occupancy)
+
+
+def parse_atom(text):
+    """(element, x, y, z, occupancy) of an atom site of materials.yaml ('Si 0 0 0 1', occupancy optional)"""
+    parts = str(text).split()
+    if len(parts) not in (4, 5):
+        raise ValueError("atom site '%s': expected 'element x y z [occupancy]'" % text)
+    def number(value):  # 0.25, or a fraction 1/3
+        try:
+            return float(value)
+        except ValueError:
+            return float(evaluate_arithmetic(value))
+    values = [number(value) for value in parts[1:]]
+    return (parts[0], values[0], values[1], values[2], values[3] if len(values) == 4 else 1.0)
+
+
 class Materials:
     def __init__(self, key_material=None, yaml_file_path=None, use_user_yaml_file=USE_USER_MATERIALS_YAML_FILE):
         """
@@ -196,16 +226,20 @@ class Materials:
         Set a material like in a dictionary, for the current session only: it is NOT written
         in the YAML file (use add_or_update_material() to save a material).
 
-        :param material: [label, lattice, extinction] or dict with keys 'lattice' and 'extinction'.
+        :param material: [label, lattice, extinction] or dict with keys 'lattice' and 'extinction'
+            (and 'atoms', 'spacegroup', 'symops' for extinction 'atoms', as in the materials file).
             lattice may be [a, b, c, alpha, beta, gamma] or the 4 matrices [Da, U, Dc, B]
         """
+        structure = {}
         if isinstance(material, dict):
             lattice, extinction = material['lattice'], material['extinction']
+            structure = {key: material[key] for key in ('spacegroup', 'atoms', 'symops') if material.get(key)}
         else:
             _, lattice, extinction = material
         if key_material in self.materials and key_material not in self.session_labels:
             self.file_versions[key_material] = self.materials[key_material]
-        self.materials[key_material] = {'label': key_material, 'lattice': lattice, 'extinction': extinction}
+        self.materials[key_material] = {'label': key_material, 'lattice': lattice, 'extinction': extinction,
+                                        **structure}
         self.session_labels.add(key_material)
 
     def __delitem__(self, key_material):
@@ -298,6 +332,7 @@ class Materials:
             if not isinstance(material, dict) or 'lattice' not in material or 'extinction' not in material:
                 raise ValueError(f"material '{label}' in {yaml_file_path} must have 'lattice' and 'extinction'")
             material['lattice'] = [evaluate_yaml_value(item) for item in material['lattice']]
+            material['extinction'] = _extinction_from_yaml(material['extinction'])
         self.materials = loaded_data
         self.session_labels = set()
         self.file_versions = {}
@@ -401,7 +436,31 @@ class Materials:
         material = self.materials.get(key_material, None)
         if material is None:
             return None
-        return [key_material, material['lattice'], material['extinction']]
+        return [key_material, material['lattice'], self._extinction_code(key_material, material)]
+
+    @staticmethod
+    def _extinction_code(key_material, material):
+        """extinction code used by the computations: 'atoms:<key_material>' for a material whose extinctions
+        are computed from its atom positions (extinction: atoms in the file), whose crystal structure is then
+        registered (structurefactor.register_structure()); else the extinction of the file"""
+        if material['extinction'] != 'atoms':
+            return material['extinction']
+        from . import structurefactor as SF
+        if not material.get('atoms'):
+            raise ValueError("material '%s': extinction 'atoms' needs the atom positions (field 'atoms')"
+                             % key_material)
+        SF.register_structure(key_material, [parse_atom(atom) for atom in material['atoms']],
+                              spacegroup=material.get('spacegroup'), symops=material.get('symops'))
+        return 'atoms:' + key_material
+
+    def get_structure(self, key_material):
+        """crystal structure of a material: dict with 'atoms' (list of (element, x, y, z, occupancy)),
+        'spacegroup' and 'symops' (or None), or None if the material has no atom positions"""
+        material = self.materials.get(key_material) or {}
+        if not material.get('atoms'):
+            return None
+        return {'atoms': [parse_atom(atom) for atom in material['atoms']],
+                'spacegroup': material.get('spacegroup'), 'symops': material.get('symops')}
     
     def get_lattice(self, key_material:str):
         """
@@ -425,9 +484,10 @@ class Materials:
         material = self.materials.get(key_material, None)
         if material is None:
             return None
-        return material['extinction']
+        return self._extinction_code(key_material, material)
 
-    def add_or_update_material(self, label, lattice, extinction, yaml_file_path=None):
+    def add_or_update_material(self, label, lattice, extinction, yaml_file_path=None, atoms=None,
+                               spacegroup=None, symops=None):
         """
         Add or update a material in the dictionary and update the YAML file.
 
@@ -436,7 +496,12 @@ class Materials:
 
         :param label: String label of the material.
         :param lattice: List of lattice parameters.
-        :param extinction: String extinction rule.
+        :param extinction: String extinction rule. 'atoms': extinctions computed from the atom positions
+            (atoms, or those of the material label if it has some); 'atoms:<other label>': those of material
+            other label (e.g. strained material created from it)
+        :param atoms: list of (element, x, y, z, occupancy) of the asymmetric unit (see cifreader), or None
+        :param spacegroup: space group code of the atom positions ('227:1'), used if symops is None
+        :param symops: list of symmetry operations ('x, y, z', ...), or None (those of spacegroup)
         :return: path of the written file
         """
         # plain python numbers (numpy ones cannot be written in the YAML file)
@@ -447,14 +512,34 @@ class Materials:
         if yaml_file_path is None:
             self.reload()  # not to lose the materials saved meanwhile by an other program
         previous = self.materials.get(label)
+        extinction = str(extinction)
+        structure = None
+        if atoms is not None:
+            structure = {'atoms': [format_atom(*atom) for atom in atoms],
+                         'spacegroup': None if spacegroup is None else str(spacegroup),
+                         'symops': list(symops) if symops else None}
+        if extinction.startswith('atoms'):
+            source = extinction[len('atoms:'):] if extinction.startswith('atoms:') else label
+            if structure is None and (self.materials.get(source) or {}).get('atoms'):
+                structure = {key: self.materials[source].get(key) for key in ('atoms', 'spacegroup', 'symops')}
+            if structure is None:
+                raise ValueError("extinction 'atoms' for material '%s' needs atom positions" % label)
+            extinction = 'atoms'
+        elif structure is None and previous and previous.get('atoms'):
+            # kept (not used with this extinction)
+            structure = {key: previous.get(key) for key in ('atoms', 'spacegroup', 'symops')}
         wassession = label in self.session_labels
         fileversion = self.file_versions.pop(label, None)
         self.session_labels.discard(label)
         self.materials[label] = {
             'label': str(label),
             'lattice': lattice,
-            'extinction': str(extinction)
+            'extinction': extinction
         }
+        if structure is not None:
+            for key in ('spacegroup', 'atoms', 'symops'):
+                if structure.get(key):
+                    self.materials[label][key] = structure[key]
         try:
             return self.write_yaml(yaml_file_path)
         except Exception:

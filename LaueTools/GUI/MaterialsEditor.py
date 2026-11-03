@@ -10,9 +10,13 @@ This module belongs to the open source LaueTools project
 JS Micha   October 2026
 """
 
+import os
+
 import wx
 
 from .. import dict_LaueTools as DictLT
+from .. import CrystalParameters as CP
+from .. import cifreader as CIF
 
 COLUMNS = ["name", "a", "b", "c", "alpha", "beta", "gamma", "extinction"]
 LATTICE_LABELS = COLUMNS[1:7]
@@ -24,7 +28,10 @@ def material_as_list(dict_materials, key_material):
     material = dict_materials[key_material]
     if isinstance(material, dict):
         return [key_material, material['lattice'], material['extinction']]
-    return [key_material, material[1], material[2]]
+    extinction = material[2]
+    if extinction == "atoms:" + key_material:  # extinctions from its own atom positions
+        extinction = "atoms"
+    return [key_material, material[1], extinction]
 
 
 def sorted_materials(labels):
@@ -320,7 +327,8 @@ class MaterialsEditorFrame(wx.Frame):
         box = wx.StaticBox(panel, -1, "Add or update a material")
         self.namectrl = wx.TextCtrl(panel, -1, "", size=(190, -1))
         self.latticectrls = [wx.TextCtrl(panel, -1, "", size=(80, -1)) for _ in LATTICE_LABELS]
-        extinctions = sorted(set(DictLT.dict_Extinc.values()), key=str.lower)
+        extinctions = sorted(set(DictLT.dict_Extinc.values()), key=str.lower) + ["atoms"]
+        self.cifstructure = None  # (label, structure) of the last imported CIF file (see OnImportCIF())
         self.extinctionctrl = wx.ComboBox(panel, -1, "no", choices=extinctions, size=(180, -1))
 
         addbtn = wx.Button(panel, -1, "Add / Update")
@@ -329,6 +337,8 @@ class MaterialsEditorFrame(wx.Frame):
         deletebtn.Bind(wx.EVT_BUTTON, self.OnDeleteMaterial)
         clearbtn = wx.Button(panel, -1, "Clear")
         clearbtn.Bind(wx.EVT_BUTTON, self.OnClear)
+        cifbtn = wx.Button(panel, -1, "Import CIF...")
+        cifbtn.Bind(wx.EVT_BUTTON, self.OnImportCIF)
         closebtn = wx.Button(panel, -1, "Close")
         closebtn.Bind(wx.EVT_BUTTON, lambda _: self.Close())
 
@@ -339,8 +349,14 @@ class MaterialsEditorFrame(wx.Frame):
         for ctrl in self.latticectrls:
             ctrl.SetToolTip("Lengths in Angstrom, angles in degree. "
                             "Arithmetical expressions are accepted, e.g.: 5.982*5.05/5")
-        self.extinctionctrl.SetToolTip("Label of the extinction rules (see CrystalParameters.ApplyExtinctionrules()). "
-                                       "'no' for no extinction")
+        self.extinctionctrl.SetToolTip("Label of the extinction rules (see CrystalParameters.ApplyExtinctionrules()), "
+                                       "'no' for no extinction, space group number (general reflection "
+                                       "conditions), optionally with its setting: e.g. 225, 227:1, 167:H, or "
+                                       "'atoms': extinctions of the crystal structure (atom positions read from "
+                                       "a CIF file)")
+        cifbtn.SetToolTip("Fill the form from a CIF file: name (chemical formula), lattice parameters and "
+                          "extinction: 'atoms' (extinctions computed from the atom positions of the CIF file) or "
+                          "the space group. Then check and click on Add / Update")
         addbtn.SetToolTip("Add the material (or update the material with the same name) and save the materials file")
         deletebtn.SetToolTip("Delete the material with the name of the form and save the materials file")
 
@@ -359,7 +375,7 @@ class MaterialsEditorFrame(wx.Frame):
         grid.Add(self.extinctionctrl)
 
         hbtns = wx.BoxSizer(wx.HORIZONTAL)
-        for btn in (addbtn, deletebtn, clearbtn):
+        for btn in (addbtn, deletebtn, clearbtn, cifbtn):
             hbtns.Add(btn, 0, wx.RIGHT, 10)
         hbtns.AddStretchSpacer()
         hbtns.Add(closebtn)
@@ -484,7 +500,41 @@ class MaterialsEditorFrame(wx.Frame):
         self.extinctionctrl.SetValue(row[7])
 
     # --- form
+    def OnImportCIF(self, _):
+        """fill the form from a CIF file (the material is added with Add / Update)"""
+        with wx.FileDialog(self, "Select a CIF file", wildcard="CIF files (*.cif)|*.cif;*.CIF|All files (*)|*",
+                           style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST) as dialog:
+            if dialog.ShowModal() != wx.ID_OK:
+                return
+            path = dialog.GetPath()
+        try:
+            label, lattice, extinction = CIF.material_from_cif(path)
+        except (OSError, ValueError) as error:
+            wx.MessageBox("Cannot read %s:\n%s" % (path, error), "Materials Editor", wx.OK | wx.ICON_ERROR)
+            return
+        try:
+            structure, reason = CIF.structure_from_cif(path), ""
+        except ValueError as error:  # no atom positions: space group only
+            structure, reason = None, str(error)
+        self.cifstructure = (label, structure) if structure else None
+        self.namectrl.SetValue(label)
+        for ctrl, value in zip(self.latticectrls, lattice):
+            ctrl.SetValue("%.10g" % value)
+        if structure:
+            self.extinctionctrl.SetValue("atoms")
+            message = ("extinction: crystal structure (%d atom sites, space group %s)"
+                       % (len(structure["atoms"]), structure["spacegroup"] or "from symmetry operations"))
+        else:
+            self.extinctionctrl.SetValue(extinction)
+            if extinction == "no":
+                message = "no space group in the CIF file: extinction set to 'no'"
+            else:
+                message = "extinction: general reflection conditions of space group %s (%s)" % (extinction, reason)
+        self.sb.SetStatusText("%s read. %s. Check the form and click on Add / Update" % (os.path.basename(path),
+                                                                                          message))
+
     def OnClear(self, _):
+        self.cifstructure = None
         self.namectrl.SetValue("")
         for ctrl in self.latticectrls:
             ctrl.SetValue("")
@@ -530,9 +580,20 @@ class MaterialsEditorFrame(wx.Frame):
             wx.MessageBox(str(error), "Materials Editor", wx.OK | wx.ICON_ERROR)
             return
 
-        if extinction not in DictLT.dict_Extinc_inv:
+        # atom positions: those of the CIF file imported for this label, else those of the material (if any)
+        structure = {}
+        if extinction == "atoms":
+            if self.cifstructure is not None and self.cifstructure[0] == label:
+                structure = self.cifstructure[1]
+            elif label not in self.dict_materials.keys() or \
+                    not hasattr(self.getlibrary(), "get_structure") or self.getlibrary().get_structure(label) is None:
+                wx.MessageBox("Extinction 'atoms' needs the atom positions of the material: import a CIF file "
+                              "(Import CIF...) with this name", "Materials Editor", wx.OK | wx.ICON_ERROR)
+                return
+        elif not CP.is_extinction_code(extinction):
             answer = wx.MessageBox("Extinction '%s' is not a known label of extinction rules (dict_Extinc in "
-                                   "dict_LaueTools.py):\nsome LaueTools modules will fail with this material."
+                                   "dict_LaueTools.py) nor a space group number (e.g. 225, 227:1, 167:H):"
+                                   "\nsome LaueTools modules will fail with this material."
                                    "\n\nAdd the material anyway?" % extinction,
                                    "Materials Editor", wx.YES_NO | wx.NO_DEFAULT | wx.ICON_WARNING)
             if answer != wx.YES:
@@ -547,13 +608,14 @@ class MaterialsEditorFrame(wx.Frame):
                 return
 
         try:
-            yaml_file = self.getlibrary().add_or_update_material(label, lattice, extinction)
+            yaml_file = self.getlibrary().add_or_update_material(label, lattice, extinction, **structure)
         except (OSError, ValueError) as error:
             wx.MessageBox("Material '%s' is not saved:\n%s" % (label, error),
                           "Materials Editor", wx.OK | wx.ICON_ERROR)
             return
         if not self.uselibrary():
-            self.dict_materials[label] = [label, lattice, extinction]
+            # extinction code of the library ('atoms' -> 'atoms:<label>', crystal structure registered)
+            self.dict_materials[label] = [label, lattice, self.getlibrary().get_extinction(label)]
 
         self.AfterChange("Material '%s' saved in %s" % (label, yaml_file), select=label)
 

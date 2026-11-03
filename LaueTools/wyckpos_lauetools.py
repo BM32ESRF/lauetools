@@ -60,6 +60,34 @@ def get_possible_sgrp_suf(sgrp_nr):
         sgrp_suf = [':H', ':R']
     return sgrp_suf
 
+def normalize_spacegroup(spacegroup):
+    """key of wp for a space group given as a number (1-230) or 'number:setting' ('227:2', '167:R', '14:c'):
+    the setting given, or the default one (first of get_possible_sgrp_suf())
+
+    :raises ValueError: if the space group or the setting is unknown
+    """
+    text = str(spacegroup).strip()
+    number, _, setting = text.partition(':')
+    if not number.isdecimal() or not 1 <= int(number) <= 230:
+        raise ValueError("unknown space group '%s' (number 1 to 230, optionally ':setting')" % text)
+    possible = get_possible_sgrp_suf(int(number))
+    if setting:
+        if ':' + setting not in (possible or []):
+            raise ValueError("unknown setting '%s' for space group %s (possible: %s)"
+                             % (setting, number, ", ".join(possible) if possible else "none"))
+        return number + ':' + setting
+    return number + get_default_sgrp_suf(int(number))
+
+
+def is_spacegroup_code(code):
+    """True if code is a space group number (1-230), optionally with its setting ('227:2', '167:R')"""
+    try:
+        normalize_spacegroup(code)
+    except (ValueError, TypeError):
+        return False
+    return not isinstance(code, bool)
+
+
 def get_default_sgrp_suf(sgrp_nr):
     """
     determine default space group suffix
@@ -83,11 +111,7 @@ def testhklcond_generalrules(spacegroup, hkl):
      """
     # * test general reflection conditions
     # * if they are violated the peak is forbidden
-    space_group = str(spacegroup)
-    space_group_nr = int(space_group.split(':')[0])
-    space_group_suf = get_default_sgrp_suf(space_group_nr)
-    if space_group_suf != '':
-        space_group = str(space_group_nr) + space_group_suf
+    space_group = normalize_spacegroup(spacegroup)
         
     # save general Wyckoff position
     gplabel = sorted(wp[space_group], key=lambda s: int(s[:-1]))[-1]
@@ -438,11 +462,7 @@ def testhklcond_generalrules_array(spacegroup, hkl):
      """
     # * test general reflection conditions
     # * if they are violated the peak is forbidden
-    space_group = str(spacegroup)
-    space_group_nr = int(space_group.split(':')[0])
-    space_group_suf = get_default_sgrp_suf(space_group_nr)
-    if space_group_suf != '':
-        space_group = str(space_group_nr) + space_group_suf
+    space_group = normalize_spacegroup(spacegroup)
         
     # save general Wyckoff position
     gplabel = sorted(wp[space_group], key=lambda s: int(s[:-1]))[-1]

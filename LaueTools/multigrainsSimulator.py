@@ -36,7 +36,7 @@ def Read_GrainListparameter(param):
     GrainName = str(param[6])
     # print "param in Read_GrainListparameter",param
 
-    Extinctions = DictLT.dict_Extinc[str(Extinc)]
+    Extinctions = DictLT.dict_Extinc.get(str(Extinc), str(Extinc))  # name, or code (space group, atoms:<label>)
     Transform_labframe = DictLT.dict_Transforms[Transf_a]
     orientMatrix = DictLT.dict_Rot[Rot]
     B_matrix = DictLT.dict_Vect[Bmatrix]
