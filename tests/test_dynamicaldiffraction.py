@@ -197,10 +197,24 @@ def test_simulation_and_plots(tmp_path):
 
     fig, ax, plotted = DD.plot_back_surface_spots(os.fspath(root / GE_IMAGE), UB, calib, 0.725, annotate=True,
                                                   savefile=os.fspath(tmp_path / "pattern.png"), **kwargs)
-    assert (tmp_path / "pattern.png").stat().st_size > 0 and len(plotted["hkl"]) == len(spots["hkl"])
-    fig2, shown = DD.plot_back_surface_thumbnails(os.fspath(root / GE_IMAGE), plotted, nb=6,
+    assert len(plotted["hkl"]) == len(spots["hkl"])
+    # saved at full resolution: upsampling x upsampling image pixels per detector pixel (default 2)
+    saved = plt.imread(os.fspath(tmp_path / "pattern.png"))
+    frame = (2048, 2048)  # MARCCD165
+    assert saved.shape[:2] == (2 * frame[0], 2 * frame[1])
+    DD.plot_back_surface_spots(os.fspath(root / GE_IMAGE), UB, calib, 0.725, upsampling=1,
+                               savefile=os.fspath(tmp_path / "pattern1.png"), **kwargs)
+    assert plt.imread(os.fspath(tmp_path / "pattern1.png")).shape[:2] == frame
+    plt.close("all")
+    spots2 = DD.simulate_back_surface_spots(UB, calib, 0.725, nb_bounces=2, **kwargs)
+    fig2, shown = DD.plot_back_surface_thumbnails(os.fspath(root / GE_IMAGE), spots2, nb=6,
                                                   ccdlabel=info["CCDLabel"],
                                                   savefile=os.fspath(tmp_path / "thumbs.png"))
     assert len(shown) == 6 and (tmp_path / "thumbs.png").stat().st_size > 0
-    plt.close(fig)
+    # each view contains the spot and all its back-surface spots
+    for ax, k in zip(fig2.axes, shown):
+        (xmin, xmax), (ymax, ymin) = ax.get_xlim(), ax.get_ylim()
+        for x, y in zip(spots2["xback"][k] - 1, spots2["yback"][k] - 1):
+            assert xmin < x < xmax and ymin < y < ymax
+    assert len(fig2.legends) == 1 and len(fig2.legends[0].get_texts()) == 5
     plt.close(fig2)

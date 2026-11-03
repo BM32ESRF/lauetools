@@ -327,9 +327,50 @@ def simulate_back_surface_spots(UBmat, calib, thickness, emin=5.0, emax=22.0, ma
     return out
 
 
+# sizes (points) of the overlay of plot_back_surface_spots() on screen
+SCREEN_SIZES = {"line": 1.5, "cross": 25, "cross_line": 1.0, "circle": 80, "circle_line": 0.8, "font": 6}
+
+
+def _draw_pattern(ax, shown, vmax, spots, emin, emax, nb_bounces, annotate, sizes=SCREEN_SIZES):
+    """image and spots of plot_back_surface_spots() in ax; return the collection of segments (for a colorbar)
+
+    :param sizes: dict of line widths and font size (points), marker areas (points^2), see SCREEN_SIZES
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import LineCollection
+
+    ax.imshow(shown, cmap="gray", vmin=0, vmax=vmax, interpolation="nearest")
+    # LaueTools pixel positions start at 1: pixel (x, y) is drawn at (x - 1, y - 1) on the image
+    x0, y0 = spots["xcam"] - 1, spots["ycam"] - 1
+    ok = ~np.isnan(spots["xback"][:, -1])
+    xb, yb = spots["xback"] - 1, spots["yback"] - 1
+    norm = plt.Normalize(emin, emax)
+    segments = [[(x0[k], y0[k]), (xb[k, -1], yb[k, -1])] for k in np.flatnonzero(ok)]
+    lines = LineCollection(segments, cmap="plasma", norm=norm, linewidths=sizes["line"], alpha=0.8)
+    lines.set_array(spots["energy"][ok])
+    ax.add_collection(lines)
+    for bounce in range(nb_bounces):
+        ax.scatter(xb[ok, bounce], yb[ok, bounce], c=spots["energy"][ok], cmap="plasma", norm=norm, marker="x",
+                   s=sizes["cross"], linewidths=sizes["cross_line"])
+    ax.scatter(x0, y0, s=sizes["circle"], facecolors="none", edgecolors="cyan", linewidths=sizes["circle_line"])
+    if annotate:
+        seen = set()
+        for k in range(len(x0)):
+            key = (round(x0[k]), round(y0[k]))
+            label = "%s %.1f keV" % ("".join(str(i) for i in spots["hkl"][k]), spots["energy"][k])
+            font = sizes["font"]
+            ax.annotate(label, (x0[k], y0[k]), xytext=(font, -font * (1 + 1.3 * (key in seen))),
+                        textcoords="offset points", color="cyan", fontsize=font)
+            seen.add(key)
+    ax.set_xlim(-0.5, shown.shape[1] - 0.5)
+    ax.set_ylim(shown.shape[0] - 0.5, -0.5)
+    return lines
+
+
 def plot_back_surface_spots(image, UBmat, calib, thickness, emin=5.0, emax=22.0, material="Si",
                             ccdlabel="sCMOS", sampletilt=40.0, nb_bounces=1, pixelsize=None, framedim=None,
-                            annotate=False, percentiles=(50.0, 99.8), ax=None, savefile=None, **kwargs):
+                            annotate=False, percentiles=(50.0, 99.8), ax=None, savefile=None, upsampling=2,
+                            **kwargs):
     """plot an image with the Laue spots of a perfect crystal slab (circles) and the predicted elongations
     towards their back-surface spots (segments, colored by energy; one cross per round trip in the slab)
 
@@ -345,12 +386,15 @@ def plot_back_surface_spots(image, UBmat, calib, thickness, emin=5.0, emax=22.0,
     :param annotate: write hkl and energy next to the spots
     :param percentiles: intensity percentiles of the image for the color scale (log scale)
     :param ax: matplotlib axes to draw in, default: new figure
-    :param savefile: save the figure to this file
+    :param savefile: save the image at full resolution, to zoom on the pixels: upsampling x upsampling image
+        pixels per detector pixel (e.g. 4036 x 4032 pixels for the sCMOS and upsampling = 2), title and energy
+        color bar inside the image. Use .png (lossless)
+    :param upsampling: integer, image pixels per detector pixel in savefile. Lines are 1 image pixel wide:
+        with upsampling >= 2 they do not hide whole detector pixels
     :param kwargs: other arguments of simulate_back_surface_spots() (eps, debye_waller_B, positions...)
     :return: figure, axes, dict of simulate_back_surface_spots()
     """
     import matplotlib.pyplot as plt
-    from matplotlib.collections import LineCollection
 
     if isinstance(image, str):
         from . import IOimagefile as IOimage
@@ -361,44 +405,42 @@ def plot_back_surface_spots(image, UBmat, calib, thickness, emin=5.0, emax=22.0,
     spots = simulate_back_surface_spots(UBmat, calib, thickness, emin, emax, material, sampletilt,
                                         pixelsize=pixelsize, framedim=framedim, ccdlabel=ccdlabel,
                                         nb_bounces=nb_bounces, **kwargs)
+    shown = np.log10(np.clip(image - np.percentile(image, percentiles[0]), 1.0, None))
+    vmax = max(np.percentile(shown, percentiles[1]), 1e-6)
+    title = "%s slab %.3f mm: Laue spots (circles), back-surface spots (crosses)" % (material, thickness)
 
     if ax is None:
         fig, ax = plt.subplots(figsize=(9, 9))
     else:
         fig = ax.figure
-    shown = np.log10(np.clip(image - np.percentile(image, percentiles[0]), 1.0, None))
-    ax.imshow(shown, cmap="gray", vmin=0, vmax=max(np.percentile(shown, percentiles[1]), 1e-6))
-
-    # LaueTools pixel positions start at 1: pixel (x, y) is drawn at (x - 1, y - 1) on the image
-    x0, y0 = spots["xcam"] - 1, spots["ycam"] - 1
-    ok = ~np.isnan(spots["xback"][:, -1])
-    xb, yb = spots["xback"] - 1, spots["yback"] - 1
-    norm = plt.Normalize(emin, emax)
-    segments = [[(x0[k], y0[k]), (xb[k, -1], yb[k, -1])] for k in np.flatnonzero(ok)]
-    lines = LineCollection(segments, cmap="plasma", norm=norm, linewidths=1.5, alpha=0.9)
-    lines.set_array(spots["energy"][ok])
-    ax.add_collection(lines)
-    for bounce in range(nb_bounces):
-        ax.scatter(xb[ok, bounce], yb[ok, bounce], c=spots["energy"][ok], cmap="plasma", norm=norm, marker="x",
-                   s=25, linewidths=1)
-    ax.scatter(x0, y0, s=80, facecolors="none", edgecolors="cyan", linewidths=0.8)
-    if annotate:
-        seen = set()
-        for k in range(len(x0)):
-            key = (round(x0[k]), round(y0[k]))
-            label = "%s %.1f keV" % ("".join(str(i) for i in spots["hkl"][k]), spots["energy"][k])
-            ax.annotate(label, (x0[k], y0[k]), xytext=(6, -6 - 8 * (key in seen)), textcoords="offset points",
-                        color="cyan", fontsize=6)
-            seen.add(key)
+    lines = _draw_pattern(ax, shown, vmax, spots, emin, emax, nb_bounces, annotate)
     fig.colorbar(lines, ax=ax, shrink=0.7, label="energy (keV)")
-    ax.set_xlim(0, framedim[1])
-    ax.set_ylim(framedim[0], 0)
     ax.set_xlabel("X (pixel)")
     ax.set_ylabel("Y (pixel)")
-    ax.set_title("%s slab %.3f mm: Laue spots (circles), back-surface spots (crosses)" % (material, thickness),
-                 fontsize=10)
+    ax.set_title(title, fontsize=10)
+
     if savefile:
-        fig.savefig(savefile, dpi=150, bbox_inches="tight")
+        # separate figure of exactly upsampling x (nb columns, nb rows) pixels, the image filling it
+        upsampling = max(int(upsampling), 1)
+        dpi = 100.0
+        nrows, ncols = shown.shape
+        full = plt.figure(figsize=(ncols * upsampling / dpi, nrows * upsampling / dpi), dpi=dpi)
+        fax = full.add_axes((0, 0, 1, 1))
+        fax.set_axis_off()
+        px = 72.0 / dpi  # one image pixel in points
+        det = upsampling * px  # one detector pixel in points
+        sizes = {"line": px, "cross": (5 * det) ** 2, "cross_line": px, "circle": (14 * det) ** 2,
+                 "circle_line": px, "font": 6 * det}
+        flines = _draw_pattern(fax, shown, vmax, spots, emin, emax, nb_bounces, annotate, sizes)
+        cax = fax.inset_axes((0.03, 0.03, 0.3, 0.012))
+        cbar = full.colorbar(flines, cax=cax, orientation="horizontal")
+        cbar.set_label("energy (keV)", color="w", fontsize=10 * det)
+        cbar.ax.tick_params(colors="w", labelsize=8 * det, width=px, length=4 * det)
+        cbar.outline.set_edgecolor("w")
+        cbar.outline.set_linewidth(px)
+        fax.text(0.01, 0.995, title, transform=fax.transAxes, color="w", fontsize=12 * det, va="top")
+        full.savefig(savefile, dpi=dpi)
+        plt.close(full)
     return fig, ax, spots
 
 
@@ -418,7 +460,7 @@ def plot_back_surface_thumbnails(image, spots, indices=None, nb=16, boxsize=40, 
     :param spots: dict returned by simulate_back_surface_spots() or plot_back_surface_spots()
     :param indices: indices of the spots to show, default: the nb brightest spots of the image having a
         back-surface spot (one per position: harmonics share the front-surface spot)
-    :param boxsize: half width (pixels) of the views
+    :param boxsize: half width (pixels) of the views, enlarged if needed to show all the back-surface spots
     :return: figure, list of the indices shown
     """
     import matplotlib.pyplot as plt
@@ -439,31 +481,53 @@ def plot_back_surface_thumbnails(image, spots, indices=None, nb=16, boxsize=40, 
             if len(indices) == nb:
                 break
     nrows = max(1, int(np.ceil(len(indices) / ncols)))
-    fig, axes = plt.subplots(nrows, ncols, figsize=(3 * ncols, 3 * nrows), squeeze=False)
+    legend_height = 1.0  # inches, below the views
+    fig, axes = plt.subplots(nrows, ncols, figsize=(3 * ncols, 3 * nrows + legend_height), squeeze=False)
     for ax in axes.ravel()[len(indices):]:
         ax.set_axis_off()
     for ax, k in zip(axes.ravel(), indices):
         # pixel (x, y) of LaueTools is the image element [y - 1, x - 1]
         x0, y0 = spots["xcam"][k] - 1, spots["ycam"][k] - 1
         yb = spots["yback"][k] - 1
-        cx, cy = int(round(x0)), int(round(y0))
-        ylo, xlo = max(cy - boxsize, 0), max(cx - boxsize, 0)
-        view = image[ylo:cy + boxsize + 1, xlo:cx + boxsize + 1]
-        view = np.log10(np.clip(view - np.percentile(view, 10), 1.0, None))
-        ax.imshow(view, cmap="viridis", extent=(xlo - 0.5, xlo + view.shape[1] - 0.5,
-                                                ylo + view.shape[0] - 0.5, ylo - 0.5))
         same = np.flatnonzero((np.abs(spots["xcam"] - spots["xcam"][k]) < 0.5)
                               & (np.abs(spots["ycam"] - spots["ycam"][k]) < 0.5)
                               & ~np.isnan(spots["xback"][:, 0]))  # harmonics of the same spot
+        # box around the spot, enlarged to contain all its back-surface spots
+        cx, cy = int(round(x0)), int(round(y0))
+        xs_all, ys_all = spots["xback"][same].ravel() - 1, spots["yback"][same].ravel() - 1
+        xlo = max(min(cx - boxsize, int(np.nanmin(xs_all)) - 5), 0)
+        xhi = min(max(cx + boxsize, int(np.nanmax(xs_all)) + 5), image.shape[1] - 1)
+        ylo = max(min(cy - boxsize, int(np.nanmin(ys_all)) - 5), 0)
+        yhi = min(max(cy + boxsize, int(np.nanmax(ys_all)) + 5), image.shape[0] - 1)
+        view = image[ylo:yhi + 1, xlo:xhi + 1]
+        view = np.log10(np.clip(view - np.percentile(view, 10), 1.0, None))
+        extent = (xlo - 0.5, xhi + 0.5, yhi + 0.5, ylo - 0.5)
+        ax.imshow(view, cmap="viridis", extent=extent)
         for j in same:
             xs, ys = spots["xback"][j] - 1, spots["yback"][j] - 1
             ax.plot([x0, xs[-1]], [y0, ys[-1]], "-", color="w", lw=0.8, alpha=0.8)
             ax.plot(xs, ys, "x", color="r" if j == k else "orange", ms=6, mew=1.2)
         ax.plot(x0, y0, "o", mfc="none", mec="w", ms=8)
+        ax.set_xlim(extent[0], extent[1])
+        ax.set_ylim(extent[2], extent[3])
         ax.set_title("%s  %.1f keV  dY %.0f px" % ("".join(str(i) for i in spots["hkl"][k]), spots["energy"][k],
                                                  yb[0] - y0), fontsize=8)
         ax.tick_params(labelsize=6)
-    fig.tight_layout()
+    from matplotlib.lines import Line2D
+    handles = [Line2D([], [], ls="none", marker="o", mfc="none", mec="w", ms=8, label="Laue spot (front surface)"),
+               Line2D([], [], color="w", lw=0.8, label="predicted elongation"),
+               Line2D([], [], ls="none", marker="x", color="r", ms=6, mew=1.2,
+                      label="back-surface spot of the reflection in the title"),
+               Line2D([], [], ls="none", marker="x", color="orange", ms=6, mew=1.2,
+                      label="back-surface spots of its harmonics (n h n k n l)")]
+    if spots["xback"].shape[1] > 1:
+        handles.append(Line2D([], [], ls="none", label="several crosses per reflection: one per round trip "
+                                                        "in the slab"))
+    legend = fig.legend(handles=handles, loc="lower center", ncol=2, fontsize=8, facecolor="0.25",
+                        edgecolor="0.25", framealpha=1)
+    for text in legend.get_texts():
+        text.set_color("w")
+    fig.tight_layout(rect=(0, legend_height / (3 * nrows + legend_height), 1, 1))
     if savefile:
         fig.savefig(savefile, dpi=150, bbox_inches="tight")
     return fig, indices
