@@ -157,3 +157,50 @@ def test_fixed_eps_and_thickness_scaling():
     assert ok.sum() > 20 and np.allclose(thin["eps"][ok], 0.8)
     assert np.allclose(thick["offset"][ok], 2 * thin["offset"][ok])
     assert np.allclose(thick["absorption_length"][ok], 2 * thin["absorption_length"][ok])
+
+
+GE_IMAGE = "LaueTools/LaueImages/Ge_blanc_0000.mccd"
+GE_FIT = "LaueTools/LaueImages/Ge_blanc_0000_LT_5.fit"
+
+
+def test_ub_from_fitfile():
+    import os
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    UB, calib, info = DD.ub_from_fitfile(os.fspath(root / GE_FIT))
+    assert np.allclose(calib, [70.775, 941.736, 1082.562, 0.63, -0.682])
+    assert info == {"CCDLabel": "MARCCD165", "pixelsize": 0.079142}
+    assert np.allclose(UB @ UB.T, np.eye(3), atol=1e-3)  # nearly a rotation
+
+
+def test_simulation_and_plots(tmp_path):
+    """Laue pattern of the Ge calibration image as a 0.725 mm thick perfect slab, drawn on the image"""
+    import os
+    from pathlib import Path
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    root = Path(__file__).resolve().parents[1]
+    UB, calib, info = DD.ub_from_fitfile(os.fspath(root / GE_FIT))
+    kwargs = dict(material="Ge", ccdlabel=info["CCDLabel"], pixelsize=info["pixelsize"], emax=22)
+    spots = DD.simulate_back_surface_spots(UB, calib, 0.725, nb_bounces=2, **kwargs)
+    ok = ~np.isnan(spots["offset"])
+    assert len(spots["hkl"]) > 100 and ok.sum() > 100
+    # harmonics kept: some positions are shared by several reflections
+    positions = {(round(x, 3), round(y, 3)) for x, y in zip(spots["xcam"], spots["ycam"])}
+    assert len(positions) < len(spots["hkl"])
+    # on the detector: mainly along +Y, at least the end of the beam path in the slab
+    dy = spots["yback"][ok, 0] - spots["ycam"][ok]
+    assert (dy > 0.725 / np.sin(40 * DEG) / info["pixelsize"] * 0.9).all()
+    assert (np.abs(spots["xback"][ok, 0] - spots["xcam"][ok]) < 0.05 * dy).all()
+    assert np.allclose(spots["yback"][ok, 1] - spots["ycam"][ok], 2 * dy, rtol=0.05)
+
+    fig, ax, plotted = DD.plot_back_surface_spots(os.fspath(root / GE_IMAGE), UB, calib, 0.725, annotate=True,
+                                                  savefile=os.fspath(tmp_path / "pattern.png"), **kwargs)
+    assert (tmp_path / "pattern.png").stat().st_size > 0 and len(plotted["hkl"]) == len(spots["hkl"])
+    fig2, shown = DD.plot_back_surface_thumbnails(os.fspath(root / GE_IMAGE), plotted, nb=6,
+                                                  ccdlabel=info["CCDLabel"],
+                                                  savefile=os.fspath(tmp_path / "thumbs.png"))
+    assert len(shown) == 6 and (tmp_path / "thumbs.png").stat().st_size > 0
+    plt.close(fig)
+    plt.close(fig2)

@@ -256,3 +256,214 @@ def back_surface_spots(twicetheta, chi, hkl, calib, thickness, sampletilt=40.0, 
                                     pixelsize=pixelsize)
             out["xback"][k, bounce], out["yback"][k, bounce] = x[0], y[0]
     return out
+
+
+# --- -------------------- Laue pattern of a wafer and plot on an image
+def ub_from_fitfile(fitfile, grain=0):
+    """UB matrix of one grain of a .fit file and the detector settings written in the file
+
+    :return: UB (q = UB B0 G*, LaueTools frame), calib (dd, xcen, ycen, xbet, xgam), dict with the 'CCDLabel'
+        and 'pixelsize' of the file when it gives them
+    """
+    import ast
+    from . import IOLaueTools as IOLT
+    result = IOLT.readfile_fit(fitfile)
+    UB = np.array(result[3][grain], dtype=float).reshape(3, 3)
+    calib = [float(v) for v in np.ravel(result[5][grain])[:5]]
+    comments = IOLT.readfitfile_comments(fitfile)
+    if "detectorparameters" in comments:  # '#DetectorParameters' block (files of DetectorCalibration and others)
+        calib = [float(v) for v in ast.literal_eval(comments["detectorparameters"])][:5]
+    if not any(calib):
+        raise ValueError("%s: no detector calibration found" % fitfile)
+    info = {}
+    if "CCDLabel" in comments:
+        info["CCDLabel"] = comments["CCDLabel"]
+    if "pixelsize" in comments:
+        info["pixelsize"] = float(comments["pixelsize"])
+    return UB, calib, info
+
+
+def simulate_back_surface_spots(UBmat, calib, thickness, emin=5.0, emax=22.0, material="Si", sampletilt=40.0,
+                                pixelsize=None, framedim=None, ccdlabel="sCMOS", positions=DIAMOND_POSITIONS,
+                                weights=None, debye_waller_B=SI_DEBYE_WALLER_B, eps=None, polarization="auto",
+                                nb_bounces=1, dictmaterials=None):
+    """Laue spots of a perfect crystal slab (e.g. Si wafer) and their back-surface spots
+
+    The harmonics (n h n k n l at n times the energy) are kept as separate spots: they share the position of the
+    front-surface spot but each one has its own back-surface spot.
+
+    :param UBmat: orientation matrix of the slab (q = UB B0 G*, LaueTools frame, as in .fit files)
+    :param calib: detector calibration (dd, xcen, ycen, xbet, xgam)
+    :param thickness: slab thickness (mm)
+    :param emin, emax: energy band (keV)
+    :param material: key of the materials library (lattice parameters and extinctions)
+    :param pixelsize, framedim: detector pixel size (mm) and frame dimensions, default: those of ccdlabel
+    :param positions, weights, debye_waller_B, eps, polarization, nb_bounces: see back_surface_spots()
+        (default positions: diamond structure, for Si, Ge, C)
+    :return: dict of arrays: hkl, energy, twicetheta, chi, xcam, ycam (front-surface spots), xback, yback
+        (n, nb_bounces), offset, alpha_in, alpha_out, eps, C, separation, absorption_length; spots outside the
+        detector frame removed
+    """
+    from . import lauecore as LAUE
+    from . import dict_LaueTools as DictLT
+    if dictmaterials is None:
+        dictmaterials = DictLT.dict_Materials
+    if pixelsize is None or framedim is None:
+        ccd = DictLT.dict_CCD[ccdlabel]
+        pixelsize = ccd[1] if pixelsize is None else pixelsize
+        framedim = ccd[0] if framedim is None else framedim
+    lattice = dictmaterials[material][1]
+    tth, chi, hkl, x, y, energy = LAUE.SimulateLaue_full_np([None, None, np.asarray(UBmat, dtype=float), material],
+                                                            emin, emax, calib, removeharmonics=0,
+                                                            pixelsize=pixelsize, dim=framedim,
+                                                            dictmaterials=dictmaterials)
+    hkl = np.asarray(hkl).astype(int)
+    inside = (x >= 0) & (x <= framedim[1]) & (y >= 0) & (y <= framedim[0])
+    tth, chi, hkl, energy = tth[inside], chi[inside], hkl[inside], np.asarray(energy)[inside]
+    out = back_surface_spots(tth, chi, hkl, calib, thickness, sampletilt=sampletilt, lattice=lattice,
+                             positions=positions, weights=weights, debye_waller_B=debye_waller_B, eps=eps,
+                             polarization=polarization, nb_bounces=nb_bounces, pixelsize=pixelsize)
+    out.update(hkl=hkl, energy=energy, twicetheta=tth, chi=chi)
+    return out
+
+
+def plot_back_surface_spots(image, UBmat, calib, thickness, emin=5.0, emax=22.0, material="Si",
+                            ccdlabel="sCMOS", sampletilt=40.0, nb_bounces=1, pixelsize=None, framedim=None,
+                            annotate=False, percentiles=(50.0, 99.8), ax=None, savefile=None, **kwargs):
+    """plot an image with the Laue spots of a perfect crystal slab (circles) and the predicted elongations
+    towards their back-surface spots (segments, colored by energy; one cross per round trip in the slab)
+
+        import LaueTools.dynamicaldiffraction as DD
+        UB, calib, info = DD.ub_from_fitfile("Si_wafer.fit")
+        fig, ax, spots = DD.plot_back_surface_spots("image_0001.tif", UB, calib, thickness=0.725,
+                                                    ccdlabel=info["CCDLabel"], pixelsize=info["pixelsize"],
+                                                    emax=22, savefile="Si_backsurface.png")
+
+    :param image: image file (read with IOimagefile.readCCDimage(ccdlabel)) or 2D array
+    :param UBmat, calib, thickness, emin, emax, material, sampletilt, nb_bounces: see
+        simulate_back_surface_spots(); calib: calibration of the detector for this image
+    :param annotate: write hkl and energy next to the spots
+    :param percentiles: intensity percentiles of the image for the color scale (log scale)
+    :param ax: matplotlib axes to draw in, default: new figure
+    :param savefile: save the figure to this file
+    :param kwargs: other arguments of simulate_back_surface_spots() (eps, debye_waller_B, positions...)
+    :return: figure, axes, dict of simulate_back_surface_spots()
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import LineCollection
+
+    if isinstance(image, str):
+        from . import IOimagefile as IOimage
+        image = IOimage.readCCDimage(image, CCDLabel=ccdlabel)[0]
+    image = np.asarray(image, dtype=float)
+    if framedim is None:
+        framedim = image.shape
+    spots = simulate_back_surface_spots(UBmat, calib, thickness, emin, emax, material, sampletilt,
+                                        pixelsize=pixelsize, framedim=framedim, ccdlabel=ccdlabel,
+                                        nb_bounces=nb_bounces, **kwargs)
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(9, 9))
+    else:
+        fig = ax.figure
+    shown = np.log10(np.clip(image - np.percentile(image, percentiles[0]), 1.0, None))
+    ax.imshow(shown, cmap="gray", vmin=0, vmax=max(np.percentile(shown, percentiles[1]), 1e-6))
+
+    # LaueTools pixel positions start at 1: pixel (x, y) is drawn at (x - 1, y - 1) on the image
+    x0, y0 = spots["xcam"] - 1, spots["ycam"] - 1
+    ok = ~np.isnan(spots["xback"][:, -1])
+    xb, yb = spots["xback"] - 1, spots["yback"] - 1
+    norm = plt.Normalize(emin, emax)
+    segments = [[(x0[k], y0[k]), (xb[k, -1], yb[k, -1])] for k in np.flatnonzero(ok)]
+    lines = LineCollection(segments, cmap="plasma", norm=norm, linewidths=1.5, alpha=0.9)
+    lines.set_array(spots["energy"][ok])
+    ax.add_collection(lines)
+    for bounce in range(nb_bounces):
+        ax.scatter(xb[ok, bounce], yb[ok, bounce], c=spots["energy"][ok], cmap="plasma", norm=norm, marker="x",
+                   s=25, linewidths=1)
+    ax.scatter(x0, y0, s=80, facecolors="none", edgecolors="cyan", linewidths=0.8)
+    if annotate:
+        seen = set()
+        for k in range(len(x0)):
+            key = (round(x0[k]), round(y0[k]))
+            label = "%s %.1f keV" % ("".join(str(i) for i in spots["hkl"][k]), spots["energy"][k])
+            ax.annotate(label, (x0[k], y0[k]), xytext=(6, -6 - 8 * (key in seen)), textcoords="offset points",
+                        color="cyan", fontsize=6)
+            seen.add(key)
+    fig.colorbar(lines, ax=ax, shrink=0.7, label="energy (keV)")
+    ax.set_xlim(0, framedim[1])
+    ax.set_ylim(framedim[0], 0)
+    ax.set_xlabel("X (pixel)")
+    ax.set_ylabel("Y (pixel)")
+    ax.set_title("%s slab %.3f mm: Laue spots (circles), back-surface spots (crosses)" % (material, thickness),
+                 fontsize=10)
+    if savefile:
+        fig.savefig(savefile, dpi=150, bbox_inches="tight")
+    return fig, ax, spots
+
+
+def _peak_brightness(image, x, y, half=3, background=15):
+    """maximum of the image around LaueTools pixel (x, y) above the median of a larger box"""
+    cx, cy = int(round(x)) - 1, int(round(y)) - 1
+    near = image[max(cy - half, 0):cy + half + 1, max(cx - half, 0):cx + half + 1]
+    around = image[max(cy - background, 0):cy + background + 1, max(cx - background, 0):cx + background + 1]
+    return float(near.max() - np.median(around)) if near.size else -np.inf
+
+
+def plot_back_surface_thumbnails(image, spots, indices=None, nb=16, boxsize=40, ncols=4, ccdlabel="sCMOS",
+                                 savefile=None):
+    """zoomed views of the image around Laue spots, with the predicted segment towards the back-surface spots
+
+    :param image: image file (read with IOimagefile.readCCDimage(ccdlabel)) or 2D array
+    :param spots: dict returned by simulate_back_surface_spots() or plot_back_surface_spots()
+    :param indices: indices of the spots to show, default: the nb brightest spots of the image having a
+        back-surface spot (one per position: harmonics share the front-surface spot)
+    :param boxsize: half width (pixels) of the views
+    :return: figure, list of the indices shown
+    """
+    import matplotlib.pyplot as plt
+
+    if isinstance(image, str):
+        from . import IOimagefile as IOimage
+        image = IOimage.readCCDimage(image, CCDLabel=ccdlabel)[0]
+    image = np.asarray(image, dtype=float)
+    if indices is None:
+        ok = np.flatnonzero(~np.isnan(spots["xback"][:, 0]))
+        brightness = np.array([_peak_brightness(image, spots["xcam"][k], spots["ycam"][k]) for k in ok])
+        indices, seen = [], set()
+        for k in ok[np.argsort(-brightness)]:
+            key = (round(spots["xcam"][k]), round(spots["ycam"][k]))
+            if key not in seen:
+                seen.add(key)
+                indices.append(int(k))
+            if len(indices) == nb:
+                break
+    nrows = max(1, int(np.ceil(len(indices) / ncols)))
+    fig, axes = plt.subplots(nrows, ncols, figsize=(3 * ncols, 3 * nrows), squeeze=False)
+    for ax in axes.ravel()[len(indices):]:
+        ax.set_axis_off()
+    for ax, k in zip(axes.ravel(), indices):
+        # pixel (x, y) of LaueTools is the image element [y - 1, x - 1]
+        x0, y0 = spots["xcam"][k] - 1, spots["ycam"][k] - 1
+        yb = spots["yback"][k] - 1
+        cx, cy = int(round(x0)), int(round(y0))
+        ylo, xlo = max(cy - boxsize, 0), max(cx - boxsize, 0)
+        view = image[ylo:cy + boxsize + 1, xlo:cx + boxsize + 1]
+        view = np.log10(np.clip(view - np.percentile(view, 10), 1.0, None))
+        ax.imshow(view, cmap="viridis", extent=(xlo - 0.5, xlo + view.shape[1] - 0.5,
+                                                ylo + view.shape[0] - 0.5, ylo - 0.5))
+        same = np.flatnonzero((np.abs(spots["xcam"] - spots["xcam"][k]) < 0.5)
+                              & (np.abs(spots["ycam"] - spots["ycam"][k]) < 0.5)
+                              & ~np.isnan(spots["xback"][:, 0]))  # harmonics of the same spot
+        for j in same:
+            xs, ys = spots["xback"][j] - 1, spots["yback"][j] - 1
+            ax.plot([x0, xs[-1]], [y0, ys[-1]], "-", color="w", lw=0.8, alpha=0.8)
+            ax.plot(xs, ys, "x", color="r" if j == k else "orange", ms=6, mew=1.2)
+        ax.plot(x0, y0, "o", mfc="none", mec="w", ms=8)
+        ax.set_title("%s  %.1f keV  dY %.0f px" % ("".join(str(i) for i in spots["hkl"][k]), spots["energy"][k],
+                                                 yb[0] - y0), fontsize=8)
+        ax.tick_params(labelsize=6)
+    fig.tight_layout()
+    if savefile:
+        fig.savefig(savefile, dpi=150, bbox_inches="tight")
+    return fig, indices
